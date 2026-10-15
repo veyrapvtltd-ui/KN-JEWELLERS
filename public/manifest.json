@@ -1,0 +1,23 @@
+{
+  "short_name": "SHREE ARADHNA",
+  "name": "SHREE ARADHNA JEWELLERS",
+  "icons": [
+    {
+      "src": "assets/logo.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#7b1122",
+  "display": "standalone",
+  "orientation": "portrait"
+}
