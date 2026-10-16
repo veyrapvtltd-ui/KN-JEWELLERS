@@ -1,42 +1,17 @@
 // 18KT Plain Gold Master Collection for SHREE ARADHNA JEWELLERS
-// Categorized precisely as per user request: rings in rings, earrings in earrings, etc.
+// Categorized precisely: rings in rings, earrings in earrings, etc.
 
 export const collection18kProducts = [
   // ==================== RINGS (9 Designs) ====================
-  // --- Gents Rings (4) ---
+  // --- Ladies Rings (6) ---
   {
     id: 'saj-18k-ring-01',
-    title: '18KT Plain Gold Gents Imperial Square Pavé Signet Ring',
-    category: 'GENTS',
+    title: '18KT Plain Gold Imperial Square Pavé Ladies Ring',
+    category: 'LADIES',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
     url: '/assets/18K_COLLECTION/18k_gents_imperial_square_ring.jpg'
   },
-  {
-    id: 'saj-18k-ring-02',
-    title: '18KT Plain Gold Gents Royal Ribbed Signet Ring',
-    category: 'GENTS',
-    subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
-    url: '/assets/18K_COLLECTION/18k_gents_royal_ribbed_ring.jpg'
-  },
-  {
-    id: 'saj-18k-ring-03',
-    title: '18KT Plain Gold Gents Sacred ॐ (Om) Signet Ring',
-    category: 'GENTS',
-    subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
-    url: '/assets/18K_COLLECTION/18k_gents_om_signet_ring.jpg'
-  },
-  {
-    id: 'saj-18k-ring-04',
-    title: '18KT Plain Gold Gents Royal Lion Crest Signet Ring',
-    category: 'GENTS',
-    subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
-    url: '/assets/18K_COLLECTION/18k_gents_royal_lion_ring.jpg'
-  },
-  // --- Ladies Rings (5) ---
   {
     id: 'saj-18k-ring-05',
     title: '18KT Plain Gold Rose Gold Crossover Infinity Diamond Ring',
@@ -78,7 +53,33 @@ export const collection18kProducts = [
     url: '/assets/18K_COLLECTION/18k_geometric_cage_diamond_ring.jpg'
   },
 
-  // ==================== EARRINGS (5 Designs) ====================
+  // --- Gents Rings (3) ---
+  {
+    id: 'saj-18k-ring-02',
+    title: '18KT Plain Gold Gents Royal Ribbed Signet Ring',
+    category: 'GENTS',
+    subCategory: 'RINGS',
+    purity: '18KT Plain Gold',
+    url: '/assets/18K_COLLECTION/18k_gents_royal_ribbed_ring.jpg'
+  },
+  {
+    id: 'saj-18k-ring-03',
+    title: '18KT Plain Gold Gents Sacred ॐ (Om) Signet Ring',
+    category: 'GENTS',
+    subCategory: 'RINGS',
+    purity: '18KT Plain Gold',
+    url: '/assets/18K_COLLECTION/18k_gents_om_signet_ring.jpg'
+  },
+  {
+    id: 'saj-18k-ring-04',
+    title: '18KT Plain Gold Gents Royal Lion Crest Signet Ring',
+    category: 'GENTS',
+    subCategory: 'RINGS',
+    purity: '18KT Plain Gold',
+    url: '/assets/18K_COLLECTION/18k_gents_royal_lion_ring.jpg'
+  },
+
+  // ==================== EARRINGS (4 Designs) ====================
   {
     id: 'saj-18k-ear-01',
     title: '18KT Plain Gold Evil Eye Diamond Stud Earrings',
@@ -87,15 +88,6 @@ export const collection18kProducts = [
     earringType: 'STUDS',
     purity: '18KT Plain Gold',
     url: '/assets/18K_COLLECTION/18k_evil_eye_diamond_studs.jpg'
-  },
-  {
-    id: 'saj-18k-ear-02',
-    title: '18KT Plain Gold Oval Solitaire Diamond Stud Earrings',
-    category: 'EARRINGS',
-    subCategory: 'EARRINGS',
-    earringType: 'STUDS',
-    purity: '18KT Plain Gold',
-    url: '/assets/18K_COLLECTION/18k_oval_solitaire_studs.jpg'
   },
   {
     id: 'saj-18k-ear-03',
@@ -167,15 +159,7 @@ export const collection18kProducts = [
     url: '/assets/18K_COLLECTION/18k_mesh_woven_gold_kada_bangle.jpg'
   },
 
-  // ==================== CHAINS (3 Designs) ====================
-  {
-    id: 'saj-18k-chn-01',
-    title: '18KT Plain Gold Modern Bar-Link Designer Chain',
-    category: 'GENTS',
-    subCategory: 'CHAINS',
-    purity: '18KT Plain Gold',
-    url: '/assets/18K_COLLECTION/18k_gold_bar_link_chain.jpg'
-  },
+  // ==================== CHAINS (2 Designs) ====================
   {
     id: 'saj-18k-chn-02',
     title: '18KT Plain Gold Sleek Flat Snake Herringbone Chain',
@@ -203,15 +187,7 @@ export const collection18kProducts = [
     url: '/assets/18K_COLLECTION/18k_floral_diamond_short_mangalsutra.jpg'
   },
 
-  // ==================== NECKLACES & SETS (6 Designs) ====================
-  {
-    id: 'saj-18k-neck-01',
-    title: '18KT Plain Gold Charm Choker Cascade Necklace',
-    category: 'LADIES',
-    subCategory: 'NECKLACES',
-    purity: '18KT Plain Gold',
-    url: '/assets/18K_COLLECTION/18k_gold_charm_choker_necklace.jpg'
-  },
+  // ==================== NECKLACES & SETS (5 Designs) ====================
   {
     id: 'saj-18k-neck-02',
     title: '18KT Plain Gold Teardrop Diamond Pendant & Earrings Set',
@@ -256,12 +232,12 @@ export const collection18kProducts = [
 
 // Highlighted best sellers for horizontal marquee
 export const best18kSellers = [
-  collection18kProducts[28], // Scalloped Bridal Set
-  collection18kProducts[6],  // Solitaire Engagement Ring
-  collection18kProducts[2],  // Sacred OM Signet Ring
-  collection18kProducts[9],  // Evil Eye Studs
-  collection18kProducts[14], // Tennis Bracelet
-  collection18kProducts[5],  // Blooming Floral Ring
-  collection18kProducts[17], // Turquoise Kada Bangle
-  collection18kProducts[15]  // Heart Diamond Bracelet
-];
+  collection18kProducts.find(p => p.id === 'saj-18k-neck-06'), // Scalloped Bridal Set
+  collection18kProducts.find(p => p.id === 'saj-18k-ring-07'), // Solitaire Engagement Ring
+  collection18kProducts.find(p => p.id === 'saj-18k-ring-03'), // Sacred OM Signet Ring
+  collection18kProducts.find(p => p.id === 'saj-18k-ear-01'),  // Evil Eye Studs
+  collection18kProducts.find(p => p.id === 'saj-18k-brac-01'), // Tennis Bracelet
+  collection18kProducts.find(p => p.id === 'saj-18k-ring-06'), // Blooming Floral Ring
+  collection18kProducts.find(p => p.id === 'saj-18k-bang-01'), // Turquoise Kada Bangle
+  collection18kProducts.find(p => p.id === 'saj-18k-brac-02')  // Heart Diamond Bracelet
+].filter(Boolean);
