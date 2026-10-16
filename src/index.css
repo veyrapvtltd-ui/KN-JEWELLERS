@@ -1397,12 +1397,12 @@ body {
 
 /* 6. Models Section - Infinite Left-to-Right Scrolling Marquee Layout */
 @keyframes marqueeLeft {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 .models-marquee-section {
-  padding: 80px 0;
+  padding: 60px 0;
   background: #ffffff;
   border-top: 1px solid rgba(123, 17, 34, 0.15);
   overflow: hidden;
@@ -1419,7 +1419,7 @@ body {
   content: '';
   position: absolute;
   top: 0;
-  width: 120px;
+  width: 80px;
   height: 100%;
   z-index: 5;
   pointer-events: none;
@@ -1440,29 +1440,43 @@ body {
   flex-wrap: nowrap;
   gap: 0;
   width: max-content;
-  animation: marqueeLeft 180s linear infinite;
-  animation-delay: 60s;
+  will-change: transform;
+  animation: marqueeLeft 38s linear infinite;
   padding: 10px 0;
 }
 
 .models-marquee-row:hover {
-  animation-play-state: paused; /* Highly polished: pauses scrolling on hover! */
+  animation-play-state: paused; /* Pauses scrolling on hover */
 }
 
 .model-marquee-card {
-  flex: 0 0 320px;
+  flex: 0 0 300px;
   flex-shrink: 0;
-  margin-right: 16px;
+  margin-right: 18px;
   aspect-ratio: 2 / 3;
   overflow: hidden;
-  border: 1px solid rgba(123, 17, 34, 0.1);
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid rgba(123, 17, 34, 0.12);
   box-shadow: 0 8px 25px rgba(42, 37, 32, 0.05);
-  transition: var(--transition-smooth);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {
+  .models-marquee-section {
+    padding: 40px 0;
+  }
+  .models-marquee-container::before, .models-marquee-container::after {
+    width: 30px;
+  }
+  .models-marquee-row {
+    animation-duration: 26s;
+  }
   .model-marquee-card {
-    flex: 0 0 230px;
+    flex: 0 0 220px;
+    margin-right: 14px;
+    border-radius: 6px;
   }
 }
 
@@ -1480,7 +1494,7 @@ body {
 }
 
 .model-marquee-card:hover .model-marquee-img {
-  transform: scale(1.02);
+  transform: scale(1.04);
 }
 
 

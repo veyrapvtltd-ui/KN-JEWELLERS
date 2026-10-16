@@ -2267,7 +2267,12 @@ export default function Home() {
             <div className="models-marquee-row">
               {/* Duplicate the best sellers list twice for a seamless infinite loop */}
               {[...bestSellerImages, ...bestSellerImages].map((item, index) => (
-                <div key={index} className="model-marquee-card">
+                <div 
+                  key={index} 
+                  className="model-marquee-card"
+                  onClick={() => setLightboxProduct(item)}
+                  title={item.title}
+                >
                   <img 
                     src={item.url} 
                     alt={item.title} 
@@ -2275,6 +2280,24 @@ export default function Home() {
                     loading="lazy"
                     decoding="async"
                   />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                    padding: '16px 12px 10px',
+                    color: '#fff',
+                    textAlign: 'center',
+                    pointerEvents: 'none'
+                  }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.title}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--royal-gold)', fontWeight: '600', marginTop: '2px' }}>
+                      {item.purity || '18K Gold'} • {item.subCategory || item.category}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
