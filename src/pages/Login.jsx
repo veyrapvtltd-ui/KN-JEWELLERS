@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,17 +17,90 @@ export default function Login() {
     setLoading(true);
     setError(null);
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
+      if (isSupabaseConfigured()) {
+        try {
+          if (isSignUp) {
+            // Check if user already exists in Supabase
+            const { data: existingUser } = await supabase
+              .from('custom_users')
+              .select('id')
+              .eq('email', cleanEmail)
+              .maybeSingle();
+
+            if (existingUser) {
+              throw new Error('Email already registered in system.');
+            }
+
+            const { data: newUser, error: insertError } = await supabase
+              .from('custom_users')
+              .insert([{
+                email: cleanEmail,
+                password,
+                full_name: fullName.trim(),
+                phone_number: phone.trim()
+              }])
+              .select()
+              .single();
+
+            if (insertError) throw insertError;
+
+            // Cache locally
+            const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+            users.push(newUser);
+            localStorage.setItem('SAJ_users', JSON.stringify(users));
+            localStorage.setItem('userId', newUser.id);
+            alert('Profile created successfully! You are now logged in.');
+            navigate(-1);
+            return;
+          } else {
+            // Sign in with Supabase
+            const { data: userProfile, error: loginError } = await supabase
+              .from('custom_users')
+              .select('*')
+              .eq('email', cleanEmail)
+              .eq('password', password)
+              .maybeSingle();
+
+            if (loginError) throw loginError;
+
+            if (userProfile) {
+              // Cache locally
+              const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+              const existingIdx = users.findIndex(u => u.id === userProfile.id);
+              if (existingIdx >= 0) users[existingIdx] = userProfile;
+              else users.push(userProfile);
+              localStorage.setItem('SAJ_users', JSON.stringify(users));
+
+              localStorage.setItem('userId', userProfile.id);
+              navigate(-1);
+              return;
+            } else {
+              throw new Error('Invalid email or password');
+            }
+          }
+        } catch (dbErr) {
+          console.warn("Supabase auth failed or table pending, attempting local storage fallback:", dbErr.message);
+          // If the error was explicitly 'Invalid email or password' or 'Email already registered', propagate it
+          if (dbErr.message.includes('Invalid email') || dbErr.message.includes('already registered')) {
+            throw dbErr;
+          }
+        }
+      }
+
+      // LocalStorage Fallback
       const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
       
       if (isSignUp) {
-        if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
           throw new Error('Email already registered.');
         }
 
         const newUser = {
           id: 'user_' + Date.now(),
-          email: email.trim(),
+          email: cleanEmail,
           password,
           full_name: fullName.trim(),
           phone_number: phone.trim(),
@@ -39,7 +113,7 @@ export default function Login() {
         alert('Profile created successfully! You are now logged in.');
         navigate(-1);
       } else {
-        const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+        const found = users.find(u => u.email.toLowerCase() === cleanEmail && u.password === password);
         if (!found) {
           throw new Error('Invalid email or password');
         }

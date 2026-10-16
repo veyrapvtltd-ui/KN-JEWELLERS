@@ -6,6 +6,7 @@ import {
   ShieldCheck, Heart, Award, Share2,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
 const bannerImages = [
@@ -498,7 +499,25 @@ export default function Home() {
   // Load public rates on startup
   useEffect(() => {
     const fetchRatesAndProducts = async () => {
-      // 1. Fetch live rates from localStorage or rates.json fallback
+      // 1. Fetch live rates from Supabase if configured
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: dbRates } = await supabase
+            .from('saj_rates')
+            .select('*')
+            .eq('id', 1)
+            .maybeSingle();
+
+          if (dbRates) {
+            setGoldRates(prev => ({ hide24k: true, ...prev, ...dbRates }));
+            localStorage.setItem('SAJ_rates', JSON.stringify(dbRates));
+          }
+        } catch (err) {
+          console.warn("Supabase rates fetch fallback:", err.message);
+        }
+      }
+
+      // 2. Local storage / rates.json fallback
       try {
         const storedRates = localStorage.getItem('SAJ_rates');
         if (storedRates) {
@@ -514,7 +533,7 @@ export default function Home() {
         console.warn("Rates loading fallback:", e);
       }
       
-      // 2. All products removed from web
+      // 3. Products catalog state
       localStorage.removeItem('SAJ_custom_products');
       setDbProducts([]);
     };
@@ -709,6 +728,22 @@ export default function Home() {
       hide24k: tempHide24k
     };
     localStorage.setItem('SAJ_rates', JSON.stringify(ratePayload));
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('saj_rates').upsert({
+          id: 1,
+          gold24k: Number(temp24k),
+          gold22k: Number(temp22k),
+          gold18k: Number(temp18k),
+          silver: Number(tempSilver),
+          updated_at: new Date().toISOString()
+        });
+      } catch (err) {
+        console.warn("Supabase rate save failed:", err.message);
+      }
+    }
+
     alert('Live Rates updated successfully!');
     setIsAdminOpen(false);
   };
@@ -1879,21 +1914,37 @@ export default function Home() {
                 Fill the form below to receive a personalized bridal collection catalog or schedule a virtual preview call.
               </p>
               
-              <form onSubmit={(e) => { 
+              <form onSubmit={async (e) => { 
                 e.preventDefault(); 
                 const formData = new FormData(e.target);
+                const branchVal = formData.get('branch') || 'Gandhidham Branch';
                 const inquiry = {
                   id: Date.now(),
                   name: formData.get('name'),
                   phone: formData.get('phone'),
-                  branch: formData.get('branch'),
+                  branch: branchVal,
                   category: formData.get('category'),
                   message: formData.get('message'),
                   date: new Date().toLocaleString()
                 };
+
+                if (isSupabaseConfigured()) {
+                  try {
+                    await supabase.from('inquiries').insert([{
+                      name: formData.get('name'),
+                      phone: formData.get('phone'),
+                      branch: branchVal,
+                      notes: formData.get('message'),
+                      inquiry_type: formData.get('category') || 'Appointment'
+                    }]);
+                  } catch (err) {
+                    console.warn("Supabase inquiry save fallback:", err.message);
+                  }
+                }
+
                 const existing = JSON.parse(localStorage.getItem('SAJ_inquiries') || '[]');
                 localStorage.setItem('SAJ_inquiries', JSON.stringify([inquiry, ...existing]));
-                alert(`Thank you! Our ${formData.get('branch') || 'showroom'} representative will reach out to you shortly.`); 
+                alert(`Thank you! Our ${branchVal} representative will reach out to you shortly.`); 
                 e.target.reset();
               }} className="contact-form">
                 <div className="form-group">

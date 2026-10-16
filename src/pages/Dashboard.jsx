@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, XCircle, CreditCard, UploadCloud, Gem, Sparkles, PlusCircle } from 'lucide-react';
 import heic2any from 'heic2any';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -67,9 +68,59 @@ export default function Dashboard() {
       return;
     }
 
-    // Fetch user details from localStorage
-    const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
-    const userData = users.find(u => u.id === userId);
+    let userData = null;
+    let userSchemes = [];
+
+    if (isSupabaseConfigured()) {
+      try {
+        // 1. Fetch user details from Supabase
+        const { data: dbUser } = await supabase
+          .from('custom_users')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (dbUser) {
+          userData = dbUser;
+        }
+
+        // 2. Fetch store settings
+        const { data: dbSettings } = await supabase
+          .from('store_settings')
+          .select('*')
+          .eq('id', 1)
+          .maybeSingle();
+
+        if (dbSettings) {
+          if (dbSettings.upi_id) setStoreUpi(dbSettings.upi_id);
+          if (dbSettings.qr_code_url) setStoreQrUrl(dbSettings.qr_code_url);
+        }
+
+        // 3. Fetch schemes and payments from Supabase
+        const { data: dbSchemes } = await supabase
+          .from('harvest_schemes')
+          .select('*, payments(*)')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (dbSchemes && dbSchemes.length > 0) {
+          userSchemes = dbSchemes.map(s => ({
+            ...s,
+            payments: s.payments || []
+          }));
+        }
+      } catch (err) {
+        console.warn("Supabase Dashboard fetch fallback:", err.message);
+      }
+    }
+
+    // Fallback to localStorage if needed
+    if (!userData) {
+      const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+      userData = users.find(u => u.id === userId);
+    }
+
     if (!userData) {
       localStorage.removeItem('userId');
       navigate('/login');
@@ -77,21 +128,23 @@ export default function Dashboard() {
     }
     setUser(userData);
 
-    // Fetch store UPI settings
+    // Settings fallback
     const settings = JSON.parse(localStorage.getItem('SAJ_store_settings') || '{}');
-    if (settings.upi_id) setStoreUpi(settings.upi_id);
-    if (settings.qr_code_url) setStoreQrUrl(settings.qr_code_url);
+    if (settings.upi_id && !storeUpi) setStoreUpi(settings.upi_id);
+    if (settings.qr_code_url && !storeQrUrl) setStoreQrUrl(settings.qr_code_url);
 
-    // Fetch all active schemes AND their payments
-    const allSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
-    const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
+    // Schemes fallback
+    if (userSchemes.length === 0) {
+      const allSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
+      const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
 
-    const userSchemes = allSchemes
-      .filter(s => s.user_id === userId && s.status === 'active')
-      .map(s => ({
-        ...s,
-        payments: allPayments.filter(p => p.scheme_id === s.id)
-      }));
+      userSchemes = allSchemes
+        .filter(s => s.user_id === userId && s.status === 'active')
+        .map(s => ({
+          ...s,
+          payments: allPayments.filter(p => p.scheme_id === s.id)
+        }));
+    }
 
     setSchemes(userSchemes);
     setLoading(false);
@@ -106,6 +159,33 @@ export default function Dashboard() {
   const startScheme = async (e) => {
     e.preventDefault();
     const amount = Number(e.target.amount.value);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: newDbScheme, error: schemeErr } = await supabase
+          .from('harvest_schemes')
+          .insert([{
+            user_id: user.id,
+            monthly_amount: amount,
+            status: 'active',
+            branch: 'Gandhidham'
+          }])
+          .select()
+          .single();
+
+        if (!schemeErr && newDbScheme) {
+          const allSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
+          allSchemes.unshift(newDbScheme);
+          localStorage.setItem('SAJ_schemes', JSON.stringify(allSchemes));
+          setShowNewSchemeForm(false);
+          fetchData();
+          return;
+        }
+      } catch (err) {
+        console.warn("Supabase scheme creation fallback:", err.message);
+      }
+    }
+
     const allSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
     const newScheme = {
       id: 'scheme_' + Date.now(),
@@ -147,22 +227,85 @@ export default function Dashboard() {
         setUploading(false);
         return;
       }
+
+      if (isSupabaseConfigured()) {
+        try {
+          const fileExt = (screenshotFile.name || 'jpg').split('.').pop();
+          const safeName = `${user.id}/${Date.now()}_payment.${fileExt}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('payment_screenshots')
+            .upload(safeName, screenshotFile, {
+              cacheControl: '3600',
+              upsert: true
+            });
+
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage
+              .from('payment_screenshots')
+              .getPublicUrl(safeName);
+            screenshot_url = urlData.publicUrl;
+          }
+        } catch (uploadEx) {
+          console.warn("Supabase Storage upload error:", uploadEx.message);
+        }
+      }
       
-      screenshot_url = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(screenshotFile);
-      });
+      if (!screenshot_url) {
+        screenshot_url = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(screenshotFile);
+        });
+      }
     }
 
+    // Save to Supabase
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: existingPay } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('scheme_id', selectedSchemeId)
+          .eq('month_number', selectedMonth)
+          .maybeSingle();
+
+        if (existingPay) {
+          await supabase
+            .from('payments')
+            .update({
+              status: 'pending',
+              payment_method: paymentMethod,
+              screenshot_url: screenshot_url || undefined,
+              amount: targetScheme.monthly_amount
+            })
+            .eq('id', existingPay.id);
+        } else {
+          await supabase
+            .from('payments')
+            .insert([{
+              scheme_id: selectedSchemeId,
+              user_id: user.id,
+              month_number: selectedMonth,
+              amount: targetScheme.monthly_amount,
+              status: 'pending',
+              payment_method: paymentMethod,
+              screenshot_url
+            }]);
+        }
+      } catch (payDbErr) {
+        console.warn("Supabase payment record error:", payDbErr.message);
+      }
+    }
+
+    // Cache locally
     const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
     const existingIndex = allPayments.findIndex(p => p.scheme_id === selectedSchemeId && p.month_number === selectedMonth);
 
     if (existingIndex >= 0) {
       allPayments[existingIndex] = {
         ...allPayments[existingIndex],
-        status: 'pending_approval',
+        status: 'pending',
         payment_method: paymentMethod,
         screenshot_url: screenshot_url || allPayments[existingIndex].screenshot_url,
         updated_at: new Date().toISOString()
@@ -174,7 +317,7 @@ export default function Dashboard() {
         user_id: user.id,
         month_number: selectedMonth,
         amount: targetScheme.monthly_amount,
-        status: 'pending_approval',
+        status: 'pending',
         payment_method: paymentMethod,
         screenshot_url: screenshot_url,
         created_at: new Date().toISOString()

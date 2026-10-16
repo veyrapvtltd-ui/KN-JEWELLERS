@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export default function AdminDashboard() {
   const [passcode, setPasscode] = useState('');
@@ -56,13 +57,47 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     setLoading(true);
-    const settings = JSON.parse(localStorage.getItem('SAJ_store_settings') || '{}');
-    if (settings.upi_id) setStoreUpi(settings.upi_id);
-    if (settings.qr_code_url) setInstaUrl(settings.qr_code_url);
 
-    const allSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
-    const allUsers = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
-    const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
+    let fetchedSettings = null;
+    let fetchedUsers = null;
+    let fetchedSchemes = null;
+    let fetchedPayments = null;
+    let fetchedInquiries = null;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const [settRes, usrRes, schRes, payRes, inqRes] = await Promise.all([
+          supabase.from('store_settings').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('custom_users').select('*'),
+          supabase.from('harvest_schemes').select('*'),
+          supabase.from('payments').select('*'),
+          supabase.from('inquiries').select('*').order('created_at', { ascending: false })
+        ]);
+
+        if (settRes.data) fetchedSettings = settRes.data;
+        if (usrRes.data) fetchedUsers = usrRes.data;
+        if (schRes.data) fetchedSchemes = schRes.data;
+        if (payRes.data) fetchedPayments = payRes.data;
+        if (inqRes.data) fetchedInquiries = inqRes.data;
+      } catch (err) {
+        console.warn("Supabase AdminDashboard fetch fallback:", err.message);
+      }
+    }
+
+    // Settings
+    const localSettings = JSON.parse(localStorage.getItem('SAJ_store_settings') || '{}');
+    const activeSettings = fetchedSettings || localSettings;
+    if (activeSettings.upi_id) setStoreUpi(activeSettings.upi_id);
+    if (activeSettings.qr_code_url) setInstaUrl(activeSettings.qr_code_url);
+
+    // Users, Schemes, Payments
+    const localUsers = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+    const localSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
+    const localPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
+
+    const allUsers = (fetchedUsers && fetchedUsers.length > 0) ? fetchedUsers : localUsers;
+    const allSchemes = (fetchedSchemes && fetchedSchemes.length > 0) ? fetchedSchemes : localSchemes;
+    const allPayments = (fetchedPayments && fetchedPayments.length > 0) ? fetchedPayments : localPayments;
 
     const enrichedSchemes = allSchemes
       .filter(s => s.status === 'active')
@@ -75,12 +110,17 @@ export default function AdminDashboard() {
     setSchemes(enrichedSchemes);
     setUsersList(allUsers);
 
-    try {
-      const storedInqs = JSON.parse(localStorage.getItem('SAJ_inquiries') || '[]');
-      setInquiries(Array.isArray(storedInqs) ? storedInqs : []);
-    } catch (e) {
-      console.error('Error parsing inquiries:', e);
-      setInquiries([]);
+    // Inquiries
+    if (fetchedInquiries && fetchedInquiries.length > 0) {
+      setInquiries(fetchedInquiries);
+    } else {
+      try {
+        const storedInqs = JSON.parse(localStorage.getItem('SAJ_inquiries') || '[]');
+        setInquiries(Array.isArray(storedInqs) ? storedInqs : []);
+      } catch (e) {
+        console.error('Error parsing inquiries:', e);
+        setInquiries([]);
+      }
     }
 
     setLoading(false);
@@ -93,6 +133,29 @@ export default function AdminDashboard() {
   }, [isAuthenticated]);
 
   const fetchUserSchemes = async (userId) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: dbSchemes } = await supabase
+          .from('harvest_schemes')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'active');
+        if (dbSchemes && dbSchemes.length > 0) {
+          setUserActiveSchemes(dbSchemes);
+          if (dbSchemes.length === 1) {
+            setManualSchemeId(dbSchemes[0].id);
+            setManualAmount(dbSchemes[0].monthly_amount.toString());
+          } else {
+            setManualSchemeId('');
+            setManualAmount('');
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn("Supabase fetchUserSchemes fallback:", err.message);
+      }
+    }
+
     const allSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
     const userSchemes = allSchemes.filter(s => s.user_id === userId && s.status === 'active');
     setUserActiveSchemes(userSchemes);
@@ -108,6 +171,15 @@ export default function AdminDashboard() {
   const handleUpiUpdate = async (e) => {
     e.preventDefault();
     setUpdatingUpi(true);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('store_settings').upsert({ id: 1, upi_id: storeUpi });
+      } catch (err) {
+        console.warn("Supabase UPI update error:", err.message);
+      }
+    }
+
     const settings = JSON.parse(localStorage.getItem('SAJ_store_settings') || '{}');
     settings.upi_id = storeUpi;
     localStorage.setItem('SAJ_store_settings', JSON.stringify(settings));
@@ -117,29 +189,57 @@ export default function AdminDashboard() {
 
   const handleInstaUpdate = async (e) => {
     e.preventDefault();
-    setUpdatingUpi(true);
+    setUpdatingInsta(true);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('store_settings').upsert({ id: 1, qr_code_url: instaUrl });
+      } catch (err) {
+        console.warn("Supabase QR URL update error:", err.message);
+      }
+    }
+
     const settings = JSON.parse(localStorage.getItem('SAJ_store_settings') || '{}');
     settings.qr_code_url = instaUrl;
     localStorage.setItem('SAJ_store_settings', JSON.stringify(settings));
-    alert("Instagram URL updated successfully!");
-    setUpdatingUpi(false);
+    alert("Instagram / QR URL updated successfully!");
+    setUpdatingInsta(false);
   };
 
   const handleApproval = async (paymentId, status) => {
+    let updateData = { status };
+
+    if (status === 'approved') {
+      const rates = JSON.parse(localStorage.getItem('SAJ_rates') || '{"gold24k": 15500}');
+      const gold24k = Number(rates.gold24k) || 15500;
+      const effectiveRate = gold24k * 1.11 * 1.03;
+
+      const currentPay = schemes.flatMap(s => s.payments || []).find(p => p.id === paymentId);
+      const payAmount = currentPay?.amount || 0;
+
+      updateData.gold_rate = gold24k;
+      updateData.gold_purchased = Number((payAmount / effectiveRate).toFixed(4));
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('payments').update(updateData).eq('id', paymentId);
+      } catch (err) {
+        console.warn("Supabase payment approval error:", err.message);
+      }
+    }
+
+    // LocalStorage sync
     const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
     const payIdx = allPayments.findIndex(p => p.id === paymentId);
     if (payIdx >= 0) {
-      allPayments[payIdx].status = status;
-      if (status === 'approved') {
-        const rates = JSON.parse(localStorage.getItem('SAJ_rates') || '{"gold24k": 7800}');
-        const gold24k = Number(rates.gold24k) || 7800;
-        const effectiveRate = gold24k * 1.11 * 1.03;
-        allPayments[payIdx].gold_rate = gold24k;
-        allPayments[payIdx].gold_purchased = Number((allPayments[payIdx].amount / effectiveRate).toFixed(4));
-      }
+      allPayments[payIdx] = {
+        ...allPayments[payIdx],
+        ...updateData
+      };
       localStorage.setItem('SAJ_payments', JSON.stringify(allPayments));
-      fetchData();
     }
+    fetchData();
   };
 
   const handleQrUpload = async (e) => {
@@ -148,16 +248,39 @@ export default function AdminDashboard() {
     
     setQrUploading(true);
     try {
-      const dataUrl = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(file);
-      });
+      let finalQrUrl = null;
+
+      if (isSupabaseConfigured()) {
+        try {
+          const fileExt = (file.name || 'png').split('.').pop();
+          const fileName = `store_qr_${Date.now()}.${fileExt}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('payment_screenshots')
+            .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+          if (!uploadErr) {
+            const { data } = supabase.storage.from('payment_screenshots').getPublicUrl(fileName);
+            finalQrUrl = data.publicUrl;
+            await supabase.from('store_settings').upsert({ id: 1, qr_code_url: finalQrUrl });
+          }
+        } catch (ex) {
+          console.warn("Storage upload error for QR, using base64:", ex.message);
+        }
+      }
+
+      if (!finalQrUrl) {
+        finalQrUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
+      }
+
       const settings = JSON.parse(localStorage.getItem('SAJ_store_settings') || '{}');
-      settings.qr_code_url = dataUrl;
+      settings.qr_code_url = finalQrUrl;
       localStorage.setItem('SAJ_store_settings', JSON.stringify(settings));
-      setInstaUrl(dataUrl);
+      setInstaUrl(finalQrUrl);
       alert('QR Code updated successfully!');
     } catch (err) {
       console.error(err);
@@ -176,10 +299,27 @@ export default function AdminDashboard() {
     setManualSubmitting(true);
 
     const amountFloat = parseFloat(manualAmount);
-    const rates = JSON.parse(localStorage.getItem('SAJ_rates') || '{"gold24k": 7800}');
-    const gold24k = Number(rates.gold24k) || 7800;
+    const rates = JSON.parse(localStorage.getItem('SAJ_rates') || '{"gold24k": 15500}');
+    const gold24k = Number(rates.gold24k) || 15500;
     const gold_rate = gold24k;
     const gold_purchased = Number((amountFloat / gold24k).toFixed(4));
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('payments').insert([{
+          scheme_id: manualSchemeId,
+          user_id: manualUserId,
+          month_number: parseInt(manualMonth),
+          amount: amountFloat,
+          status: 'approved',
+          payment_method: manualMethod,
+          gold_rate,
+          gold_purchased
+        }]);
+      } catch (err) {
+        console.warn("Supabase manual payment insert error:", err.message);
+      }
+    }
 
     const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
     allPayments.push({
@@ -200,10 +340,10 @@ export default function AdminDashboard() {
     setManualUserSearch('');
     setManualUserId('');
     setManualMonth('');
-      setManualAmount('');
-      setManualSchemeId('');
-      setUserActiveSchemes([]);
-      fetchData();
+    setManualAmount('');
+    setManualSchemeId('');
+    setUserActiveSchemes([]);
+    fetchData();
     setManualSubmitting(false);
   };
 
