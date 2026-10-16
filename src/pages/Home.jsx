@@ -43,24 +43,24 @@ const mangalsutraImages = [];
 
 const allProducts = [];
 
-const categories = ['ALL', 'GENTS', 'LADIES', 'WEDDING SET', 'SILVER COLLECTION'];
+const categories = ['ALL', 'GENTS', 'LADIES', 'EARRINGS', 'WEDDING SET'];
 
 // Sub-categories per main collection
 const subCategories = {
   'GENTS': ['ALL', 'RINGS', 'CHAINS', 'BRACELETS', 'LOCKETS'],
-  'LADIES': ['ALL', 'BANGLES', 'SHORT MANGALSUTRA', 'LONG MANGALSUTRA', 'RINGS', 'NECKLACES', 'BRACELETS', 'EARRINGS'],
-  'WEDDING SET': ['ALL'],
-  'SILVER COLLECTION': ['ALL', 'SILVER CHAIN', 'SILVER BRACELETS', 'PAYAL', 'CHALLA', 'SILVER UTENSILS', 'SILVER MANGALSUTRA']
+  'LADIES': ['ALL', 'BANGLES', 'SHORT MANGALSUTRA', 'LONG MANGALSUTRA', 'RINGS', 'NECKLACES', 'BRACELETS'],
+  'EARRINGS': ['ALL', 'DAILY WEAR TOPS', 'JUMKAS', 'SUI DHAGA', 'BUTHI', 'KANCHAINS', 'FANCY'],
+  'WEDDING SET': ['ALL']
 };
 
-// Earring types â€” shown as a 3rd level when LADIES > EARRINGS is selected
+// Earring types — shown when EARRINGS is selected
 const earringSubTypes = ['ALL', 'DAILY WEAR TOPS', 'JUMKAS', 'SUI DHAGA', 'BUTHI', 'KANCHAINS', 'FANCY'];
 
 const marqueeCategories = [
   { name: 'GENTS', label: 'GENTS COLLECTION', img: '/assets/gents_collection_img.jpg' },
   { name: 'LADIES', label: 'LADIES COLLECTION', img: '/assets/ladies_collection_img.jpg' },
-  { name: 'WEDDING SET', label: 'WEDDING SET', img: '/assets/wedding_collection_banner.jpg' },
-  { name: 'SILVER COLLECTION', label: 'SILVER COLLECTION', img: '/assets/silver_heart_bangles.jpg' }
+  { name: 'EARRINGS', label: 'EARRING COLLECTION', img: '/assets/earrings_collection_img.jpg' },
+  { name: 'WEDDING SET', label: 'WEDDING SET', img: '/assets/wedding_collection_banner.jpg' }
 ];
 
 
@@ -68,10 +68,10 @@ const marqueeCategories = [
 const circularCategories = [
   { label: 'BANGLES', letter: 'B', cat: 'LADIES', sub: 'BANGLES' },
   { label: 'RINGS', letter: 'R', cat: 'LADIES', sub: 'RINGS' },
-  { label: 'EARRINGS', letter: 'E', cat: 'LADIES', sub: 'EARRINGS' },
+  { label: 'EARRINGS', letter: 'E', cat: 'EARRINGS', sub: 'ALL' },
   { label: 'PENDANTS', letter: 'P', cat: 'GENTS', sub: 'LOCKETS' },
   { label: 'BRACELETS', letter: 'B', cat: 'LADIES', sub: 'BRACELETS' },
-  { label: 'ANKLETS', letter: 'A', cat: 'SILVER COLLECTION', sub: 'PAYAL' },
+  { label: 'ANKLETS', letter: 'A', cat: 'LADIES', sub: 'ALL' },
   { label: 'CHAINS', letter: 'C', cat: 'GENTS', sub: 'CHAINS' },
   { label: 'CHAIN + PENDANT', letter: 'CP', cat: 'LADIES', sub: 'NECKLACES' },
   { label: 'VIEW ALL', letter: 'V', cat: 'ALL', sub: 'ALL' }
@@ -758,7 +758,12 @@ export default function Home() {
   const filteredProducts = (() => {
     const combinedProducts = [...dbProducts, ...allProducts];
     if (activeCategory === 'ALL') return combinedProducts;
-    let base = combinedProducts.filter(p => p.category === activeCategory);
+    let base = combinedProducts.filter(p => {
+      if (activeCategory === 'EARRINGS') {
+        return p.category === 'EARRINGS' || p.subCategory === 'EARRINGS' || (p.category === 'LADIES' && p.subCategory === 'EARRINGS');
+      }
+      return p.category === activeCategory;
+    });
     if (activeSubCategory !== 'ALL') {
       base = base.filter(p => {
         let sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
@@ -774,7 +779,7 @@ export default function Home() {
       });
     }
     // 3rd level: earring type filter
-    if (activeSubCategory === 'EARRINGS' && activeEarringType !== 'ALL') {
+    if ((activeCategory === 'EARRINGS' || activeSubCategory === 'EARRINGS') && activeEarringType !== 'ALL') {
       base = base.filter(p => (p.earringType || '').toUpperCase() === activeEarringType);
     }
     return base;
@@ -1562,13 +1567,10 @@ export default function Home() {
           {filteredProducts.length === 0 && activeCategory !== 'WEDDING SET' && (
             <div className="custom-order-box">
               <span className="custom-order-title">
-                {activeCategory === 'SILVER COLLECTION' ? 'COMING SOON' : 'CUSTOM ORDER ONLY'}
+                BESPOKE HANDCRAFTED DESIGNS
               </span>
               <p className="custom-order-desc">
-                {activeCategory === 'SILVER COLLECTION'
-                  ? 'Our Silver Collection is launching soon! Visit our Gandhidham or Adipur showrooms or WhatsApp us to enquire about Silver Chain, Bracelets, Payal, Challa, Silver Utensils and Mangalsutra.'
-                  : `We craft bespoke handcrafted pieces matching your specifications for ${activeSubCategory !== 'ALL' ? activeSubCategory : activeCategory}. Please contact our Gandhidham or Adipur showrooms on WhatsApp to design your dream piece.`
-                }
+                We craft bespoke handcrafted pieces matching your exact specifications for {activeSubCategory !== 'ALL' ? activeSubCategory : activeCategory}. Please contact our Gandhidham or Adipur showrooms on WhatsApp to design your dream piece.
               </p>
               <a 
                 href="https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20want%20to%20place%20a%20custom%20order." 
@@ -1576,7 +1578,7 @@ export default function Home() {
                 rel="noreferrer"
                 className="custom-order-link"
               >
-                {activeCategory === 'SILVER COLLECTION' ? 'ENQUIRE NOW →' : 'TALK TO DESIGNER →'}
+                TALK TO DESIGNER →
               </a>
             </div>
           )}
@@ -1969,16 +1971,17 @@ export default function Home() {
                       <option>Ladies Earrings - Kanchains</option>
                       <option>Ladies Earrings - Fancy</option>
                     </optgroup>
-                    <optgroup label="Wedding Set">
-                      <option>Wedding Set</option>
+                    <optgroup label="Earrings Collection">
+                      <option>Daily Wear Tops</option>
+                      <option>Jhumkas</option>
+                      <option>Sui Dhaga</option>
+                      <option>Buthi</option>
+                      <option>Kanchains</option>
+                      <option>Fancy Earrings</option>
                     </optgroup>
-                    <optgroup label="Silver Collection">
-                      <option>Silver Chain</option>
-                      <option>Silver Bracelets</option>
-                      <option>Payal</option>
-                      <option>Challa</option>
-                      <option>Silver Utensils</option>
-                      <option>Silver Mangalsutra</option>
+                    <optgroup label="Wedding Collection">
+                      <option>Royal Wedding Set</option>
+                      <option>Bridal Choker & Necklace</option>
                     </optgroup>
                   </select>
                 </div>
