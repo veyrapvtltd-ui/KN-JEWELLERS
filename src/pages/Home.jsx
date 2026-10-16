@@ -1725,25 +1725,23 @@ export default function Home() {
                 boxShadow: '0 8px 30px rgba(123, 17, 34, 0.08)',
                 margin: '20px 0 30px',
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(360px, 1fr))',
+                gridTemplateColumns: isMobile ? '1fr' : 'minmax(320px, 46%) 1fr',
                 alignItems: 'stretch',
                 width: '100%',
                 maxWidth: '100%',
                 boxSizing: 'border-box'
               }}
             >
-              {/* Image banner - Full bridal set with matching earrings & pendant visible */}
+              {/* Image banner - Pure Edge-to-Edge Luxury Bridal Set */}
               <div style={{ 
                 position: 'relative', 
                 overflow: 'hidden', 
-                background: 'radial-gradient(circle at center, #630c1b 0%, #440711 100%)', 
+                background: '#4a0b14', 
                 width: '100%', 
-                minHeight: isMobile ? '360px' : '520px',
-                maxHeight: isMobile ? '460px' : '580px',
+                minHeight: isMobile ? '380px' : '500px',
+                height: '100%',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: isMobile ? '12px 6px' : '20px 12px'
+                borderRadius: isMobile ? '16px 16px 0 0' : '16px 0 0 16px'
               }}>
                 <img 
                   src="/assets/wedding_collection_banner.jpg" 
@@ -1751,25 +1749,16 @@ export default function Home() {
                   style={{
                     width: '100%',
                     height: '100%',
-                    maxHeight: isMobile ? '430px' : '540px',
-                    objectFit: 'contain',
-                    objectPosition: 'center center',
-                    display: 'block',
-                    filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.45))',
-                    transition: 'transform 0.4s ease'
+                    objectFit: 'cover',
+                    objectPosition: 'center 62%',
+                    display: 'block'
                   }}
                 />
                 <div style={{
                   position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to top, rgba(68, 7, 17, 0.4) 0%, transparent 40%)',
-                  pointerEvents: 'none'
-                }} />
-                <div style={{
-                  position: 'absolute',
-                  bottom: '16px',
+                  top: '16px',
                   left: '16px',
-                  background: 'rgba(123, 17, 34, 0.9)',
+                  background: 'rgba(123, 17, 34, 0.92)',
                   backdropFilter: 'blur(8px)',
                   color: '#ffffff',
                   padding: '6px 14px',
@@ -1781,6 +1770,7 @@ export default function Home() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                   zIndex: 2
                 }}>
                   <span>👑</span>
@@ -1789,7 +1779,7 @@ export default function Home() {
               </div>
 
               {/* Details & CTA */}
-              <div style={{ padding: isMobile ? '24px 20px' : '36px 32px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ padding: isMobile ? '24px 20px' : '36px 36px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <span style={{
                   background: 'var(--royal-gold)',
                   color: '#ffffff',
@@ -1809,31 +1799,39 @@ export default function Home() {
                   fontFamily: 'var(--font-serif)',
                   fontSize: isMobile ? '22px' : '28px',
                   color: 'var(--peacock-green)',
-                  margin: '0 0 10px',
+                  margin: '0 0 12px',
                   fontWeight: '700',
-                  letterSpacing: '0.8px'
+                  letterSpacing: '0.8px',
+                  lineHeight: '1.2'
                 }}>
                   Royal Wedding Collection
                 </h3>
                 <p style={{
-                  fontSize: isMobile ? '12px' : '13px',
+                  fontSize: isMobile ? '12.5px' : '13.5px',
                   lineHeight: '1.65',
                   color: 'var(--text-muted)',
-                  margin: '0 0 16px'
+                  margin: '0 0 18px'
                 }}>
                   Exquisite handcrafted bridal jewellery in pure BIS 916 hallmarked gold, enriched with certified ruby stones, pearls, and matching chandelier earrings. Tailored bespoke sets crafted to order for your special day.
                 </p>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', margin: '0 0 20px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#b8860b', background: 'rgba(212, 175, 55, 0.12)', border: '1px solid rgba(212, 175, 55, 0.35)', padding: '5px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                    👑 Complete Bridal Set (Necklace + Earrings)
-                  </span>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--peacock-green)', background: 'rgba(123, 17, 34, 0.08)', border: '1px solid rgba(123, 17, 34, 0.2)', padding: '5px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                    ✓ 100% BIS 916 Hallmarked Pure Gold
-                  </span>
+                {/* Features Checklist */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '0 0 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '700', color: '#b8860b' }}>
+                    <span style={{ fontSize: '14px' }}>👑</span>
+                    <span>Complete Bridal Set (Heritage Necklace + Chandelier Earrings)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '700', color: 'var(--peacock-green)' }}>
+                    <span style={{ fontSize: '14px' }}>✓</span>
+                    <span>100% Certified BIS 916 Hallmarked Pure Gold</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)' }}>
+                    <span style={{ fontSize: '14px' }}>💎</span>
+                    <span>Natural Ruby Stones, Emerald Center & Seed Pearls</span>
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                   <a 
                     href="https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20the%20Royal%20Wedding%20Collection%20sets." 
                     target="_blank" 
