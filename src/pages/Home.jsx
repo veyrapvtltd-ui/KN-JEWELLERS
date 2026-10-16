@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
 const bannerImages = [
@@ -534,8 +535,38 @@ export default function Home() {
       }
       
       // 3. Products catalog state
-      localStorage.removeItem('SAJ_custom_products');
-      setDbProducts([]);
+      let productsList = [];
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: pData } = await supabase
+            .from('saj_products')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (pData && pData.length > 0) {
+            productsList = pData.map(p => ({
+              id: p.id,
+              title: p.title,
+              category: p.category,
+              subCategory: p.subcategory || 'ALL',
+              purity: p.description?.split('-')[0]?.trim() || '22K Hallmarked Gold',
+              weight: p.weight || '',
+              url: p.image || '/assets/logo.png',
+              price: p.price
+            }));
+          }
+        } catch (dbErr) {
+          console.warn("Supabase products fetch fallback:", dbErr);
+        }
+      }
+
+      if (productsList.length === 0) {
+        try {
+          productsList = JSON.parse(localStorage.getItem('SAJ_custom_products') || '[]');
+        } catch {
+          productsList = [];
+        }
+      }
+      setDbProducts(productsList);
     };
     fetchRatesAndProducts();
   }, []);
@@ -626,17 +657,43 @@ export default function Home() {
     setIsUploading(true);
 
     try {
-      const fileExt = upImageFile.name.split('.').pop();
+      // Step 1: Optimize and downscale image to prevent quota blowout
+      const optimizedFile = await optimizeImageForStorage(upImageFile, 1200, 1200, 0.82);
+      const fileExt = (optimizedFile.name || 'jpg').split('.').pop();
       const fileName = `product_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      const filePath = `${fileName}`;
 
-      // Convert image to Base64 Data URL for standalone client storage
-      const imageUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(upImageFile);
-      });
+      let finalImageUrl = null;
+
+      // Step 2: Try uploading to Supabase Storage bucket 'product_images'
+      if (isSupabaseConfigured()) {
+        try {
+          const { error: uploadErr } = await supabase.storage
+            .from('product_images')
+            .upload(fileName, optimizedFile, { cacheControl: '3600', upsert: true });
+
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage.from('product_images').getPublicUrl(fileName);
+            finalImageUrl = urlData?.publicUrl;
+
+            // Also persist in Supabase saj_products table
+            await supabase.from('saj_products').insert([{
+              title: upTitle,
+              category: upCategory,
+              subcategory: upSubCategory,
+              weight: upWeight,
+              image: finalImageUrl,
+              description: `${upPurity || '22K Gold'} - ${upEarringType || ''}`
+            }]);
+          }
+        } catch (storageEx) {
+          console.warn("Supabase product storage upload fallback:", storageEx.message);
+        }
+      }
+
+      // Step 3: Fallback to compact Data URL for LocalStorage
+      if (!finalImageUrl) {
+        finalImageUrl = await fileToDataUrl(optimizedFile);
+      }
 
       const finalProduct = {
         id: Date.now().toString(),
@@ -646,7 +703,7 @@ export default function Home() {
         earringType: upEarringType,
         purity: upPurity,
         weight: upWeight,
-        url: imageUrl
+        url: finalImageUrl
       };
 
       // Save locally in localStorage

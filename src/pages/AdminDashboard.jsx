@@ -6,8 +6,10 @@ import {
   setSupabaseConfig, 
   clearSupabaseConfig, 
   testSupabaseConnection,
+  runVigorousStorageTests,
   SUPABASE_SCHEMA_SQL
 } from '../lib/supabase';
+import { optimizeImageForStorage } from '../lib/imageOptimizer';
 
 export default function AdminDashboard() {
   const [passcode, setPasscode] = useState('');
@@ -23,6 +25,10 @@ export default function AdminDashboard() {
   const [showKey, setShowKey] = useState(false);
   const [copiedSchema, setCopiedSchema] = useState(false);
   const [showSqlGuide, setShowSqlGuide] = useState(false);
+
+  // Vigorous Storage Testing State
+  const [runningStorageTest, setRunningStorageTest] = useState(false);
+  const [storageTestResults, setStorageTestResults] = useState(null);
 
   // Live Rates State
   const [gold24k, setGold24k] = useState('15500');
@@ -243,6 +249,19 @@ export default function AdminDashboard() {
     setUpdatingUpi(false);
   };
 
+  // Run Full Vigorous Storage Diagnostics
+  const handleRunStorageDiagnostics = async () => {
+    setRunningStorageTest(true);
+    try {
+      const results = await runVigorousStorageTests();
+      setStorageTestResults(results);
+    } catch (err) {
+      alert('Storage diagnostic test failed: ' + err.message);
+    } finally {
+      setRunningStorageTest(false);
+    }
+  };
+
   // Upload QR Code
   const handleQrUpload = async (e) => {
     const file = e.target.files[0];
@@ -250,15 +269,17 @@ export default function AdminDashboard() {
     
     setQrUploading(true);
     try {
+      // Optimize image first to keep storage compact & fast
+      const optimizedFile = await optimizeImageForStorage(file, 800, 800, 0.85);
       let finalQrUrl = null;
 
       if (isSupabaseConfigured()) {
         try {
-          const fileExt = (file.name || 'png').split('.').pop();
+          const fileExt = (optimizedFile.name || 'jpg').split('.').pop();
           const fileName = `store_qr_${Date.now()}.${fileExt}`;
           const { error: uploadErr } = await supabase.storage
             .from('payment_screenshots')
-            .upload(fileName, file, { cacheControl: '3600', upsert: true });
+            .upload(fileName, optimizedFile, { cacheControl: '3600', upsert: true });
 
           if (!uploadErr) {
             const { data } = supabase.storage.from('payment_screenshots').getPublicUrl(fileName);
@@ -275,7 +296,7 @@ export default function AdminDashboard() {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result);
           reader.onerror = () => resolve(null);
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(optimizedFile);
         });
       }
 
@@ -617,6 +638,100 @@ export default function AdminDashboard() {
               )}
             </div>
           </form>
+        </div>
+
+        {/* VIGOROUS STORAGE & BUCKET DIAGNOSTICS */}
+        <div style={{ background: '#161616', padding: '28px', borderRadius: '8px', border: '1px solid #2a2a2a', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', marginBottom: '20px' }}>
+            <div>
+              <h2 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.4rem', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>🛡️</span> Vigorous Storage & Bucket Diagnostics
+              </h2>
+              <p style={{ color: '#aaa', margin: 0, fontSize: '0.85rem' }}>
+                Vigorously tests LocalStorage read/write fidelity, quota headroom, Supabase Storage buckets, and public CDN access.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRunStorageDiagnostics}
+              disabled={runningStorageTest}
+              style={{
+                padding: '10px 20px',
+                background: runningStorageTest ? '#333' : 'var(--royal-gold)',
+                color: runningStorageTest ? '#888' : '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: '700',
+                fontSize: '0.85rem',
+                cursor: runningStorageTest ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {runningStorageTest ? 'Running Diagnostic Tests...' : '⚡ Run Vigorous Storage Tests'}
+            </button>
+          </div>
+
+          {storageTestResults && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{
+                padding: '12px 16px',
+                borderRadius: '6px',
+                fontSize: '0.88rem',
+                fontWeight: '600',
+                background: storageTestResults.overallSuccess ? 'rgba(40, 167, 69, 0.15)' : 'rgba(255, 193, 7, 0.15)',
+                color: storageTestResults.overallSuccess ? '#28a745' : '#ffc107',
+                border: `1px solid ${storageTestResults.overallSuccess ? '#28a745' : '#ffc107'}`
+              }}>
+                {storageTestResults.overallSuccess
+                  ? '✓ All Storage & Persistence Subsystems are 100% Operational!'
+                  : '⚠️ Storage Diagnostics Complete - Review Status Below:'}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
+                {storageTestResults.tests.map((t) => (
+                  <div 
+                    key={t.id}
+                    style={{
+                      background: '#0d0d0d',
+                      border: `1px solid ${t.passed ? '#2a442e' : '#522a2a'}`,
+                      borderRadius: '6px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{t.name}</strong>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 'bold',
+                          padding: '3px 8px',
+                          borderRadius: '12px',
+                          background: t.passed ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+                          color: t.passed ? '#28a745' : '#dc3545'
+                        }}>
+                          {t.passed ? 'PASS' : 'FAIL'}
+                        </span>
+                      </div>
+                      <p style={{ color: '#aaa', fontSize: '0.8rem', margin: '4px 0 0', lineHeight: '1.4' }}>
+                        {t.details}
+                      </p>
+                    </div>
+                    {t.latencyMs && (
+                      <div style={{ marginTop: '10px', fontSize: '0.75rem', color: '#666' }}>
+                        Response latency: {t.latencyMs}ms
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 2. LIVE GOLD & SILVER RATES MANAGEMENT */}
