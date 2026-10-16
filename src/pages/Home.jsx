@@ -990,7 +990,11 @@ export default function Home() {
     if (activeCategory === 'RINGS') {
       let rings = combinedProducts.filter(p => {
         const sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
-        return sub === 'RINGS' || (p.title || '').toUpperCase().includes('RING');
+        if (sub === 'RINGS') return true;
+        if (sub && sub !== 'ALL') return false;
+        const titleUpper = (p.title || '').toUpperCase();
+        if (titleUpper.includes('EARRING') || titleUpper.includes('HERRINGBONE')) return false;
+        return /\b(RING|RINGS|SIGNET|BAND)\b/.test(titleUpper);
       });
       if (activeSubCategory === 'LADIES RINGS') {
         return rings.filter(p => p.category === 'LADIES');
@@ -1033,6 +1037,9 @@ export default function Home() {
     if (activeSubCategory !== 'ALL') {
       base = base.filter(p => {
         let sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
+        if (sub === activeSubCategory) return true;
+        if (sub && sub !== 'ALL') return false;
+
         const titleUpper = (p.title || '').toUpperCase();
         if (titleUpper.includes('BANGLE') || titleUpper.includes('GBN') || titleUpper.includes('KADA')) {
           sub = 'BANGLES';
@@ -1040,7 +1047,7 @@ export default function Home() {
           sub = 'SHORT MANGALSUTRA';
         } else if (titleUpper.includes('LONG MANGALSUTRA') || titleUpper.includes('GGT')) {
           sub = 'LONG MANGALSUTRA';
-        } else if (titleUpper.includes('RING')) {
+        } else if (!titleUpper.includes('EARRING') && !titleUpper.includes('HERRINGBONE') && /\b(RING|RINGS|SIGNET|BAND)\b/.test(titleUpper)) {
           sub = 'RINGS';
         } else if (titleUpper.includes('BRACELET')) {
           sub = 'BRACELETS';
