@@ -478,12 +478,12 @@ export default function Home() {
     const saved = localStorage.getItem('SAJ_gold_rates');
     return saved ? { hide24k: true, ...JSON.parse(saved) } : {
       gold24k: 15500,
-      gold22k: 14000,
-      gold18k: 5740,
-      silver: 235,
+      gold22k: 14200,
+      gold18k: 11625,
+      silver: 98,
       hide24k: true,
       lastUpdated: new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }),
-      updatedAt: 1716700000000
+      updatedAt: Date.now()
     };
   });
 
@@ -562,6 +562,44 @@ export default function Home() {
       window.removeEventListener('saj_custom_notification', handleCustomNotify);
       if (bc) bc.close();
       if (supabaseChannel) supabase.removeChannel(supabaseChannel);
+    };
+  }, []);
+
+  // Real-time Rate Sync Across All Open Tabs & Windows (LocalStorage + BroadcastChannel)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'SAJ_gold_rates' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setGoldRates(prev => ({ ...prev, ...parsed }));
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    const handleRatesUpdatedEvent = (e) => {
+      if (e.detail) {
+        setGoldRates(prev => ({ ...prev, ...e.detail }));
+      }
+    };
+    window.addEventListener('saj_rates_updated', handleRatesUpdatedEvent);
+
+    let ratesBc = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        ratesBc = new BroadcastChannel('saj_rates_channel');
+        ratesBc.onmessage = (event) => {
+          if (event.data) {
+            setGoldRates(prev => ({ ...prev, ...event.data }));
+          }
+        };
+      }
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('saj_rates_updated', handleRatesUpdatedEvent);
+      if (ratesBc) ratesBc.close();
     };
   }, []);
 
@@ -928,9 +966,20 @@ export default function Home() {
     };
     localStorage.setItem('SAJ_rates', JSON.stringify(ratePayload));
 
+    // Broadcast updated rates to all open tabs immediately
+    window.dispatchEvent(new CustomEvent('saj_rates_updated', { detail: ratePayload }));
+    try {
+      if ('BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('saj_rates_channel');
+        bc.postMessage(ratePayload);
+        bc.close();
+      }
+    } catch (e) {}
+
+    let cloudSaved = false;
     if (isSupabaseConfigured()) {
       try {
-        await supabase.from('saj_rates').upsert({
+        const { error } = await supabase.from('saj_rates').upsert({
           id: 1,
           gold24k: Number(temp24k),
           gold22k: Number(temp22k),
@@ -938,12 +987,17 @@ export default function Home() {
           silver: Number(tempSilver),
           updated_at: new Date().toISOString()
         });
+        if (!error) cloudSaved = true;
       } catch (err) {
         console.warn("Supabase rate save failed:", err.message);
       }
     }
 
-    alert('Live Rates updated successfully!');
+    if (cloudSaved) {
+      alert(`✅ Live Rates updated & saved to Supabase Cloud Database!\n\n• 22K Gold: ₹${temp22k}/g\n• Silver: ₹${tempSilver}/g\n\nSynced live across all devices and customers worldwide.`);
+    } else {
+      alert(`⚠️ Rates updated in Local Storage (Localhost Mode)!\n\n• 22K Gold: ₹${temp22k}/g\n• Silver: ₹${tempSilver}/g\n\n📌 Note: Supabase Cloud Database is not connected, so this is currently saved only on this machine.\nTo sync live across all customers' mobile phones and computers worldwide, connect your Supabase Cloud Database in Section 1.`);
+    }
     setIsAdminOpen(false);
   };
 

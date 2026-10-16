@@ -235,6 +235,18 @@ export default function AdminDashboard() {
       silver: Number(silver)
     }));
 
+    // Broadcast updated rates to all open tabs immediately
+    window.dispatchEvent(new CustomEvent('saj_rates_updated', { detail: ratePayload }));
+    try {
+      if ('BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('saj_rates_channel');
+        bc.postMessage(ratePayload);
+        bc.close();
+      }
+    } catch (e) {}
+
+    let cloudSaved = false;
+
     // Save to Supabase Cloud if connected
     if (isSupabaseConfigured()) {
       try {
@@ -246,14 +258,19 @@ export default function AdminDashboard() {
           silver: Number(silver),
           updated_at: new Date().toISOString()
         });
-        if (error) throw error;
+        if (!error) cloudSaved = true;
       } catch (err) {
         console.warn('Supabase rate update failed, saved locally:', err.message);
       }
     }
 
     setSavingRates(false);
-    alert('Live Gold & Silver Rates updated successfully!');
+
+    if (cloudSaved) {
+      alert(`✅ Live Rates updated & saved to Supabase Cloud Database!\n\n• 24K Gold: ₹${gold24k}/g\n• 22K Gold: ₹${gold22k}/g\n• 18K Gold: ₹${gold18k}/g\n• Silver: ₹${silver}/g\n\nSynced live across all devices and customers worldwide.`);
+    } else {
+      alert(`⚠️ Rates updated in Local Storage (Localhost Mode)!\n\n• 22K Gold: ₹${gold22k}/g\n• Silver: ₹${silver}/g\n\n📌 Note: Supabase Cloud Database is not connected, so this is currently saved only on this machine.\nTo sync live across all customers' mobile phones and computers worldwide, connect your Supabase Cloud Database in Section 1.`);
+    }
   };
 
   // Update UPI
