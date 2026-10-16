@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
-import { getCurrentFestival, dispatchFestivalBroadcast } from '../lib/festivalGreetings';
+import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification } from '../lib/festivalGreetings';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
 const bannerImages = [
@@ -302,12 +302,22 @@ export default function Home() {
     fetchInstaConfig();
   }, []);
 
+  const handleSendTestNotification = () => {
+    sendSystemNotification(
+      '👑 Shree Aradhna Jewellers',
+      `✨ Notification Test: Today 22K Gold ₹${goldRates.gold22k}/g | Silver ₹${goldRates.silver}/g. Festive offers active in Gandhidham & Adipur showrooms!`
+    );
+  };
+
   const requestNotificationPermission = () => {
     if ('Notification' in window) {
       Notification.requestPermission().then((permission) => {
         if (permission === 'granted') {
           registerPushSubscription();
-          alert('🔔 Rate Alerts Enabled! You will now receive system notifications on your mobile status bar / lock screen when gold rates change, even when the app is completely closed.');
+          sendSystemNotification(
+            '👑 Shree Aradhna Jewellers',
+            `🔔 Rate Alerts Enabled! Today 22K Gold: ₹${goldRates.gold22k}/g | Silver: ₹${goldRates.silver}/g. Gandhidham & Adipur showrooms.`
+          );
         } else {
           alert('Notifications were blocked. Please enable notification permission in your browser/device settings to receive live rate updates.');
         }
@@ -461,9 +471,29 @@ export default function Home() {
   });
 
   const [showPwaNotification, setShowPwaNotification] = useState(false);
+  const [pwaNotificationData, setPwaNotificationData] = useState({
+    title: 'LIVE RATE ALERT',
+    body: 'Gold rates updated! Check today\'s latest hallmarked rates.'
+  });
 
   useEffect(() => {
     document.title = "Shree Aradhna Jewellers | Premium Gold & Silver Jewellery";
+  }, []);
+
+  // Listen for custom notifications triggered anywhere in the app or admin tester
+  useEffect(() => {
+    const handleCustomNotify = (e) => {
+      if (e.detail) {
+        setPwaNotificationData({
+          title: e.detail.title || '👑 SHREE ARADHNA JEWELLERS',
+          body: e.detail.body || 'Live updates from Shree Aradhna Jewellers'
+        });
+        setShowPwaNotification(true);
+        setTimeout(() => setShowPwaNotification(false), 7000);
+      }
+    };
+    window.addEventListener('saj_custom_notification', handleCustomNotify);
+    return () => window.removeEventListener('saj_custom_notification', handleCustomNotify);
   }, []);
 
   useEffect(() => {
@@ -471,6 +501,10 @@ export default function Home() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (isStandalone && goldRates.gold22k) {
       const timer = setTimeout(() => {
+        setPwaNotificationData({
+          title: '👑 LIVE RATE ALERT',
+          body: `Gold rates updated! 22K: ₹${goldRates.gold22k}/g | Silver: ₹${goldRates.silver}/g.`
+        });
         setShowPwaNotification(true);
       }, 1500);
       return () => clearTimeout(timer);
@@ -2659,6 +2693,31 @@ export default function Home() {
               🔔 Enable Rate Alerts
             </button>
 
+            {/* Test Notification Button */}
+            <button
+              onClick={handleSendTestNotification}
+              style={{
+                background: '#7b1122',
+                color: '#ffd700',
+                border: '1.5px solid #ffd700',
+                padding: '14px 28px',
+                borderRadius: '30px',
+                fontWeight: '700',
+                fontSize: '12px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(123, 17, 34, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              className="pwa-test-btn"
+            >
+              🔔 Send Test Notification
+            </button>
+
             {/* iOS Instructions Trigger */}
             <button
               onClick={() => setIsIosHelpOpen(true)}
@@ -3586,7 +3645,7 @@ export default function Home() {
               color: 'var(--peacock-green)',
               letterSpacing: '0.5px'
             }}>
-              LIVE RATE ALERT
+              {pwaNotificationData.title}
             </h4>
             <p style={{
               margin: 0,
@@ -3594,7 +3653,7 @@ export default function Home() {
               color: '#555555',
               lineHeight: '1.4'
             }}>
-              Gold rates updated! 22K: <strong>₹{goldRates.gold22k}/g</strong> | Silver: <strong>₹{goldRates.silver}/g</strong>.
+              {pwaNotificationData.body}
             </p>
           </div>
 

@@ -15,6 +15,7 @@ import {
   getCurrentFestival, 
   getNextUpcomingFestival, 
   dispatchFestivalBroadcast,
+  sendSystemNotification,
   getISTDateString 
 } from '../lib/festivalGreetings';
 
@@ -1122,6 +1123,32 @@ export default function AdminDashboard() {
                 }}
               >
                 Set as Active Website Banner
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sendSystemNotification(
+                    '👑 Shree Aradhna Jewellers',
+                    '✨ System Notification Test: Live gold rates and festival offers active across all devices! Visit Gandhidham & Adipur showrooms.'
+                  );
+                  alert('🔔 Test notification sent! Check your Windows notification center, phone tray, or open website tabs.');
+                }}
+                style={{
+                  padding: '10px 18px',
+                  background: '#7b1122',
+                  color: '#ffd700',
+                  border: '1px solid #ffd700',
+                  borderRadius: '4px',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                🔔 Send Test Notification
               </button>
 
               <button

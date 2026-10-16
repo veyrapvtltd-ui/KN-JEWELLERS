@@ -1,4 +1,4 @@
-// Clean passive PWA service worker with Push Notification support
+// Clean passive PWA service worker with Push Notification support for Shree Aradhna Jewellers
 self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
@@ -13,14 +13,14 @@ self.addEventListener('activate', (e) => {
 
 // Passive fetch listener to satisfy PWA installability requirements without blocking network requests
 self.addEventListener('fetch', (e) => {
-  // Do nothing - let browser handle network fetch normally
+  // Let browser handle network fetch normally
 });
 
-// Listen to background push events when the app is closed
+// Listen to background push events when the app is closed or open
 self.addEventListener('push', (event) => {
   let payload = {
-    title: 'Laxmi Jewellers',
-    body: 'Live Gold Rate Update! Check today\'s latest prices.'
+    title: '👑 Shree Aradhna Jewellers',
+    body: 'Live Gold Rate Update! Check today\'s latest hallmarked rates and showroom offers.'
   };
 
   if (event.data) {
@@ -28,7 +28,7 @@ self.addEventListener('push', (event) => {
       payload = event.data.json();
     } catch (e) {
       payload = {
-        title: 'Laxmi Jewellers',
+        title: '👑 Shree Aradhna Jewellers',
         body: event.data.text()
       };
     }
@@ -36,11 +36,11 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body,
-    icon: '/assets/logo.jpg',
-    badge: '/assets/logo.jpg',
+    icon: '/assets/logo.png',
+    badge: '/assets/logo.png',
     vibrate: [200, 100, 200],
     data: {
-      url: '/'
+      url: payload.url || '/'
     }
   };
 
@@ -49,18 +49,19 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Handle notification clicks (reopen the app)
+// Handle notification clicks (reopen or focus the app)
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url === '/' && 'focus' in client) {
+        if ('focus' in client) {
           return client.focus();
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow('/');
+        return clients.openWindow(targetUrl);
       }
     })
   );

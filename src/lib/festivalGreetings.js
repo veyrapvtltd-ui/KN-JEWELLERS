@@ -1159,21 +1159,56 @@ export async function dispatchFestivalBroadcast(festival, force = false) {
   });
   localStorage.setItem('SAJ_festival_broadcast_history', JSON.stringify(history.slice(0, 50)));
 
-  // Try browser push notification if permitted
-  if ('Notification' in window && Notification.permission === 'granted') {
-    try {
-      new Notification(festival.title, {
-        body: `${festival.greeting}\n${festival.offer}`,
-        icon: '/assets/logo.png',
-        badge: '/assets/logo.png',
-        tag: `festival-${festival.id}`
-      });
-    } catch (e) {
-      console.warn('Native notification failed:', e);
-    }
-  }
+  // Try browser push notification if permitted or requested
+  const notifyTitle = festival.title || festival.name || '👑 Shree Aradhna Jewellers';
+  const notifyBody = `${festival.greeting || ''}\n${festival.offer || 'Visit our Gandhidham & Adipur showrooms for festival offers.'}`;
+  sendSystemNotification(notifyTitle, notifyBody, `festival-${festival.id}`);
 
   // Dispatch custom DOM event so website banner & popup reactively update
   window.dispatchEvent(new CustomEvent('saj_festival_broadcast', { detail: festival }));
   return true;
 }
+
+/**
+ * Universal system notification sender (ServiceWorker + Native Notification + Event)
+ */
+export function sendSystemNotification(title, body, tag = 'saj-alert') {
+  if (typeof window === 'undefined') return;
+
+  const options = {
+    body,
+    icon: '/assets/logo.png',
+    badge: '/assets/logo.png',
+    tag,
+    vibrate: [200, 100, 200],
+    data: { url: window.location.origin }
+  };
+
+  if ('Notification' in window) {
+    if (Notification.permission === 'granted') {
+      try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(title, options);
+          });
+        } else {
+          new Notification(title, options);
+        }
+      } catch (e) {
+        console.warn('Native notification failed:', e);
+      }
+    } else if (Notification.permission === 'default') {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          new Notification(title, options);
+        }
+      });
+    }
+  }
+
+  // Always broadcast DOM event for in-app floating toast
+  window.dispatchEvent(new CustomEvent('saj_custom_notification', {
+    detail: { title, body }
+  }));
+}
+
