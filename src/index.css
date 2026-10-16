@@ -69,7 +69,7 @@ html {
   padding: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   position: relative;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -80,7 +80,7 @@ body {
   padding: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   position: relative;
   font-family: var(--font-sans);
   background-color: var(--ivory-bg);
@@ -95,7 +95,7 @@ body {
 #root {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   position: relative;
 }
 
@@ -2509,7 +2509,7 @@ html, body, #root, section, header, footer, main, .section-inner {
 /* Mobile Landscape & Height-Constrained Orientation Fixes */
 @media screen and (orientation: landscape) and (max-height: 600px) {
   html, body, #root {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     width: 100% !important;
   }
 
@@ -2559,7 +2559,7 @@ html, body, #root, section, header, footer, main, .section-inner {
 /* Mobile Portrait Orientations (up to 480px) */
 @media screen and (max-width: 480px) {
   html, body, #root {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     width: 100% !important;
   }
 

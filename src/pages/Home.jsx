@@ -1732,15 +1732,18 @@ export default function Home() {
                 boxSizing: 'border-box'
               }}
             >
-              {/* Image banner - Completely filled across all mobile orientations */}
+              {/* Image banner - Full bridal set with matching earrings & pendant visible */}
               <div style={{ 
                 position: 'relative', 
                 overflow: 'hidden', 
-                background: '#580a17', 
+                background: 'radial-gradient(circle at center, #630c1b 0%, #440711 100%)', 
                 width: '100%', 
-                minHeight: isMobile ? '320px' : '480px',
-                maxHeight: isMobile ? '460px' : '560px',
-                display: 'flex'
+                minHeight: isMobile ? '360px' : '520px',
+                maxHeight: isMobile ? '460px' : '580px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: isMobile ? '12px 6px' : '20px 12px'
               }}>
                 <img 
                   src="/assets/wedding_collection_banner.jpg" 
@@ -1748,24 +1751,25 @@ export default function Home() {
                   style={{
                     width: '100%',
                     height: '100%',
-                    minHeight: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'center top',
+                    maxHeight: isMobile ? '430px' : '540px',
+                    objectFit: 'contain',
+                    objectPosition: 'center center',
                     display: 'block',
+                    filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.45))',
                     transition: 'transform 0.4s ease'
                   }}
                 />
                 <div style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'linear-gradient(to top, rgba(88, 10, 23, 0.5) 0%, transparent 60%)',
+                  background: 'linear-gradient(to top, rgba(68, 7, 17, 0.4) 0%, transparent 40%)',
                   pointerEvents: 'none'
                 }} />
                 <div style={{
                   position: 'absolute',
                   bottom: '16px',
                   left: '16px',
-                  background: 'rgba(123, 17, 34, 0.85)',
+                  background: 'rgba(123, 17, 34, 0.9)',
                   backdropFilter: 'blur(8px)',
                   color: '#ffffff',
                   padding: '6px 14px',
@@ -1776,7 +1780,8 @@ export default function Home() {
                   border: '1px solid rgba(255, 215, 0, 0.4)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '6px',
+                  zIndex: 2
                 }}>
                   <span>👑</span>
                   <span>BRIDAL SPECIAL COLLECTION</span>
@@ -1814,10 +1819,19 @@ export default function Home() {
                   fontSize: isMobile ? '12px' : '13px',
                   lineHeight: '1.65',
                   color: 'var(--text-muted)',
-                  margin: '0 0 20px'
+                  margin: '0 0 16px'
                 }}>
                   Exquisite handcrafted bridal jewellery in pure BIS 916 hallmarked gold, enriched with certified ruby stones, pearls, and matching chandelier earrings. Tailored bespoke sets crafted to order for your special day.
                 </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', margin: '0 0 20px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#b8860b', background: 'rgba(212, 175, 55, 0.12)', border: '1px solid rgba(212, 175, 55, 0.35)', padding: '5px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    👑 Complete Bridal Set (Necklace + Earrings)
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--peacock-green)', background: 'rgba(123, 17, 34, 0.08)', border: '1px solid rgba(123, 17, 34, 0.2)', padding: '5px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    ✓ 100% BIS 916 Hallmarked Pure Gold
+                  </span>
+                </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                   <a 
