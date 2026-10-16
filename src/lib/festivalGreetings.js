@@ -1212,3 +1212,74 @@ export function sendSystemNotification(title, body, tag = 'saj-alert') {
   }));
 }
 
+/**
+ * Broadcast notification to ALL devices, tabs, PWAs, and worldwide Supabase realtime subscribers
+ */
+export async function broadcastNotificationToAll(title, body) {
+  if (typeof window === 'undefined') return;
+
+  const payload = {
+    title: title || '👑 Shree Aradhna Jewellers',
+    body: body || 'Live Gold Rate Update! Hallmarked 22K/24K rates & showroom offers active in Gandhidham & Adipur.',
+    timestamp: new Date().toISOString()
+  };
+
+  // 1. Dispatch locally on current device
+  sendSystemNotification(payload.title, payload.body, `broadcast-${Date.now()}`);
+
+  // 2. Cross-tab BroadcastChannel to wake up all open tabs & PWA instances
+  try {
+    if ('BroadcastChannel' in window) {
+      const bc = new BroadcastChannel('saj_notifications');
+      bc.postMessage(payload);
+    }
+  } catch (e) {
+    console.warn('BroadcastChannel error:', e);
+  }
+
+  // 3. Supabase Realtime & Persistent Store for worldwide devices
+  try {
+    const { isSupabaseConfigured, supabase } = await import('./supabase');
+    if (isSupabaseConfigured()) {
+      const channel = supabase.channel('saj_public_broadcast');
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          channel.send({
+            type: 'broadcast',
+            event: 'new_notification',
+            payload
+          });
+        }
+      });
+
+      // Save notification to store
+      try {
+        await supabase.from('broadcast_notifications').insert([{
+          title: payload.title,
+          body: payload.body,
+          created_at: payload.timestamp
+        }]);
+      } catch (err) {}
+    }
+  } catch (e) {
+    console.warn('Supabase broadcast failed:', e);
+  }
+
+  // 4. Save to local broadcast history
+  try {
+    const history = JSON.parse(localStorage.getItem('SAJ_festival_broadcast_history') || '[]');
+    history.unshift({
+      festivalId: 'public-broadcast',
+      festivalName: 'Public Broadcast',
+      title: payload.title,
+      offer: payload.body,
+      date: new Date().toLocaleDateString('en-IN'),
+      timestamp: payload.timestamp
+    });
+    localStorage.setItem('SAJ_festival_broadcast_history', JSON.stringify(history.slice(0, 50)));
+  } catch (e) {}
+
+  return payload;
+}
+
+

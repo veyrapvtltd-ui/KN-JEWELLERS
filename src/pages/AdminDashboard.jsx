@@ -16,6 +16,7 @@ import {
   getNextUpcomingFestival, 
   dispatchFestivalBroadcast,
   sendSystemNotification,
+  broadcastNotificationToAll,
   getISTDateString 
 } from '../lib/festivalGreetings';
 
@@ -316,6 +317,10 @@ export default function AdminDashboard() {
     };
 
     await dispatchFestivalBroadcast(customFest, true);
+    await broadcastNotificationToAll(
+      customFest.title || `👑 ${customFest.name}`,
+      `${customFest.greeting || ''} • ${customFest.offer || ''}`.trim()
+    );
     setBroadcastingFest(false);
 
     try {
@@ -323,7 +328,7 @@ export default function AdminDashboard() {
       setFestivalHistory(hist);
     } catch (e) {}
 
-    alert(`🎉 Festive greeting for "${customFest.name}" broadcasted to website and notifications successfully!`);
+    alert(`🎉 Festive greeting for "${customFest.name}" broadcasted to all devices, website tabs & notifications!`);
   };
 
   const handleSetFestivalOverride = (festId) => {
@@ -404,7 +409,14 @@ export default function AdminDashboard() {
     const titleVal = e.target.elements.alertTitle.value;
     const bodyVal = e.target.elements.alertBody.value;
 
-    alert(`🔔 Broadcast alert dispatched: "${titleVal} - ${bodyVal}"`);
+    await broadcastNotificationToAll(titleVal, bodyVal);
+
+    try {
+      const hist = JSON.parse(localStorage.getItem('SAJ_festival_broadcast_history') || '[]');
+      setFestivalHistory(hist);
+    } catch (err) {}
+
+    alert(`📢 Broadcast alert dispatched to all devices & active website visitors:\n\n"${titleVal}"\n"${bodyVal}"`);
     e.target.reset();
     setSendingAlert(false);
   };
@@ -1153,6 +1165,33 @@ export default function AdminDashboard() {
 
               <button
                 type="button"
+                onClick={async () => {
+                  await broadcastNotificationToAll(
+                    '👑 Shree Aradhna Jewellers',
+                    `📢 Live Showroom Update: Today 22K Gold ₹${gold22k}/g | Silver ₹${silver}/g. Special festive offers active at Gandhidham & Adipur!`
+                  );
+                  alert('📢 Broadcast notification dispatched to ALL open devices, website tabs, and notification trays!');
+                }}
+                style={{
+                  padding: '10px 18px',
+                  background: 'linear-gradient(135deg, #ffd700 0%, #d4af37 100%)',
+                  color: '#7b1122',
+                  border: '1px solid #ffd700',
+                  borderRadius: '4px',
+                  fontWeight: '800',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 4px 12px rgba(212, 175, 55, 0.25)'
+                }}
+              >
+                📢 Broadcast to All Devices
+              </button>
+
+              <button
+                type="button"
                 onClick={handleClearFestivalOverride}
                 style={{
                   padding: '10px 18px',
@@ -1166,6 +1205,90 @@ export default function AdminDashboard() {
               >
                 Reset to Auto Date
               </button>
+            </div>
+
+            {/* Custom Notification & Broadcast to All */}
+            <div style={{ background: '#161616', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '18px', marginTop: '20px' }}>
+              <h5 style={{ color: 'var(--royal-gold)', margin: '0 0 6px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📢</span> Custom Alert Broadcast (Sent to All Devices & Visitors Worldwide)
+              </h5>
+              <p style={{ color: '#888', fontSize: '0.8rem', margin: '0 0 14px' }}>
+                Type any custom announcement below to dispatch an instant push alert and gold-and-wine floating toast to all open tabs, phones, and computers simultaneously.
+              </p>
+
+              <form onSubmit={handleSendPushAlert} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', color: '#aaa', fontSize: '0.8rem', marginBottom: '4px' }}>
+                      Notification Title
+                    </label>
+                    <input
+                      name="alertTitle"
+                      type="text"
+                      defaultValue="👑 Shree Aradhna Jewellers"
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        background: '#0d0d0d',
+                        border: '1px solid #333',
+                        color: '#fff',
+                        borderRadius: '4px',
+                        fontSize: '0.88rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', color: '#aaa', fontSize: '0.8rem', marginBottom: '4px' }}>
+                      Message Content
+                    </label>
+                    <input
+                      name="alertBody"
+                      type="text"
+                      placeholder="e.g. Special Weekend Offer: Flat 20% off making charges on 22K Gold! Visit Gandhidham & Adipur."
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        background: '#0d0d0d',
+                        border: '1px solid #333',
+                        color: '#fff',
+                        borderRadius: '4px',
+                        fontSize: '0.88rem',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={sendingAlert}
+                    style={{
+                      padding: '10px 22px',
+                      background: 'linear-gradient(135deg, #ffd700 0%, #d4af37 100%)',
+                      color: '#7b1122',
+                      border: '1px solid #ffd700',
+                      borderRadius: '4px',
+                      fontWeight: '800',
+                      fontSize: '0.82rem',
+                      cursor: sendingAlert ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      textTransform: 'uppercase',
+                      boxShadow: '0 4px 14px rgba(212, 175, 55, 0.25)'
+                    }}
+                  >
+                    {sendingAlert ? 'Broadcasting...' : '📢 Send Broadcast Alert to All'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

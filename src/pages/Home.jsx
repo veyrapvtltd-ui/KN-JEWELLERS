@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
-import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification } from '../lib/festivalGreetings';
+import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification, broadcastNotificationToAll } from '../lib/festivalGreetings';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
 const bannerImages = [
@@ -309,6 +309,14 @@ export default function Home() {
     );
   };
 
+  const handleBroadcastToAll = async () => {
+    await broadcastNotificationToAll(
+      '👑 Shree Aradhna Jewellers',
+      `📢 Showroom Alert to All: Today 22K Gold ₹${goldRates.gold22k}/g | Silver ₹${goldRates.silver}/g. Special festive offers active at Gandhidham & Adipur!`
+    );
+    alert('📢 Broadcast notification dispatched to all open devices, tabs, and notification centers!');
+  };
+
   const requestNotificationPermission = () => {
     if ('Notification' in window) {
       Notification.requestPermission().then((permission) => {
@@ -480,20 +488,72 @@ export default function Home() {
     document.title = "Shree Aradhna Jewellers | Premium Gold & Silver Jewellery";
   }, []);
 
-  // Listen for custom notifications triggered anywhere in the app or admin tester
+  // Listen for custom notifications triggered anywhere (Current Window, Cross-Tab BroadcastChannel, or Supabase Realtime)
   useEffect(() => {
-    const handleCustomNotify = (e) => {
-      if (e.detail) {
-        setPwaNotificationData({
-          title: e.detail.title || '👑 SHREE ARADHNA JEWELLERS',
-          body: e.detail.body || 'Live updates from Shree Aradhna Jewellers'
-        });
-        setShowPwaNotification(true);
-        setTimeout(() => setShowPwaNotification(false), 7000);
+    const handleNotificationPayload = (payload) => {
+      if (!payload) return;
+      const title = payload.title || '👑 SHREE ARADHNA JEWELLERS';
+      const body = payload.body || 'Live updates from Shree Aradhna Jewellers';
+
+      setPwaNotificationData({ title, body });
+      setShowPwaNotification(true);
+      setTimeout(() => setShowPwaNotification(false), 7000);
+
+      // Trigger native notification if permitted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(reg => {
+              reg.showNotification(title, {
+                body,
+                icon: '/assets/logo.png',
+                badge: '/assets/logo.png',
+                tag: `notif-${Date.now()}`
+              });
+            });
+          } else {
+            new Notification(title, {
+              body,
+              icon: '/assets/logo.png',
+              badge: '/assets/logo.png',
+              tag: `notif-${Date.now()}`
+            });
+          }
+        } catch (e) {}
       }
     };
+
+    // 1. Current Window Custom Event
+    const handleCustomNotify = (e) => handleNotificationPayload(e.detail);
     window.addEventListener('saj_custom_notification', handleCustomNotify);
-    return () => window.removeEventListener('saj_custom_notification', handleCustomNotify);
+
+    // 2. Cross-Tab BroadcastChannel for all open tabs & PWA instances
+    let bc = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        bc = new BroadcastChannel('saj_notifications');
+        bc.onmessage = (event) => handleNotificationPayload(event.data);
+      }
+    } catch (e) {}
+
+    // 3. Supabase Realtime Channel
+    let supabaseChannel = null;
+    try {
+      if (isSupabaseConfigured()) {
+        supabaseChannel = supabase
+          .channel('saj_public_broadcast')
+          .on('broadcast', { event: 'new_notification' }, (payload) => {
+            handleNotificationPayload(payload.payload);
+          })
+          .subscribe();
+      }
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener('saj_custom_notification', handleCustomNotify);
+      if (bc) bc.close();
+      if (supabaseChannel) supabase.removeChannel(supabaseChannel);
+    };
   }, []);
 
   useEffect(() => {
@@ -2697,13 +2757,14 @@ export default function Home() {
             </button>
 
             {/* Test Notification Button */}
+            {/* Test Notification Button */}
             <button
               onClick={handleSendTestNotification}
               style={{
                 background: '#7b1122',
                 color: '#ffd700',
                 border: '1.5px solid #ffd700',
-                padding: '14px 28px',
+                padding: '14px 24px',
                 borderRadius: '30px',
                 fontWeight: '700',
                 fontSize: '12px',
@@ -2718,7 +2779,32 @@ export default function Home() {
               }}
               className="pwa-test-btn"
             >
-              🔔 Send Test Notification
+              🔔 Test Notification
+            </button>
+
+            {/* Broadcast to All Button */}
+            <button
+              onClick={handleBroadcastToAll}
+              style={{
+                background: 'linear-gradient(135deg, #ffd700 0%, #d4af37 100%)',
+                color: '#7b1122',
+                border: '1.5px solid #ffd700',
+                padding: '14px 24px',
+                borderRadius: '30px',
+                fontWeight: '800',
+                fontSize: '12px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(212, 175, 55, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              className="pwa-broadcast-btn"
+            >
+              📢 Broadcast to All
             </button>
 
             {/* iOS Instructions Trigger */}
