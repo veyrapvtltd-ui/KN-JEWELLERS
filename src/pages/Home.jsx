@@ -1712,34 +1712,76 @@ export default function Home() {
           </div>
 
           {activeCategory === 'WEDDING SET' && (
-            <div style={{
-              background: 'linear-gradient(145deg, #ffffff 0%, #faf5f5 100%)',
-              border: '1.5px solid rgba(123, 17, 34, 0.2)',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: '0 8px 30px rgba(123, 17, 34, 0.08)',
-              margin: '20px 0 30px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              alignItems: 'center'
-            }}>
-              {/* Image banner */}
-              <div style={{ position: 'relative', overflow: 'hidden', background: '#580a17', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div 
+              className="wedding-showcase-card"
+              style={{
+                background: 'linear-gradient(145deg, #ffffff 0%, #faf5f5 100%)',
+                border: '1.5px solid rgba(123, 17, 34, 0.2)',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 8px 30px rgba(123, 17, 34, 0.08)',
+                margin: '20px 0 30px',
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(360px, 1fr))',
+                alignItems: 'stretch',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box'
+              }}
+            >
+              {/* Image banner - Completely filled across all mobile orientations */}
+              <div style={{ 
+                position: 'relative', 
+                overflow: 'hidden', 
+                background: '#580a17', 
+                width: '100%', 
+                minHeight: isMobile ? '320px' : '480px',
+                maxHeight: isMobile ? '460px' : '560px',
+                display: 'flex'
+              }}>
                 <img 
                   src="/assets/wedding_collection_banner.jpg" 
                   alt="Royal Wedding Collection - Shree Aradhna Jewellers" 
                   style={{
                     width: '100%',
-                    maxHeight: '520px',
-                    objectFit: 'contain',
+                    height: '100%',
+                    minHeight: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center top',
                     display: 'block',
                     transition: 'transform 0.4s ease'
                   }}
                 />
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(88, 10, 23, 0.5) 0%, transparent 60%)',
+                  pointerEvents: 'none'
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  bottom: '16px',
+                  left: '16px',
+                  background: 'rgba(123, 17, 34, 0.85)',
+                  backdropFilter: 'blur(8px)',
+                  color: '#ffffff',
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  letterSpacing: '1px',
+                  border: '1px solid rgba(255, 215, 0, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>👑</span>
+                  <span>BRIDAL SPECIAL COLLECTION</span>
+                </div>
               </div>
 
               {/* Details & CTA */}
-              <div style={{ padding: '36px 32px', textAlign: 'left' }}>
+              <div style={{ padding: isMobile ? '24px 20px' : '36px 32px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <span style={{
                   background: 'var(--royal-gold)',
                   color: '#ffffff',
@@ -1750,30 +1792,31 @@ export default function Home() {
                   borderRadius: '20px',
                   textTransform: 'uppercase',
                   display: 'inline-block',
-                  marginBottom: '12px'
+                  marginBottom: '12px',
+                  alignSelf: 'flex-start'
                 }}>
                   ✨ BRIDAL MASTERPIECE
                 </span>
                 <h3 style={{
                   fontFamily: 'var(--font-serif)',
-                  fontSize: '28px',
+                  fontSize: isMobile ? '22px' : '28px',
                   color: 'var(--peacock-green)',
                   margin: '0 0 10px',
                   fontWeight: '700',
-                  letterSpacing: '1px'
+                  letterSpacing: '0.8px'
                 }}>
                   Royal Wedding Collection
                 </h3>
                 <p style={{
-                  fontSize: '13px',
-                  lineHeight: '1.7',
+                  fontSize: isMobile ? '12px' : '13px',
+                  lineHeight: '1.65',
                   color: 'var(--text-muted)',
-                  margin: '0 0 24px'
+                  margin: '0 0 20px'
                 }}>
                   Exquisite handcrafted bridal jewellery in pure BIS 916 hallmarked gold, enriched with certified ruby stones, pearls, and matching chandelier earrings. Tailored bespoke sets crafted to order for your special day.
                 </p>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                   <a 
                     href="https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20the%20Royal%20Wedding%20Collection%20sets." 
                     target="_blank" 
@@ -1782,9 +1825,9 @@ export default function Home() {
                       background: 'var(--royal-gold)',
                       color: '#ffffff',
                       textDecoration: 'none',
-                      padding: '12px 24px',
+                      padding: isMobile ? '10px 18px' : '12px 24px',
                       borderRadius: '30px',
-                      fontSize: '11px',
+                      fontSize: isMobile ? '10px' : '11px',
                       fontWeight: '700',
                       letterSpacing: '1px',
                       textTransform: 'uppercase',
@@ -1803,9 +1846,9 @@ export default function Home() {
                       color: 'var(--peacock-green)',
                       border: '1.5px solid var(--peacock-green)',
                       textDecoration: 'none',
-                      padding: '12px 24px',
+                      padding: isMobile ? '10px 18px' : '12px 24px',
                       borderRadius: '30px',
-                      fontSize: '11px',
+                      fontSize: isMobile ? '10px' : '11px',
                       fontWeight: '700',
                       letterSpacing: '1px',
                       textTransform: 'uppercase',
