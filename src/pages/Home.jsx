@@ -884,294 +884,297 @@ export default function Home() {
   return (
     <div className="app-container">
       
-      {/* Animated Live Gold Rates Ticker Bar */}
-      <div className="gold-ticker-bar">
-        <div className="ticker-content-wrapper">
-          <div className="ticker-items">
-            <span className="ticker-live-dot">
-              <span className="ping-dot"></span>
-              LIVE RATE
-            </span>
-            <span className="ticker-item" style={{ fontWeight: 700, color: '#ffffff' }}>SHREE ARADHNA JEWELLERS:</span>
+      {/* Unified Sticky Header Stack: Live Rates Ticker -> Brand Navbar -> Festival Ribbon */}
+      <div className="site-header-sticky-wrapper">
+        {/* Animated Live Gold Rates Ticker Bar */}
+        <div className="gold-ticker-bar">
+          <div className="ticker-content-wrapper">
+            <div className="ticker-items">
+              <span className="ticker-live-dot">
+                <span className="ping-dot"></span>
+                LIVE RATE
+              </span>
+              <span className="ticker-item" style={{ fontWeight: 700, color: '#ffffff' }}>SHREE ARADHNA JEWELLERS:</span>
 
-            {!goldRates.hide24k && goldRates.gold24k > 0 && (
-              <>
-                <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/g</strong></span>
-                <span className="ticker-item-separator"> | </span>
-              </>
-            )}
-            <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/g</strong></span>
-            <span className="ticker-item-separator"> | </span>
-            <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/g</strong></span>
-            <span className="ticker-item-separator"> | </span>
-            <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/g</strong></span>
-            <span className="ticker-item-separator"> | </span>
-            <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
-            
-            {/* Duplicated loop for infinite scrolling marquee */}
-            <span className="ticker-item-separator" style={{ margin: '0 20px' }}> | </span>
+              {!goldRates.hide24k && goldRates.gold24k > 0 && (
+                <>
+                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/g</strong></span>
+                  <span className="ticker-item-separator"> | </span>
+                </>
+              )}
+              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/g</strong></span>
+              <span className="ticker-item-separator"> | </span>
+              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/g</strong></span>
+              <span className="ticker-item-separator"> | </span>
+              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/g</strong></span>
+              <span className="ticker-item-separator"> | </span>
+              <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
+              
+              {/* Duplicated loop for infinite scrolling marquee */}
+              <span className="ticker-item-separator" style={{ margin: '0 20px' }}> | </span>
 
-            {!goldRates.hide24k && goldRates.gold24k > 0 && (
-              <>
-                <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/g</strong></span>
-                <span className="ticker-item-separator"> | </span>
-              </>
-            )}
-            <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/g</strong></span>
-            <span className="ticker-item-separator"> | </span>
-            <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/g</strong></span>
-            <span className="ticker-item-separator"> | </span>
-            <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/g</strong></span>
-            <span className="ticker-item-separator"> | </span>
-            <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
+              {!goldRates.hide24k && goldRates.gold24k > 0 && (
+                <>
+                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/g</strong></span>
+                  <span className="ticker-item-separator"> | </span>
+                </>
+              )}
+              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/g</strong></span>
+              <span className="ticker-item-separator"> | </span>
+              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/g</strong></span>
+              <span className="ticker-item-separator"> | </span>
+              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/g</strong></span>
+              <span className="ticker-item-separator"> | </span>
+              <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
+            </div>
           </div>
         </div>
-      </div>
-      
-      {/* Automated Indian Festival Greeting Banner */}
-      {activeFestival && !isFestivalDismissed && (
-        <div 
-          className="festival-greeting-bar"
-          style={{
-            background: 'linear-gradient(90deg, #7b1122 0%, #9c152b 25%, #b8860b 50%, #9c152b 75%, #7b1122 100%)',
-            backgroundSize: '200% auto',
-            color: '#ffffff',
-            padding: isMobile ? '8px 36px 8px 12px' : '10px 48px 10px 20px',
-            textAlign: 'center',
-            fontSize: isMobile ? '11px' : '13px',
-            fontWeight: '600',
-            letterSpacing: '0.4px',
-            position: 'relative',
-            zIndex: 998,
-            boxShadow: '0 4px 15px rgba(123, 17, 34, 0.25)',
-            borderBottom: '1px solid rgba(255, 215, 0, 0.35)',
-            width: '100%',
-            maxWidth: '100%',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-          }}
-        >
-          {isMobile ? (
-            /* Mobile Layout (Clean Vertical Proportion with Gujarati Focus) */
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', maxWidth: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '15px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
-                <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.5px' }}>
-                  {activeFestival.nameGujarati ? activeFestival.nameGujarati : activeFestival.name}
-                </span>
-                <span style={{ 
-                  background: 'rgba(255, 215, 0, 0.2)', 
-                  border: '1px solid rgba(255, 215, 0, 0.4)', 
-                  color: '#ffeaa7', 
-                  fontSize: '9px', 
-                  padding: '1px 6px', 
-                  borderRadius: '10px',
+
+        {/* 1. Header & Navigation */}
+        <header className="header-main">
+          <div className="nav-container">
+            
+            <a href="#" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img src="/assets/logo.png" alt="SHREE ARADHNA JEWELLERS Logo" className="brand-logo-img" style={{ height: '42px', width: '42px', borderRadius: '8px', objectFit: 'contain' }} />
+              <div className="brand-text-container">
+                <h1 className="brand-name" style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', color: 'inherit', display: 'inline' }}>SHREE ARADHNA JEWELLERS</h1>
+                <span className="brand-subtitle">GANDHIDHAM & ADIPUR</span>
+              </div>
+            </a>
+
+            {/* Desktop Navigation Links */}
+            <nav className="desktop-nav">
+              <a href="#" className="nav-link">HOME</a>
+              <a href="#categories" className="nav-link">CATEGORIES</a>
+              <a href="#showcase" className="nav-link">COLLECTIONS</a>
+              <a href="#bestsellers" className="nav-link">BEST SELLERS</a>
+              <a href="#contact" className="nav-link">CONTACT</a>
+              
+              {localStorage.getItem('userId') ? (
+                <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="nav-link">LOGOUT</a>
+              ) : (
+                <a href="/login" className="nav-link" style={{ color: 'var(--royal-gold)', fontWeight: 'bold' }}>LOGIN / REGISTER</a>
+              )}
+            </nav>
+
+            {/* Call button */}
+            <a href="tel:+919638888170" className="call-btn" title="Call Branch 1 (Gandhidham): 9638888170 | Branch 2 (Adipur): 7202921222">
+              <Phone className="icon-sm" />
+              <span>CALL NOW</span>
+            </a>
+
+            {/* Wishlist Header Button */}
+            <button 
+              onClick={() => setIsWishlistModalOpen(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--peacock-green)',
+                display: 'flex',
+                alignItems: 'center',
+                position: 'relative',
+                padding: '6px',
+                marginRight: '12px'
+              }}
+              aria-label="View Wishlist"
+              className="header-wishlist-btn"
+            >
+              <Heart style={{ width: '20px', height: '20px', fill: Object.values(likedProducts).filter(Boolean).length > 0 ? 'var(--peacock-green)' : 'none' }} />
+              {Object.values(likedProducts).filter(Boolean).length > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '-2px',
+                  background: 'var(--royal-gold)',
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  fontSize: '8px',
+                  width: '14px',
+                  height: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   fontWeight: '700'
                 }}>
-                  શુભ પર્વ
+                  {Object.values(likedProducts).filter(Boolean).length}
                 </span>
+              )}
+            </button>
+
+            {/* Mobile Menu Button */}
+            <button 
+              className="mobile-menu-toggle"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              {isMenuOpen ? <X className="icon-md" /> : <Menu className="icon-md" />}
+            </button>
+          </div>
+
+          {/* Mobile Dropdown Menu */}
+          {isMenuOpen && (
+            <div className="mobile-nav">
+              <a href="#" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">HOME</a>
+              <a href="#categories" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">CATEGORIES</a>
+              <a href="#showcase" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">COLLECTIONS</a>
+              <a href="#bestsellers" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">BEST SELLERS</a>
+              <a href="#contact" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">CONTACT</a>
+              
+              {localStorage.getItem('userId') ? (
+                <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="mobile-nav-link">LOGOUT</a>
+              ) : (
+                <a href="/login" className="mobile-nav-link">LOGIN / REGISTER</a>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                <a href="tel:+919638888170" className="mobile-call-btn" style={{ justifyContent: 'center' }}>
+                  <Phone className="icon-sm" />
+                  <span>GANDHIDHAM: 9638888170</span>
+                </a>
+                <a href="tel:+917202921222" className="mobile-call-btn" style={{ justifyContent: 'center', background: '#ffffff', color: 'var(--peacock-green)', border: '1.5px solid var(--peacock-green)' }}>
+                  <Phone className="icon-sm" />
+                  <span>ADIPUR: 7202921222</span>
+                </a>
               </div>
-              <div style={{ color: '#ffffff', fontSize: '10.5px', lineHeight: '1.35', opacity: 0.95 }}>
-                {activeFestival.greetingGujarati || activeFestival.greeting}
+            </div>
+          )}
+        </header>
+
+        {/* Automated Indian & Gujarati Festival Greeting Banner */}
+        {activeFestival && !isFestivalDismissed && (
+          <div 
+            className="festival-greeting-bar"
+            style={{
+              background: 'linear-gradient(90deg, #7b1122 0%, #9c152b 25%, #b8860b 50%, #9c152b 75%, #7b1122 100%)',
+              backgroundSize: '200% auto',
+              color: '#ffffff',
+              padding: isMobile ? '8px 36px 8px 12px' : '10px 48px 10px 20px',
+              textAlign: 'center',
+              fontSize: isMobile ? '11px' : '13px',
+              fontWeight: '600',
+              letterSpacing: '0.4px',
+              position: 'relative',
+              zIndex: 998,
+              boxShadow: '0 4px 15px rgba(123, 17, 34, 0.25)',
+              borderBottom: '1px solid rgba(255, 215, 0, 0.35)',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              overflow: 'hidden'
+            }}
+          >
+            {isMobile ? (
+              /* Mobile Layout (Clean Vertical Proportion with Gujarati Focus) */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', maxWidth: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '15px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
+                  <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.5px' }}>
+                    {activeFestival.nameGujarati ? activeFestival.nameGujarati : activeFestival.name}
+                  </span>
+                  <span style={{ 
+                    background: 'rgba(255, 215, 0, 0.2)', 
+                    border: '1px solid rgba(255, 215, 0, 0.4)', 
+                    color: '#ffeaa7', 
+                    fontSize: '9px', 
+                    padding: '1px 6px', 
+                    borderRadius: '10px',
+                    fontWeight: '700'
+                  }}>
+                    શુભ પર્વ
+                  </span>
+                </div>
+                <div style={{ color: '#ffffff', fontSize: '10.5px', lineHeight: '1.35', opacity: 0.95 }}>
+                  {activeFestival.greetingGujarati || activeFestival.greeting}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <span style={{ color: '#ffeaa7', fontSize: '10px', fontStyle: 'italic' }}>
+                    • {activeFestival.offer}
+                  </span>
+                  <a 
+                    href="#showcase" 
+                    onClick={() => handleCategoryClick('WEDDING SET')}
+                    style={{
+                      padding: '3px 10px',
+                      background: '#ffd700',
+                      color: '#7b1122',
+                      borderRadius: '16px',
+                      textDecoration: 'none',
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      letterSpacing: '0.4px',
+                      display: 'inline-block',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Explore Collection →
+                  </a>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <span style={{ color: '#ffeaa7', fontSize: '10px', fontStyle: 'italic' }}>
+            ) : (
+              /* Desktop Layout */
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ fontSize: '18px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
+                <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                  {activeFestival.nameGujarati ? `${activeFestival.nameGujarati} (${activeFestival.name}):` : `${activeFestival.name}:`}
+                </span>
+                <span style={{ color: '#ffffff' }}>{activeFestival.greetingGujarati || activeFestival.greeting}</span>
+                <span style={{ color: '#ffeaa7', fontSize: '12px', fontStyle: 'italic' }}>
                   • {activeFestival.offer}
                 </span>
                 <a 
                   href="#showcase" 
                   onClick={() => handleCategoryClick('WEDDING SET')}
                   style={{
-                    padding: '3px 10px',
+                    marginLeft: '8px',
+                    padding: '4px 12px',
                     background: '#ffd700',
                     color: '#7b1122',
-                    borderRadius: '16px',
+                    borderRadius: '20px',
                     textDecoration: 'none',
-                    fontSize: '10px',
+                    fontSize: '11px',
                     fontWeight: '800',
-                    letterSpacing: '0.4px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
                     display: 'inline-block',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                    whiteSpace: 'nowrap'
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
                   }}
                 >
-                  Explore Collection →
+                  Explore Festive Collection →
                 </a>
               </div>
-            </div>
-          ) : (
-            /* Desktop Layout */
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <span style={{ fontSize: '18px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
-              <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-                {activeFestival.nameGujarati ? `${activeFestival.nameGujarati} (${activeFestival.name}):` : `${activeFestival.name}:`}
-              </span>
-              <span style={{ color: '#ffffff' }}>{activeFestival.greetingGujarati || activeFestival.greeting}</span>
-              <span style={{ color: '#ffeaa7', fontSize: '12px', fontStyle: 'italic' }}>
-                • {activeFestival.offer}
-              </span>
-              <a 
-                href="#showcase" 
-                onClick={() => handleCategoryClick('WEDDING SET')}
-                style={{
-                  marginLeft: '8px',
-                  padding: '4px 12px',
-                  background: '#ffd700',
-                  color: '#7b1122',
-                  borderRadius: '20px',
-                  textDecoration: 'none',
-                  fontSize: '11px',
-                  fontWeight: '800',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  display: 'inline-block',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-                }}
-              >
-                Explore Festive Collection →
-              </a>
-            </div>
-          )}
-
-          {/* Dismiss button neatly positioned in top-right corner, NEVER overlapping text */}
-          <button 
-            onClick={() => setIsFestivalDismissed(true)}
-            aria-label="Dismiss greeting"
-            style={{
-              background: 'rgba(0, 0, 0, 0.25)',
-              border: '1px solid rgba(255, 215, 0, 0.35)',
-              color: '#ffd700',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: '700',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'absolute',
-              right: '8px',
-              top: isMobile ? '8px' : '50%',
-              transform: isMobile ? 'none' : 'translateY(-50%)',
-              padding: 0
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* 1. Header & Navigation */}
-      <header className="header-main">
-        <div className="nav-container">
-          
-          <a href="#" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="/assets/logo.png" alt="SHREE ARADHNA JEWELLERS Logo" className="brand-logo-img" style={{ height: '42px', width: '42px', borderRadius: '8px', objectFit: 'contain' }} />
-            <div className="brand-text-container">
-              <h1 className="brand-name" style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', color: 'inherit', display: 'inline' }}>SHREE ARADHNA JEWELLERS</h1>
-              <span className="brand-subtitle">GANDHIDHAM & ADIPUR</span>
-            </div>
-          </a>
-
-          {/* Desktop Navigation Links */}
-          <nav className="desktop-nav">
-            <a href="#" className="nav-link">HOME</a>
-            <a href="#categories" className="nav-link">CATEGORIES</a>
-            <a href="#showcase" className="nav-link">COLLECTIONS</a>
-            <a href="#bestsellers" className="nav-link">BEST SELLERS</a>
-            <a href="#contact" className="nav-link">CONTACT</a>
-            
-            {localStorage.getItem('userId') ? (
-              <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="nav-link">LOGOUT</a>
-            ) : (
-              <a href="/login" className="nav-link" style={{ color: 'var(--royal-gold)', fontWeight: 'bold' }}>LOGIN / REGISTER</a>
             )}
-          </nav>
 
-          {/* Call button */}
-          <a href="tel:+919638888170" className="call-btn" title="Call Branch 1 (Gandhidham): 9638888170 | Branch 2 (Adipur): 7202921222">
-            <Phone className="icon-sm" />
-            <span>CALL NOW</span>
-          </a>
-
-          {/* Wishlist Header Button */}
-          <button 
-            onClick={() => setIsWishlistModalOpen(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--peacock-green)',
-              display: 'flex',
-              alignItems: 'center',
-              position: 'relative',
-              padding: '6px',
-              marginRight: '12px'
-            }}
-            aria-label="View Wishlist"
-            className="header-wishlist-btn"
-          >
-            <Heart style={{ width: '20px', height: '20px', fill: Object.values(likedProducts).filter(Boolean).length > 0 ? 'var(--peacock-green)' : 'none' }} />
-            {Object.values(likedProducts).filter(Boolean).length > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-2px',
-                background: 'var(--royal-gold)',
-                color: '#ffffff',
+            {/* Dismiss button neatly positioned in top-right corner, NEVER overlapping text */}
+            <button 
+              onClick={() => setIsFestivalDismissed(true)}
+              aria-label="Dismiss greeting"
+              style={{
+                background: 'rgba(0, 0, 0, 0.25)',
+                border: '1px solid rgba(255, 215, 0, 0.35)',
+                color: '#ffd700',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: '700',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
-                fontSize: '8px',
-                width: '14px',
-                height: '14px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: '700'
-              }}>
-                {Object.values(likedProducts).filter(Boolean).length}
-              </span>
-            )}
-          </button>
-
-          {/* Mobile Menu Button */}
-          <button 
-            className="mobile-menu-toggle"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle navigation menu"
-          >
-            {isMenuOpen ? <X className="icon-md" /> : <Menu className="icon-md" />}
-          </button>
-        </div>
-
-        {/* Mobile Dropdown Menu */}
-        {isMenuOpen && (
-          <div className="mobile-nav">
-            <a href="#" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">HOME</a>
-            <a href="#categories" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">CATEGORIES</a>
-            <a href="#showcase" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">COLLECTIONS</a>
-            <a href="#bestsellers" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">BEST SELLERS</a>
-            <a href="#contact" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">CONTACT</a>
-            
-            {localStorage.getItem('userId') ? (
-              <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="mobile-nav-link">LOGOUT</a>
-            ) : (
-              <a href="/login" className="mobile-nav-link">LOGIN / REGISTER</a>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-              <a href="tel:+919638888170" className="mobile-call-btn" style={{ justifyContent: 'center' }}>
-                <Phone className="icon-sm" />
-                <span>GANDHIDHAM: 9638888170</span>
-              </a>
-              <a href="tel:+917202921222" className="mobile-call-btn" style={{ justifyContent: 'center', background: '#ffffff', color: 'var(--peacock-green)', border: '1.5px solid var(--peacock-green)' }}>
-                <Phone className="icon-sm" />
-                <span>ADIPUR: 7202921222</span>
-              </a>
-            </div>
+                position: 'absolute',
+                right: '8px',
+                top: isMobile ? '8px' : '50%',
+                transform: isMobile ? 'none' : 'translateY(-50%)',
+                padding: 0
+              }}
+            >
+              ✕
+            </button>
           </div>
         )}
-      </header>
+      </div>
 
       {/* 2. Hero Banner Slider Carousel */}
       <section className="hero-section">

@@ -120,13 +120,21 @@ body {
 .icon-lg { width: 36px; height: 36px; }
 
 /* 1. Header & Navigation */
-.header-main {
-  position: fixed;
+.site-header-sticky-wrapper {
+  position: sticky;
   top: 0;
   left: 0;
   width: 100%;
+  max-width: 100%;
   z-index: 1000;
-  background: rgba(253, 251, 247, 0.95);
+  display: flex;
+  flex-direction: column;
+}
+
+.header-main {
+  position: relative;
+  width: 100%;
+  background: rgba(253, 251, 247, 0.98);
   backdrop-filter: blur(15px);
   border-bottom: 1px solid rgba(123, 17, 34, 0.15);
   transition: var(--transition-smooth);
@@ -1835,14 +1843,11 @@ body {
    Live Gold & Silver Rates Ticker Bar
    ========================================================================== */
 .gold-ticker-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: 36px;
   background: linear-gradient(90deg, var(--peacock-dark) 0%, var(--peacock-green) 50%, var(--peacock-dark) 100%);
   color: #ffffff;
-  z-index: 1001;
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -1913,13 +1918,9 @@ body {
   font-size: 14px;
 }
 
-/* Adjust Main Header and Container offsets for fixed Ticker */
-.header-main {
-  top: 36px !important;
-}
-
+/* Natural flow inside sticky site-header-sticky-wrapper */
 .app-container {
-  padding-top: 36px !important;
+  padding-top: 0 !important;
 }
 
 /* ==========================================================================
@@ -2513,7 +2514,7 @@ html, body, #root, section, header, footer, main, .section-inner {
   }
 
   .header-main {
-    position: sticky !important;
+    position: relative !important;
     padding: 2px 0 !important;
   }
 
