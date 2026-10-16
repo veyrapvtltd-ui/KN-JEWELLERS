@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
       </p>
       <h3 style={{ marginTop: '30px', color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif' }}>1. Information We Collect</h3>
       <p style={{ lineHeight: '1.6', fontSize: '1.1rem' }}>
-        We may collect personal information such as your name, email address, phone number, and transaction details when you register for an account, subscribe to our newsletter, or participate in our Harvest Schemes.
+        We may collect personal information such as your name, email address, phone number, and transaction details when you register for an account, subscribe to our newsletter, or submit an appointment or showroom inquiry.
       </p>
       <h3 style={{ marginTop: '30px', color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif' }}>2. How We Use Your Information</h3>
       <p style={{ lineHeight: '1.6', fontSize: '1.1rem' }}>

@@ -1,7 +1,7 @@
 -- =========================================================================
 -- SHREE ARADHNA JEWELLERS - COMPLETE SUPABASE SETUP SCRIPT
 -- Branches: Gandhidham & Adipur, Gujarat
--- Run this entire script in your Supabase Dashboard: SQL Editor -> New Query -> Run
+-- Run this script in your Supabase Dashboard: SQL Editor -> New Query -> Run
 -- =========================================================================
 
 -- Enable UUID extension
@@ -53,32 +53,7 @@ CREATE TABLE IF NOT EXISTS public.custom_users (
     created_at timestamp with time zone DEFAULT now()
 );
 
--- 4. GOLD HARVEST SCHEMES
-CREATE TABLE IF NOT EXISTS public.harvest_schemes (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid REFERENCES public.custom_users(id) ON DELETE CASCADE,
-    monthly_amount numeric NOT NULL,
-    status text DEFAULT 'active',
-    branch text DEFAULT 'Gandhidham',
-    created_at timestamp with time zone DEFAULT now()
-);
-
--- 5. SCHEME PAYMENTS
-CREATE TABLE IF NOT EXISTS public.payments (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    scheme_id uuid REFERENCES public.harvest_schemes(id) ON DELETE CASCADE,
-    user_id uuid REFERENCES public.custom_users(id) ON DELETE CASCADE,
-    month_number integer NOT NULL,
-    amount numeric NOT NULL,
-    status text DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
-    payment_method text DEFAULT 'UPI', -- 'UPI' or 'Cash'
-    screenshot_url text,
-    gold_rate numeric,
-    gold_purchased numeric,
-    created_at timestamp with time zone DEFAULT now()
-);
-
--- 6. SHOWROOM APPOINTMENTS & INQUIRIES
+-- 4. SHOWROOM APPOINTMENTS & INQUIRIES
 CREATE TABLE IF NOT EXISTS public.inquiries (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text,
@@ -93,7 +68,7 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
     created_at timestamp with time zone DEFAULT now()
 );
 
--- 7. PRODUCTS CATALOG
+-- 5. PRODUCTS CATALOG
 CREATE TABLE IF NOT EXISTS public.saj_products (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     title text NOT NULL,
@@ -108,18 +83,14 @@ CREATE TABLE IF NOT EXISTS public.saj_products (
 
 -- =========================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
--- Permissive policies for easy website and client operations
 -- =========================================================================
 
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saj_rates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.custom_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.harvest_schemes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saj_products ENABLE ROW LEVEL SECURITY;
 
--- Allow public read & write access for website functionalities
 DO $$ 
 BEGIN
     DROP POLICY IF EXISTS "Public Full Access store_settings" ON public.store_settings;
@@ -131,12 +102,6 @@ BEGIN
     DROP POLICY IF EXISTS "Public Full Access custom_users" ON public.custom_users;
     CREATE POLICY "Public Full Access custom_users" ON public.custom_users FOR ALL TO public USING (true) WITH CHECK (true);
 
-    DROP POLICY IF EXISTS "Public Full Access harvest_schemes" ON public.harvest_schemes;
-    CREATE POLICY "Public Full Access harvest_schemes" ON public.harvest_schemes FOR ALL TO public USING (true) WITH CHECK (true);
-
-    DROP POLICY IF EXISTS "Public Full Access payments" ON public.payments;
-    CREATE POLICY "Public Full Access payments" ON public.payments FOR ALL TO public USING (true) WITH CHECK (true);
-
     DROP POLICY IF EXISTS "Public Full Access inquiries" ON public.inquiries;
     CREATE POLICY "Public Full Access inquiries" ON public.inquiries FOR ALL TO public USING (true) WITH CHECK (true);
 
@@ -146,10 +111,8 @@ END $$;
 
 -- =========================================================================
 -- STORAGE BUCKETS CONFIGURATION
--- Buckets: payment_screenshots, product_images
 -- =========================================================================
 
--- Insert buckets into storage.buckets if they do not exist
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('payment_screenshots', 'payment_screenshots', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
@@ -158,7 +121,6 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('product_images', 'product_images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Storage RLS policies for payment_screenshots
 DO $$ 
 BEGIN
     DROP POLICY IF EXISTS "Public Read payment_screenshots" ON storage.objects;

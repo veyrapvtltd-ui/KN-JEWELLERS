@@ -4,50 +4,23 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 export default function AdminDashboard() {
   const [passcode, setPasscode] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  // Ledger & Search State
-  const [schemes, setSchemes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedScheme, setSelectedScheme] = useState(null);
   
   // Store Settings
   const [storeUpi, setStoreUpi] = useState('9638888170@okbizaxis');
   const [updatingUpi, setUpdatingUpi] = useState(false);
   const [qrUploading, setQrUploading] = useState(false);
-
-  // Manual Entry State
-  const [usersList, setUsersList] = useState([]);
-  const [manualUserSearch, setManualUserSearch] = useState('');
-  const [manualUserId, setManualUserId] = useState('');
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [manualMonth, setManualMonth] = useState('');
-  const [manualAmount, setManualAmount] = useState('');
-  const [manualMethod, setManualMethod] = useState('Cash');
-  const [manualSubmitting, setManualSubmitting] = useState(false);
-  const [sendingAlert, setSendingAlert] = useState(false);
   const [instaUrl, setInstaUrl] = useState('');
   const [updatingInsta, setUpdatingInsta] = useState(false);
+
+  // Alerts & Inquiries
+  const [sendingAlert, setSendingAlert] = useState(false);
   const [inquiries, setInquiries] = useState([]);
-
-  const handleSendPushAlert = async (e) => {
-    e.preventDefault();
-    setSendingAlert(true);
-    const titleVal = e.target.elements.alertTitle.value;
-    const bodyVal = e.target.elements.alertBody.value;
-
-    alert(`🔔 Broadcast simulated: "${titleVal} - ${bodyVal}"`);
-    e.target.reset();
-    setSendingAlert(false);
-  };
-  
-  // Multiple Schemes Support for Manual Entry
-  const [userActiveSchemes, setUserActiveSchemes] = useState([]);
-  const [manualSchemeId, setManualSchemeId] = useState('');
+  const [searchInquiry, setSearchInquiry] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const envPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'Papersoft@5577';
+    const envPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'umang@12';
     if (passcode === envPasscode || passcode === 'Papersoft@5577' || passcode === 'umang@12') {
       setIsAuthenticated(true);
     } else {
@@ -59,25 +32,16 @@ export default function AdminDashboard() {
     setLoading(true);
 
     let fetchedSettings = null;
-    let fetchedUsers = null;
-    let fetchedSchemes = null;
-    let fetchedPayments = null;
     let fetchedInquiries = null;
 
     if (isSupabaseConfigured()) {
       try {
-        const [settRes, usrRes, schRes, payRes, inqRes] = await Promise.all([
+        const [settRes, inqRes] = await Promise.all([
           supabase.from('store_settings').select('*').eq('id', 1).maybeSingle(),
-          supabase.from('custom_users').select('*'),
-          supabase.from('harvest_schemes').select('*'),
-          supabase.from('payments').select('*'),
           supabase.from('inquiries').select('*').order('created_at', { ascending: false })
         ]);
 
         if (settRes.data) fetchedSettings = settRes.data;
-        if (usrRes.data) fetchedUsers = usrRes.data;
-        if (schRes.data) fetchedSchemes = schRes.data;
-        if (payRes.data) fetchedPayments = payRes.data;
         if (inqRes.data) fetchedInquiries = inqRes.data;
       } catch (err) {
         console.warn("Supabase AdminDashboard fetch fallback:", err.message);
@@ -89,26 +53,6 @@ export default function AdminDashboard() {
     const activeSettings = fetchedSettings || localSettings;
     if (activeSettings.upi_id) setStoreUpi(activeSettings.upi_id);
     if (activeSettings.qr_code_url) setInstaUrl(activeSettings.qr_code_url);
-
-    // Users, Schemes, Payments
-    const localUsers = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
-    const localSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
-    const localPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
-
-    const allUsers = (fetchedUsers && fetchedUsers.length > 0) ? fetchedUsers : localUsers;
-    const allSchemes = (fetchedSchemes && fetchedSchemes.length > 0) ? fetchedSchemes : localSchemes;
-    const allPayments = (fetchedPayments && fetchedPayments.length > 0) ? fetchedPayments : localPayments;
-
-    const enrichedSchemes = allSchemes
-      .filter(s => s.status === 'active')
-      .map(s => ({
-        ...s,
-        custom_users: allUsers.find(u => u.id === s.user_id) || { full_name: 'Customer', phone_number: 'N/A', email: 'N/A' },
-        payments: allPayments.filter(p => p.scheme_id === s.id)
-      }));
-
-    setSchemes(enrichedSchemes);
-    setUsersList(allUsers);
 
     // Inquiries
     if (fetchedInquiries && fetchedInquiries.length > 0) {
@@ -131,42 +75,6 @@ export default function AdminDashboard() {
       fetchData();
     }
   }, [isAuthenticated]);
-
-  const fetchUserSchemes = async (userId) => {
-    if (isSupabaseConfigured()) {
-      try {
-        const { data: dbSchemes } = await supabase
-          .from('harvest_schemes')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('status', 'active');
-        if (dbSchemes && dbSchemes.length > 0) {
-          setUserActiveSchemes(dbSchemes);
-          if (dbSchemes.length === 1) {
-            setManualSchemeId(dbSchemes[0].id);
-            setManualAmount(dbSchemes[0].monthly_amount.toString());
-          } else {
-            setManualSchemeId('');
-            setManualAmount('');
-          }
-          return;
-        }
-      } catch (err) {
-        console.warn("Supabase fetchUserSchemes fallback:", err.message);
-      }
-    }
-
-    const allSchemes = JSON.parse(localStorage.getItem('SAJ_schemes') || '[]');
-    const userSchemes = allSchemes.filter(s => s.user_id === userId && s.status === 'active');
-    setUserActiveSchemes(userSchemes);
-    if (userSchemes.length === 1) {
-      setManualSchemeId(userSchemes[0].id);
-      setManualAmount(userSchemes[0].monthly_amount.toString());
-    } else {
-      setManualSchemeId('');
-      setManualAmount('');
-    }
-  };
 
   const handleUpiUpdate = async (e) => {
     e.preventDefault();
@@ -202,44 +110,8 @@ export default function AdminDashboard() {
     const settings = JSON.parse(localStorage.getItem('SAJ_store_settings') || '{}');
     settings.qr_code_url = instaUrl;
     localStorage.setItem('SAJ_store_settings', JSON.stringify(settings));
-    alert("Instagram / QR URL updated successfully!");
+    alert("Instagram / Widget URL updated successfully!");
     setUpdatingInsta(false);
-  };
-
-  const handleApproval = async (paymentId, status) => {
-    let updateData = { status };
-
-    if (status === 'approved') {
-      const rates = JSON.parse(localStorage.getItem('SAJ_rates') || '{"gold24k": 15500}');
-      const gold24k = Number(rates.gold24k) || 15500;
-      const effectiveRate = gold24k * 1.11 * 1.03;
-
-      const currentPay = schemes.flatMap(s => s.payments || []).find(p => p.id === paymentId);
-      const payAmount = currentPay?.amount || 0;
-
-      updateData.gold_rate = gold24k;
-      updateData.gold_purchased = Number((payAmount / effectiveRate).toFixed(4));
-    }
-
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('payments').update(updateData).eq('id', paymentId);
-      } catch (err) {
-        console.warn("Supabase payment approval error:", err.message);
-      }
-    }
-
-    // LocalStorage sync
-    const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
-    const payIdx = allPayments.findIndex(p => p.id === paymentId);
-    if (payIdx >= 0) {
-      allPayments[payIdx] = {
-        ...allPayments[payIdx],
-        ...updateData
-      };
-      localStorage.setItem('SAJ_payments', JSON.stringify(allPayments));
-    }
-    fetchData();
   };
 
   const handleQrUpload = async (e) => {
@@ -281,7 +153,7 @@ export default function AdminDashboard() {
       settings.qr_code_url = finalQrUrl;
       localStorage.setItem('SAJ_store_settings', JSON.stringify(settings));
       setInstaUrl(finalQrUrl);
-      alert('QR Code updated successfully!');
+      alert('Showroom QR Code updated successfully!');
     } catch (err) {
       console.error(err);
       alert('Error uploading QR code');
@@ -290,508 +162,269 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleManualPayment = async (e) => {
+  const handleSendPushAlert = async (e) => {
     e.preventDefault();
-    if (!manualUserId || !manualMonth || !manualAmount || !manualSchemeId) {
-      alert("Please ensure a valid customer and specific scheme are selected.");
-      return;
-    }
-    setManualSubmitting(true);
+    setSendingAlert(true);
+    const titleVal = e.target.elements.alertTitle.value;
+    const bodyVal = e.target.elements.alertBody.value;
 
-    const amountFloat = parseFloat(manualAmount);
-    const rates = JSON.parse(localStorage.getItem('SAJ_rates') || '{"gold24k": 15500}');
-    const gold24k = Number(rates.gold24k) || 15500;
-    const gold_rate = gold24k;
-    const gold_purchased = Number((amountFloat / gold24k).toFixed(4));
+    alert(`🔔 Broadcast simulated: "${titleVal} - ${bodyVal}"`);
+    e.target.reset();
+    setSendingAlert(false);
+  };
+
+  const handleDeleteInquiry = async (inqId) => {
+    if (!window.confirm("Are you sure you want to delete this inquiry?")) return;
 
     if (isSupabaseConfigured()) {
       try {
-        await supabase.from('payments').insert([{
-          scheme_id: manualSchemeId,
-          user_id: manualUserId,
-          month_number: parseInt(manualMonth),
-          amount: amountFloat,
-          status: 'approved',
-          payment_method: manualMethod,
-          gold_rate,
-          gold_purchased
-        }]);
+        await supabase.from('inquiries').delete().eq('id', inqId);
       } catch (err) {
-        console.warn("Supabase manual payment insert error:", err.message);
+        console.warn("Supabase inquiry deletion error:", err.message);
       }
     }
 
-    const allPayments = JSON.parse(localStorage.getItem('SAJ_payments') || '[]');
-    allPayments.push({
-      id: 'pay_' + Date.now(),
-      scheme_id: manualSchemeId,
-      user_id: manualUserId,
-      month_number: parseInt(manualMonth),
-      amount: amountFloat,
-      status: 'approved',
-      payment_method: manualMethod,
-      gold_rate,
-      gold_purchased,
-      created_at: new Date().toISOString()
-    });
-
-    localStorage.setItem('SAJ_payments', JSON.stringify(allPayments));
-    alert("Payment added successfully!");
-    setManualUserSearch('');
-    setManualUserId('');
-    setManualMonth('');
-    setManualAmount('');
-    setManualSchemeId('');
-    setUserActiveSchemes([]);
-    fetchData();
-    setManualSubmitting(false);
+    const updated = inquiries.filter(i => i.id !== inqId);
+    localStorage.setItem('SAJ_inquiries', JSON.stringify(updated));
+    setInquiries(updated);
   };
-
-  const filteredSchemes = schemes.filter(s => {
-    const name = s.custom_users?.full_name?.toLowerCase() || s.custom_users?.email?.toLowerCase() || '';
-    const phone = String(s.custom_users?.phone_number || '');
-    const q = searchQuery.toLowerCase();
-    return name.includes(q) || phone.includes(q);
-  });
-
-  const filteredUsersList = usersList.filter(u => {
-    const term = manualUserSearch.toLowerCase();
-    return (u.full_name?.toLowerCase().includes(term) || String(u.phone_number || '').includes(term));
-  });
 
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', padding: '20px' }}>
         <div style={{ width: '100%', maxWidth: '400px', padding: '40px', background: '#1a1a1a', border: '1px solid var(--royal-gold)', borderRadius: '2px', textAlign: 'center' }}>
-          <h2 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', marginBottom: '30px', fontSize: '2rem', letterSpacing: '1px' }}>Admin Login</h2>
-          <form onSubmit={handleLogin}>
+          <h2 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '2rem', marginBottom: '30px', letterSpacing: '2px' }}>
+            ADMIN ACCESS
+          </h2>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <input 
               type="password" 
               placeholder="Enter Admin Passcode" 
-              value={passcode}
+              value={passcode} 
               onChange={(e) => setPasscode(e.target.value)}
-              style={{ padding: '15px', width: '100%', marginBottom: '20px', background: '#000', border: '1px solid #333', color: '#fff', outline: 'none', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '2px' }}
+              required
+              style={{ padding: '12px 15px', background: '#000', border: '1px solid #333', color: '#fff', outline: 'none', textAlign: 'center', fontSize: '1.1rem', letterSpacing: '3px' }}
             />
-            <button type="submit" style={{ padding: '15px 20px', width: '100%', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: 'pointer', letterSpacing: '1px' }}>
-              Access Dashboard
+            <button 
+              type="submit" 
+              style={{ padding: '12px', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer' }}
+            >
+              Enter Dashboard
             </button>
+            <a href="/" style={{ color: '#888', textDecoration: 'none', fontSize: '0.85rem' }}>← Back to Website</a>
           </form>
         </div>
       </div>
     );
   }
 
+  const filteredInquiries = inquiries.filter(inq => {
+    if (!searchInquiry) return true;
+    const term = searchInquiry.toLowerCase();
+    return (
+      (inq.name && inq.name.toLowerCase().includes(term)) ||
+      (inq.phone && String(inq.phone).includes(term)) ||
+      (inq.branch && inq.branch.toLowerCase().includes(term)) ||
+      (inq.category && inq.category.toLowerCase().includes(term)) ||
+      (inq.notes && inq.notes.toLowerCase().includes(term))
+    );
+  });
+
   return (
     <div className="admin-container" style={{ minHeight: '100vh', background: '#111', color: '#fff', padding: '40px 20px', fontFamily: '"Inter", sans-serif' }}>
-      
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          body { background: white !important; color: black !important; }
-          .admin-container { padding: 0 !important; background: white !important; }
-        }
-        .print-only { display: none; }
-      `}</style>
-
-      <div className="no-print" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '2.5rem', letterSpacing: '2px', textTransform: 'uppercase' }}>
-            Harvest Scheme Admin
-          </h1>
-          <div style={{ width: '60px', height: '2px', background: 'var(--royal-gold)', margin: '20px auto 0' }} />
-        </div>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* Settings Section */}
-        <div style={{ background: '#1a1a1a', padding: '30px', borderRadius: '2px', border: '1px solid #333', marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '30px' }}>
-          <div style={{ flex: 1, minWidth: '300px' }}>
-            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.5rem', marginBottom: '15px' }}>Store UPI Setting</h3>
-            <form onSubmit={handleUpiUpdate} style={{ display: 'flex', alignItems: 'flex-end', gap: '15px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
+          <div>
+            <h1 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '2.4rem', letterSpacing: '2px', textTransform: 'uppercase', margin: 0 }}>
+              Shree Aradhna Jewellers
+            </h1>
+            <p style={{ color: '#888', margin: '8px 0 0', letterSpacing: '1px', fontSize: '0.95rem' }}>
+              Showroom Management & Store Settings • Gandhidham & Adipur
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <a href="/" style={{ padding: '10px 18px', background: 'transparent', color: 'var(--royal-gold)', border: '1px solid var(--royal-gold)', textDecoration: 'none', borderRadius: '4px', fontSize: '0.85rem', fontWeight: '600' }}>
+              ← View Website
+            </a>
+            <button 
+              onClick={() => setIsAuthenticated(false)}
+              style={{ padding: '10px 18px', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Store Settings Section */}
+        <div style={{ background: '#1a1a1a', padding: '30px', borderRadius: '4px', border: '1px solid #333', marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '30px' }}>
+          
+          <div style={{ flex: '1 1 300px' }}>
+            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.3rem', marginBottom: '15px' }}>Official Store UPI</h3>
+            <form onSubmit={handleUpiUpdate} style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontSize: '0.9rem' }}>Official UPI ID</label>
-                <input type="text" value={storeUpi} onChange={(e) => setStoreUpi(e.target.value)} required style={{ padding: '12px', width: '100%', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none' }} />
+                <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontSize: '0.85rem' }}>UPI ID for Customer Payments</label>
+                <input 
+                  type="text" 
+                  value={storeUpi} 
+                  onChange={(e) => setStoreUpi(e.target.value)} 
+                  required 
+                  style={{ padding: '12px', width: '100%', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none', borderRadius: '4px' }} 
+                />
               </div>
-              <button type="submit" disabled={updatingUpi} style={{ padding: '12px 25px', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: updatingUpi ? 'not-allowed' : 'pointer' }}>
+              <button 
+                type="submit" 
+                disabled={updatingUpi} 
+                style={{ padding: '12px 20px', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: updatingUpi ? 'not-allowed' : 'pointer', borderRadius: '4px' }}
+              >
                 {updatingUpi ? 'Saving...' : 'Save'}
               </button>
             </form>
           </div>
 
-          <div style={{ flex: 1, minWidth: '300px' }}>
-            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.5rem', marginBottom: '15px' }}>Store QR Code</h3>
-            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-              <input type="file" accept="image/*,.heic,.heif,.heics,.heifs,image/heic,image/heif" onChange={handleQrUpload} disabled={qrUploading} style={{ color: '#fff', background: '#000', padding: '10px', border: '1px solid #444', flex: 1 }} />
-              {qrUploading && <span style={{ color: 'var(--royal-gold)' }}>Uploading...</span>}
+          <div style={{ flex: '1 1 300px' }}>
+            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.3rem', marginBottom: '15px' }}>Store QR Code</h3>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleQrUpload} 
+                disabled={qrUploading} 
+                style={{ color: '#fff', background: '#000', padding: '10px', border: '1px solid #444', flex: 1, borderRadius: '4px' }} 
+              />
+              {qrUploading && <span style={{ color: 'var(--royal-gold)', fontSize: '0.85rem' }}>Uploading...</span>}
             </div>
+            <p style={{ color: '#666', fontSize: '0.8rem', marginTop: '6px' }}>Upload showroom QR code image</p>
           </div>
 
-          <div style={{ flex: 1, minWidth: '300px' }}>
-            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.5rem', marginBottom: '15px' }}>Instagram Widget/API Setting</h3>
-            <form onSubmit={handleInstaUpdate} style={{ display: 'flex', alignItems: 'flex-end', gap: '15px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontSize: '0.9rem' }}>Behold JSON URL or SnapWidget Link</label>
-                <input type="text" value={instaUrl} onChange={(e) => setInstaUrl(e.target.value)} placeholder="https://feeds.behold.so/..." style={{ padding: '12px', width: '100%', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none' }} />
-              </div>
-              <button type="submit" disabled={updatingInsta} style={{ padding: '12px 25px', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: updatingInsta ? 'not-allowed' : 'pointer' }}>
-                {updatingInsta ? 'Saving...' : 'Save'}
-              </button>
-            </form>
-          </div>
-
-          <div style={{ flex: 1, minWidth: '300px' }}>
-            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.5rem', marginBottom: '15px' }}>Broadcast Push Alerts</h3>
-            <form onSubmit={handleSendPushAlert} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', color: '#888', marginBottom: '4px', fontSize: '0.85rem' }}>Alert Title</label>
-                <input type="text" placeholder="e.g. Hardik Jewellers" name="alertTitle" required style={{ padding: '10px', width: '100%', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none', borderRadius: '4px' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: '#888', marginBottom: '4px', fontSize: '0.85rem' }}>Alert Message</label>
-                <textarea placeholder="e.g. New collection uploaded on our Instagram page! Check it out." name="alertBody" required style={{ padding: '10px', width: '100%', height: '50px', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none', resize: 'none', borderRadius: '4px' }} />
-              </div>
-              <button type="submit" disabled={sendingAlert} style={{ padding: '10px 20px', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: sendingAlert ? 'not-allowed' : 'pointer', borderRadius: '4px' }}>
-                {sendingAlert ? 'Broadcasting...' : 'Broadcast to All'}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Manual Payment Entry Section */}
-        <div style={{ background: '#1a1a1a', padding: '30px', borderRadius: '2px', border: '1px solid #333', marginBottom: '30px' }}>
-          <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.5rem', marginBottom: '20px' }}>Manual Payment Entry</h3>
-          <form onSubmit={handleManualPayment} style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-end' }}>
-            
-            <div style={{ flex: '1 1 250px', position: 'relative' }}>
-              <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontSize: '0.9rem' }}>Search Customer (Name/Phone)</label>
+          <div style={{ flex: '1 1 300px' }}>
+            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.3rem', marginBottom: '15px' }}>Broadcast Push Alerts</h3>
+            <form onSubmit={handleSendPushAlert} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <input 
                 type="text" 
-                value={manualUserSearch} 
-                onChange={(e) => {
-                  setManualUserSearch(e.target.value);
-                  setManualUserId('');
-                  setUserActiveSchemes([]);
-                  setManualSchemeId('');
-                  setShowUserDropdown(true);
-                }} 
-                onFocus={() => setShowUserDropdown(true)}
-                placeholder="Type to search..."
-                required={!manualUserId}
-                style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none' }} 
+                placeholder="Alert Title (e.g. Diwali Collection Live!)" 
+                name="alertTitle" 
+                required 
+                style={{ padding: '10px', width: '100%', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none', borderRadius: '4px' }} 
               />
-              
-              {showUserDropdown && manualUserSearch && !manualUserId && (
-                <ul style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#111', border: '1px solid var(--royal-gold)', listStyle: 'none', padding: 0, margin: 0, maxHeight: '200px', overflowY: 'auto', zIndex: 100 }}>
-                  {filteredUsersList.map(u => (
-                    <li 
-                      key={u.id} 
-                      onClick={() => {
-                        setManualUserId(u.id);
-                        setManualUserSearch(`${u.full_name || u.email} (${u.phone_number || 'No Phone'})`);
-                        setShowUserDropdown(false);
-                        fetchUserSchemes(u.id);
-                      }}
-                      style={{ padding: '10px', cursor: 'pointer', borderBottom: '1px solid #333', color: '#fff' }}
-                      onMouseEnter={(e) => e.target.style.background = '#222'}
-                      onMouseLeave={(e) => e.target.style.background = '#111'}
-                    >
-                      {u.full_name || u.email} ({u.phone_number || 'No Phone'})
-                    </li>
-                  ))}
-                  {filteredUsersList.length === 0 && <li style={{ padding: '10px', color: '#888' }}>No customers found</li>}
-                </ul>
-              )}
-            </div>
+              <textarea 
+                placeholder="Message (e.g. Visit our Gandhidham showroom to preview the new bridal jewelry set)" 
+                name="alertBody" 
+                required 
+                style={{ padding: '10px', width: '100%', height: '50px', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none', resize: 'none', borderRadius: '4px' }} 
+              />
+              <button 
+                type="submit" 
+                disabled={sendingAlert} 
+                style={{ padding: '10px', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: sendingAlert ? 'not-allowed' : 'pointer', borderRadius: '4px', fontSize: '0.85rem' }}
+              >
+                {sendingAlert ? 'Sending...' : 'Broadcast Alert'}
+              </button>
+            </form>
+          </div>
 
-              {userActiveSchemes.length > 1 && (
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', color: 'var(--royal-gold)', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 'bold' }}>Select Specific Scheme</label>
-                <select value={manualSchemeId} onChange={(e) => {
-                  setManualSchemeId(e.target.value);
-                  const s = userActiveSchemes.find(x => x.id === e.target.value);
-                  if (s) setManualAmount(s.monthly_amount.toString());
-                }} required style={{ width: '100%', padding: '12px', background: 'rgba(123, 17, 34,0.1)', border: '1px solid var(--royal-gold)', color: '#fff', outline: 'none' }}>
-                  <option value="">-- Choose Scheme --</option>
-                  {userActiveSchemes.map((s, idx) => (
-                    <option key={s.id} value={s.id}>
-                      A/C {idx + 1} (₹{s.monthly_amount} - {new Date(s.start_date).toLocaleDateString()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            
-            <div style={{ flex: '1 1 100px' }}>
-              <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontSize: '0.9rem' }}>Month</label>
-              <select value={manualMonth} onChange={(e) => setManualMonth(e.target.value)} required style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none' }}>
-                <option value="">--</option>
-                {[...Array(11)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
-              </select>
-            </div>
-            
-            <div style={{ flex: '1 1 150px' }}>
-              <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontSize: '0.9rem' }}>Amount (₹)</label>
-              <input type="number" min="0" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} required placeholder="e.g. 5000" style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none' }} />
-            </div>
-
-            <div style={{ flex: '1 1 150px' }}>
-              <label style={{ display: 'block', color: '#888', marginBottom: '8px', fontSize: '0.9rem' }}>Method</label>
-              <select value={manualMethod} onChange={(e) => setManualMethod(e.target.value)} required style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #444', color: '#fff', outline: 'none' }}>
-                <option value="Cash">Cash</option>
-                <option value="UPI">UPI</option>
-              </select>
-            </div>
-
-            <button type="submit" disabled={manualSubmitting} style={{ padding: '12px 25px', background: 'var(--royal-gold)', color: '#000', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: manualSubmitting ? 'not-allowed' : 'pointer', height: '43px' }}>
-              {manualSubmitting ? 'Adding...' : 'Add'}
-            </button>
-          </form>
         </div>
 
-        {/* Searchable Customer List */}
-        <div style={{ background: '#1a1a1a', padding: '30px', borderRadius: '2px', border: '1px solid #333' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.5rem' }}>Active Customer Ledgers</h3>
+        {/* Appointment & Showroom Inquiries Section */}
+        <div style={{ background: '#1a1a1a', padding: '30px', borderRadius: '4px', border: '1px solid #333' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.6rem', margin: 0 }}>
+                Customer Appointments & Inquiries
+              </h3>
+              <p style={{ color: '#888', margin: '4px 0 0', fontSize: '0.85rem' }}>
+                Total received: {inquiries.length} inquiries
+              </p>
+            </div>
+
             <input 
               type="text" 
-              placeholder="Search by name or phone..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ padding: '10px 15px', background: '#000', border: '1px solid var(--royal-gold)', color: '#fff', outline: 'none', width: '300px' }}
+              placeholder="Search by name, phone, branch..." 
+              value={searchInquiry}
+              onChange={(e) => setSearchInquiry(e.target.value)}
+              style={{ padding: '10px 16px', background: '#000', border: '1px solid var(--royal-gold)', color: '#fff', outline: 'none', borderRadius: '4px', width: '280px' }}
             />
           </div>
-          
-          {loading ? <p style={{ color: '#888' }}>Loading customers...</p> : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-              {filteredSchemes.length === 0 ? (
-                <p style={{ color: '#888' }}>No customers found.</p>
-              ) : filteredSchemes.map(scheme => {
-                const user = scheme.custom_users;
-                
-                const approvedPayments = scheme.payments?.filter(p => p.status === 'approved') || [];
-                const pendingPayments = scheme.payments?.filter(p => p.status === 'pending_approval') || [];
-                
-                const totalGold = approvedPayments.reduce((acc, curr) => acc + (Number(curr.gold_purchased) || 0), 0).toFixed(4);
 
-                // Calculate A/C number
-                const userSchemes = schemes.filter(s => s.user_id === scheme.user_id).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                const accIndex = userSchemes.findIndex(s => s.id === scheme.id) + 1;
-                const accLabel = `A/C ${accIndex}`;
-
-                return (
-                  <div key={scheme.id} onClick={() => setSelectedScheme({...scheme, accIndex})} style={{ padding: '20px', background: '#000', border: '1px solid #333', borderRadius: '2px', cursor: 'pointer', transition: 'border-color 0.2s', position: 'relative' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--royal-gold)'} onMouseLeave={e => e.currentTarget.style.borderColor = '#333'}>
-                    <div style={{ position: 'absolute', top: 0, right: 0, background: '#333', padding: '3px 8px', fontSize: '0.7rem', color: '#fff', fontWeight: 'bold', borderBottomLeftRadius: '2px' }}>
-                      {accLabel} <span style={{ color: '#aaa', fontWeight: 'normal', marginLeft: '5px' }}>| Started: {new Date(scheme.start_date).toLocaleDateString()}</span>
-                    </div>
-                    <h4 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '5px', paddingRight: '60px' }}>{user?.full_name || 'Unknown'}</h4>
-                    <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '15px' }}>{user?.phone_number || 'No Phone'}</p>
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <div>
-                        <span style={{ color: '#666' }}>Monthly:</span>
-                        <div style={{ color: 'var(--royal-gold)', fontWeight: 'bold' }}>₹{scheme.monthly_amount}</div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <span style={{ color: '#666' }}>Total Gold:</span>
-                        <div style={{ color: '#fff', fontWeight: 'bold' }}>{totalGold}g</div>
-                      </div>
-                    </div>
-                    
-                    {pendingPayments.length > 0 && (
-                      <div style={{ marginTop: '15px', padding: '5px', background: 'rgba(123, 17, 34,0.1)', color: 'var(--royal-gold)', fontSize: '0.8rem', textAlign: 'center', border: '1px dashed var(--royal-gold)' }}>
-                        {pendingPayments.length} Payment(s) Pending Approval!
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+          {loading ? (
+            <p style={{ color: '#888' }}>Loading inquiries...</p>
+          ) : filteredInquiries.length === 0 ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#666', background: '#0d0d0d', borderRadius: '4px' }}>
+              <p style={{ fontSize: '1.1rem', margin: '0 0 8px' }}>No inquiries found.</p>
+              <p style={{ fontSize: '0.85rem', margin: 0 }}>Appointments submitted on the website will appear here in real time.</p>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Ledger Modal (Printable) */}
-      {selectedScheme && (
-        <div className="no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#1a1a1a', padding: '40px', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--royal-gold)', borderRadius: '2px', position: 'relative' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', marginBottom: '20px' }}>
-              <button onClick={() => window.print()} style={{ padding: '8px 15px', background: 'var(--royal-gold)', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                Print / Save PDF
-              </button>
-              <button onClick={() => setSelectedScheme(null)} style={{ padding: '8px 15px', background: 'transparent', color: '#888', border: '1px solid #444', cursor: 'pointer' }}>
-                Close
-              </button>
-            </div>
-
-            <LedgerContent 
-              scheme={selectedScheme} 
-              payments={selectedScheme.payments || []} 
-              handleApproval={handleApproval}
-              setSelectedScheme={setSelectedScheme}
-            />
-
-          </div>
-        </div>
-      )}
-
-      {/* Appointment Inquiries Section */}
-      <div className="no-print" style={{ maxWidth: '1200px', margin: '40px auto 0', padding: '30px', background: '#1a1a1a', borderRadius: '2px', border: '1px solid #333' }}>
-        <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.8rem', marginBottom: '20px' }}>Book an Appointment Inquiries</h3>
-        {!Array.isArray(inquiries) || inquiries.length === 0 ? (
-          <p style={{ color: '#888' }}>No inquiries yet.</p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-            {inquiries.filter(Boolean).map((inq) => (
-              <div key={inq.id || Math.random()} style={{ background: '#000', border: '1px solid #333', padding: '20px', borderRadius: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <strong style={{ color: '#fff', fontSize: '1.1rem' }}>{inq.name}</strong>
-                  <span style={{ color: '#666', fontSize: '0.8rem' }}>{inq.date}</span>
-                </div>
-                <div style={{ color: 'var(--royal-gold)', marginBottom: '10px' }}>📞 {inq.phone}</div>
-                <div style={{ color: '#888', fontSize: '0.9rem', marginBottom: '5px' }}><strong>Category:</strong> {inq.category}</div>
-                {inq.message && (
-                  <div style={{ color: '#aaa', fontSize: '0.9rem', marginTop: '10px', padding: '10px', background: '#111', borderRadius: '2px' }}>
-                    "{inq.message}"
-                  </div>
-                )}
-                <button 
-                  onClick={() => {
-                    const newInqs = inquiries.filter(i => i.id !== inq.id);
-                    localStorage.setItem('SAJ_inquiries', JSON.stringify(newInqs));
-                    setInquiries(newInqs);
-                  }}
-                  style={{ marginTop: '15px', background: 'transparent', color: '#dc3545', border: '1px solid #dc3545', padding: '5px 10px', cursor: 'pointer', fontSize: '0.8rem' }}
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+              {filteredInquiries.map((inq, idx) => (
+                <div 
+                  key={inq.id || idx} 
+                  style={{ background: '#0a0a0a', border: '1px solid #333', padding: '20px', borderRadius: '6px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                 >
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Hidden Print-Only Render */}
-      {selectedScheme && (
-        <div className="print-only">
-          <LedgerContent 
-            scheme={selectedScheme} 
-            payments={selectedScheme.payments || []} 
-            handleApproval={() => {}}
-            isPrintMode={true}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LedgerContent({ scheme, payments, handleApproval, setSelectedScheme, isPrintMode = false }) {
-  const user = scheme.custom_users;
-  
-  const startDate = new Date(scheme.start_date);
-  const approvedPayments = payments.filter(p => p.status === 'approved');
-  const monthsPaid = approvedPayments.length;
-  
-  const nextDueDate = new Date(startDate);
-  nextDueDate.setMonth(nextDueDate.getMonth() + monthsPaid);
-  
-  const totalGold = approvedPayments.reduce((acc, curr) => acc + (Number(curr.gold_purchased) || 0), 0).toFixed(4);
-
-  return (
-    <div style={{ color: isPrintMode ? '#000' : '#fff' }}>
-      <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: `2px solid ${isPrintMode ? '#000' : 'var(--royal-gold)'}`, paddingBottom: '20px' }}>
-        <h2 style={{ fontFamily: '"Playfair Display", serif', fontSize: '2.5rem', margin: 0, textTransform: 'uppercase', letterSpacing: '2px', color: isPrintMode ? '#000' : 'var(--royal-gold)' }}>Hardik Jewellers</h2>
-        
-        {isPrintMode && (
-          <div style={{ fontSize: '0.9rem', color: '#444', marginTop: '10px', lineHeight: '1.5' }}>
-            <p style={{ margin: 0 }}>Opp. Old Bus Stand, Main Market, City - 123456</p>
-            <p style={{ margin: 0 }}>Phone: +91 98765 43210 | Email: contact@hardikjewellers.com</p>
-            <p style={{ margin: 0 }}>GSTIN: 24AAAAA0000A1Z5</p>
-          </div>
-        )}
-        
-        <p style={{ margin: '15px 0 0', fontSize: '1.2rem', letterSpacing: '5px', fontWeight: 'bold' }}>HARVEST SCHEME LEDGER {scheme.accIndex ? `- A/C ${scheme.accIndex}` : ''}</p>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', fontSize: '1.1rem' }}>
-        <div>
-          <p style={{ margin: '0 0 5px' }}><strong>Customer Name:</strong> {user?.full_name || user?.email}</p>
-          <p style={{ margin: '0 0 5px' }}><strong>Phone Number:</strong> {user?.phone_number || '-'}</p>
-          <p style={{ margin: '0 0 5px' }}><strong>Scheme Start Date:</strong> {startDate.toLocaleDateString()}</p>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: '0 0 5px' }}><strong>Monthly Amount:</strong> ₹{scheme.monthly_amount}</p>
-          <p style={{ margin: '0 0 5px' }}><strong>Total Gold:</strong> {totalGold}g</p>
-          {monthsPaid < 11 && (
-            <p style={{ margin: '0 0 5px', color: isPrintMode ? '#000' : 'var(--royal-gold)' }}><strong>Next Due Date:</strong> {nextDueDate.toLocaleDateString()}</p>
-          )}
-        </div>
-      </div>
-
-      <table style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>
-        <thead>
-          <tr style={{ background: isPrintMode ? '#f5f5f5' : '#000', color: isPrintMode ? '#000' : 'var(--royal-gold)', textAlign: 'left' }}>
-            <th style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>Month</th>
-            <th style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>Date Paid</th>
-            <th style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>Amount</th>
-            <th style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>Gold Rate</th>
-            <th style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>Gold Acquired</th>
-            {!isPrintMode && <th style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>Status / Action</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {[...Array(11)].map((_, i) => {
-            const monthNum = i + 1;
-            const payment = payments.find(p => p.month_number === monthNum);
-            
-            let statusText = "Unpaid";
-            if (payment) {
-              if (payment.status === 'approved') statusText = "Paid";
-              else if (payment.status === 'pending_approval') statusText = "Pending Admin";
-              else if (payment.status === 'rejected') statusText = "Rejected";
-            }
-
-            return (
-              <tr key={monthNum} style={{ background: payment?.status === 'approved' ? (isPrintMode ? '#fff' : 'rgba(40,167,69,0.05)') : 'transparent' }}>
-                <td style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>Month {monthNum}</td>
-                <td style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>{payment?.payment_date ? new Date(payment.payment_date).toLocaleDateString() : '-'}</td>
-                <td style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>{payment ? `₹${payment.amount}` : '-'}</td>
-                <td style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>{payment?.gold_rate ? `₹${payment.gold_rate}/g` : '-'}</td>
-                <td style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}` }}>{payment?.gold_purchased ? `+${payment.gold_purchased}g` : '-'}</td>
-                
-                {!isPrintMode && (
-                  <td style={{ padding: '12px', border: '1px solid #333' }}>
-                    {payment?.status === 'pending_approval' ? (
-                      <div style={{ display: 'flex', gap: '5px' }}>
-                        <button onClick={() => { handleApproval(payment.id, 'approved'); setSelectedScheme(null); }} style={{ background: 'green', color: '#fff', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>Accept</button>
-                        <button onClick={() => { handleApproval(payment.id, 'rejected'); setSelectedScheme(null); }} style={{ background: 'red', color: '#fff', border: 'none', padding: '5px 10px', cursor: 'pointer' }}>Reject</button>
-                        {payment.screenshot_url && <a href={payment.screenshot_url} target="_blank" rel="noreferrer" style={{ padding: '5px', background: '#444', color: '#fff', textDecoration: 'none' }}>View</a>}
-                      </div>
-                    ) : (
-                      <span style={{ color: payment?.status === 'approved' ? '#28a745' : payment?.status === 'rejected' ? '#dc3545' : '#888' }}>
-                        {statusText}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <strong style={{ color: '#ffffff', fontSize: '1.15rem' }}>
+                        {inq.name || 'Anonymous Customer'}
+                      </strong>
+                      <span style={{ color: '#777', fontSize: '0.75rem' }}>
+                        {inq.created_at ? new Date(inq.created_at).toLocaleString() : inq.date || ''}
                       </span>
+                    </div>
+
+                    <div style={{ marginBottom: '10px' }}>
+                      <a 
+                        href={`tel:${inq.phone}`} 
+                        style={{ color: 'var(--royal-gold)', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        📞 {inq.phone || 'No phone'}
+                      </a>
+                    </div>
+
+                    {inq.branch && (
+                      <div style={{ color: '#bbb', fontSize: '0.85rem', marginBottom: '6px' }}>
+                        <span style={{ color: '#666' }}>Preferred Branch:</span> <strong>{inq.branch}</strong>
+                      </div>
                     )}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-          {/* Bonus Row */}
-          <tr>
-            <td style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}`, fontWeight: 'bold' }}>Month 12 (BONUS)</td>
-            <td colSpan={isPrintMode ? "4" : "5"} style={{ padding: '12px', border: `1px solid ${isPrintMode ? '#ccc' : '#333'}`, textAlign: 'center', fontWeight: 'bold', color: isPrintMode ? '#000' : 'var(--royal-gold)' }}>
-              {monthsPaid >= 11 ? `BONUS UNLOCKED: ₹${scheme.monthly_amount}` : `Pending (${11 - monthsPaid} months left)`}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      {isPrintMode && (
-        <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-between' }}>
-          <div>_______________________<br/>Customer Signature</div>
-          <div>_______________________<br/>Authorized Signatory</div>
+
+                    {(inq.inquiry_type || inq.category) && (
+                      <div style={{ color: '#bbb', fontSize: '0.85rem', marginBottom: '6px' }}>
+                        <span style={{ color: '#666' }}>Type:</span> {inq.inquiry_type || inq.category}
+                      </div>
+                    )}
+
+                    {(inq.notes || inq.message) && (
+                      <div style={{ color: '#ddd', fontSize: '0.85rem', marginTop: '12px', padding: '10px 12px', background: '#161616', borderRadius: '4px', borderLeft: '3px solid var(--royal-gold)', fontStyle: 'italic', lineHeight: '1.4' }}>
+                        "{inq.notes || inq.message}"
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', paddingTop: '14px', borderTop: '1px solid #222' }}>
+                    <a 
+                      href={`https://wa.me/91${String(inq.phone || '').replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(inq.name || 'Customer')},%20greetings%20from%20SHREE%20ARADHNA%20JEWELLERS!`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ padding: '6px 12px', background: '#25D366', color: '#fff', textDecoration: 'none', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}
+                    >
+                      💬 WhatsApp
+                    </a>
+
+                    <button 
+                      onClick={() => handleDeleteInquiry(inq.id)}
+                      style={{ background: 'transparent', color: '#dc3545', border: '1px solid #dc3545', padding: '5px 12px', cursor: 'pointer', fontSize: '0.75rem', borderRadius: '4px' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
-      )}
+
+      </div>
     </div>
   );
 }

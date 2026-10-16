@@ -848,10 +848,7 @@ export default function Home() {
             <a href="#contact" className="nav-link">CONTACT</a>
             
             {localStorage.getItem('userId') ? (
-              <>
-                <a href="/dashboard" className="nav-link" style={{ color: 'var(--royal-gold)', fontWeight: 'bold' }}>MY SCHEME</a>
-                <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="nav-link">LOGOUT</a>
-              </>
+              <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="nav-link">LOGOUT</a>
             ) : (
               <a href="/login" className="nav-link" style={{ color: 'var(--royal-gold)', fontWeight: 'bold' }}>LOGIN / REGISTER</a>
             )}
@@ -922,10 +919,7 @@ export default function Home() {
             <a href="#contact" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">CONTACT</a>
             
             {localStorage.getItem('userId') ? (
-              <>
-                <a href="/dashboard" className="mobile-nav-link">MY SCHEME</a>
-                <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="mobile-nav-link">LOGOUT</a>
-              </>
+              <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="mobile-nav-link">LOGOUT</a>
             ) : (
               <a href="/login" className="mobile-nav-link">LOGIN / REGISTER</a>
             )}
@@ -1590,34 +1584,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3.5. Digital Gold Harvest Scheme Advertisement */}
-      <section className="harvest-promo-section" style={{ 
-        background: 'var(--ivory-cards)', 
-        color: 'var(--text-dark)', 
-        padding: '80px 20px', 
-        textAlign: 'center', 
-        margin: '60px 0', 
-        position: 'relative',
-        overflow: 'hidden',
-        borderTop: '1px solid var(--royal-gold-border)',
-        borderBottom: '1px solid var(--royal-gold-border)'
-      }}>
 
-        
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '2.8rem', marginBottom: '15px', fontFamily: 'var(--font-serif)', textTransform: 'uppercase', letterSpacing: '3px', color: 'var(--peacock-green)' }}>Join our Digital Gold Harvest</h2>
-          <p style={{ fontSize: '1.2rem', marginBottom: '40px', color: 'var(--text-muted)', lineHeight: '1.8', letterSpacing: '0.5px' }}>
-            Invest simply for 11 months, and get the 12th month absolutely <span style={{ color: 'var(--royal-gold)', fontWeight: 'bold' }}>FREE as a BONUS</span>! Secure your future with pure BIS Hallmarked Gold and certified diamonds.
-          </p>
-          <Link to="/dashboard" className="btn-gold" style={{ 
-            display: 'inline-block', 
-            padding: '18px 40px', 
-            fontSize: '14px',
-          }}>
-            Start Your Golden Journey
-          </Link>
-        </div>
-      </section>
 
       {/* 6. Best Sellers Gallery Horizontal Marquee Strip */}
       {bestSellerImages && bestSellerImages.length > 0 && (
@@ -2320,7 +2287,7 @@ export default function Home() {
             marginLeft: 'auto',
             marginRight: 'auto'
           }}>
-            Install our official Web App on your iOS or Android device. Track live gold rates, manage your saving scheme installments, and sync your wishlist seamlessly with a single click.
+            Install our official Web App on your iOS or Android device. Track live gold rates, browse handcrafted bridal collections, and inquire seamlessly with our Gandhidham & Adipur showrooms.
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
@@ -3116,27 +3083,28 @@ export default function Home() {
               </div>
 
               <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed var(--royal-gold)', textAlign: 'center' }}>
-                  <h4 style={{ color: 'white', marginBottom: '12px', fontSize: '14px', letterSpacing: '2px' }}>HARVEST SCHEME SETTINGS</h4>
-                  <button 
-                    type="button" 
-                    onClick={() => window.location.href = '/admin'} 
-                    className="admin-submit-btn"
-                    style={{ background: 'var(--royal-gold)', color: 'var(--rich-black)', fontWeight: 'bold' }}
-                  >
-                    OPEN HARVEST ADMIN PANEL
-                  </button>
-                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                    (Verify payments, Add manual payments, Upload QR Code)
-                  </p>
-                </div>
-
+                <h4 style={{ color: 'white', marginBottom: '12px', fontSize: '14px', letterSpacing: '2px' }}>STORE ADMIN DASHBOARD</h4>
                 <button 
                   type="button" 
-                  onClick={handleAdminLogout} 
+                  onClick={() => window.location.href = '/admin'} 
                   className="admin-submit-btn"
-                  style={{ background: 'transparent', border: '1px solid var(--royal-gold)', color: 'var(--royal-gold)', marginTop: '24px' }}
+                  style={{ background: 'var(--royal-gold)', color: 'var(--rich-black)', fontWeight: 'bold' }}
                 >
+                  OPEN ADMIN PANEL
                 </button>
+                <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                  (Showroom Appointments, Inquiries, UPI & Store Settings)
+                </p>
+              </div>
+
+              <button 
+                type="button" 
+                onClick={handleAdminLogout} 
+                className="admin-submit-btn"
+                style={{ background: 'transparent', border: '1px solid var(--royal-gold)', color: 'var(--royal-gold)', marginTop: '24px' }}
+              >
+                LOGOUT FROM ADMIN
+              </button>
               </>
             )}
           </div>
@@ -3411,7 +3379,7 @@ export default function Home() {
               color: '#555555',
               lineHeight: '1.5'
             }}>
-              Get instant live 22K Gold & Silver rates, handcrafted collections & scheme updates directly on your mobile home screen.
+              Get instant live 22K Gold & Silver rates, handcrafted bridal collections & showroom updates directly on your mobile home screen.
             </p>
 
             {/* Benefits Checklist */}
@@ -3432,7 +3400,7 @@ export default function Home() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#333333', fontWeight: '600' }}>
                 <span style={{ color: 'var(--royal-gold)', fontSize: '16px' }}>💎</span>
-                <span>Bespoke Jewelry Catalog & Scheme Tracker</span>
+                <span>Bespoke Jewelry Catalog & Showroom Appointments</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#333333', fontWeight: '600' }}>
                 <span style={{ color: 'var(--royal-gold)', fontSize: '16px' }}>📱</span>

@@ -13,7 +13,7 @@ export default function TermsOfUse() {
       </p>
       <h3 style={{ marginTop: '30px', color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif' }}>1. Acceptance of Terms</h3>
       <p style={{ lineHeight: '1.6', fontSize: '1.1rem' }}>
-        By using our services, creating an account, or participating in any of our schemes, you confirm that you have read, understood, and agreed to these terms. If you do not agree with any part of these terms, please do not use our services.
+        By using our services, creating an account, or interacting with our showrooms, you confirm that you have read, understood, and agreed to these terms. If you do not agree with any part of these terms, please do not use our services.
       </p>
       <h3 style={{ marginTop: '30px', color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif' }}>2. User Responsibilities</h3>
       <p style={{ lineHeight: '1.6', fontSize: '1.1rem' }}>

@@ -182,10 +182,10 @@ export default function Login() {
             textTransform: 'uppercase',
             margin: 0
           }}>
-            {isSignUp ? 'Join the Harvest' : 'Welcome Back'}
+            {isSignUp ? 'Create Your Account' : 'Welcome Back'}
           </h2>
           <p style={{ color: '#666666', fontSize: '0.85rem', marginTop: '8px', lineHeight: '1.4' }}>
-            {isSignUp ? 'Begin your journey of pure gold' : 'Access your Digital Gold Harvest Dashboard'}
+            {isSignUp ? 'Join Shree Aradhna Jewellers for exclusive bridal collection updates' : 'Sign in to access your wishlist and profile'}
           </p>
         </div>
         
