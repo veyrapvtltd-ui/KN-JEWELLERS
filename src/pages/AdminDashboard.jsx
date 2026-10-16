@@ -10,6 +10,13 @@ import {
   SUPABASE_SCHEMA_SQL
 } from '../lib/supabase';
 import { optimizeImageForStorage } from '../lib/imageOptimizer';
+import { 
+  INDIAN_FESTIVALS, 
+  getCurrentFestival, 
+  getNextUpcomingFestival, 
+  dispatchFestivalBroadcast,
+  getISTDateString 
+} from '../lib/festivalGreetings';
 
 export default function AdminDashboard() {
   const [passcode, setPasscode] = useState('');
@@ -29,6 +36,24 @@ export default function AdminDashboard() {
   // Vigorous Storage Testing State
   const [runningStorageTest, setRunningStorageTest] = useState(false);
   const [storageTestResults, setStorageTestResults] = useState(null);
+
+  // Indian Festivals Automation State
+  const [autoFestivalBroadcast, setAutoFestivalBroadcast] = useState(
+    () => localStorage.getItem('SAJ_auto_festival_broadcast_disabled') !== 'true'
+  );
+  const [selectedFestId, setSelectedFestId] = useState(() => {
+    const todayFest = getCurrentFestival();
+    return todayFest.isActive ? todayFest.festival.id : 'diwali';
+  });
+  const [customFestOffer, setCustomFestOffer] = useState('');
+  const [broadcastingFest, setBroadcastingFest] = useState(false);
+  const [festivalHistory, setFestivalHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('SAJ_festival_broadcast_history') || '[]');
+    } catch {
+      return [];
+    }
+  });
 
   // Live Rates State
   const [gold24k, setGold24k] = useState('15500');
@@ -260,6 +285,64 @@ export default function AdminDashboard() {
     } finally {
       setRunningStorageTest(false);
     }
+  };
+
+  // Indian Festival Handlers
+  const handleToggleAutoBroadcast = () => {
+    const nextVal = !autoFestivalBroadcast;
+    setAutoFestivalBroadcast(nextVal);
+    if (!nextVal) {
+      localStorage.setItem('SAJ_auto_festival_broadcast_disabled', 'true');
+      alert('Automatic festival greetings paused.');
+    } else {
+      localStorage.removeItem('SAJ_auto_festival_broadcast_disabled');
+      alert('Automatic festival greetings active! System will automatically broadcast on Indian festival dates.');
+      const todayFest = getCurrentFestival();
+      if (todayFest.isActive) {
+        dispatchFestivalBroadcast(todayFest.festival, true);
+      }
+    }
+  };
+
+  const handleBroadcastFestivalNow = async (festObj) => {
+    const targetFest = festObj || INDIAN_FESTIVALS.find(f => f.id === selectedFestId);
+    if (!targetFest) return;
+
+    setBroadcastingFest(true);
+    const customFest = {
+      ...targetFest,
+      offer: customFestOffer.trim() ? customFestOffer.trim() : targetFest.offer
+    };
+
+    await dispatchFestivalBroadcast(customFest, true);
+    setBroadcastingFest(false);
+
+    try {
+      const hist = JSON.parse(localStorage.getItem('SAJ_festival_broadcast_history') || '[]');
+      setFestivalHistory(hist);
+    } catch (e) {}
+
+    alert(`🎉 Festive greeting for "${customFest.name}" broadcasted to website and notifications successfully!`);
+  };
+
+  const handleSetFestivalOverride = (festId) => {
+    localStorage.setItem('SAJ_active_festival_override', festId);
+    const target = INDIAN_FESTIVALS.find(f => f.id === festId);
+    if (target) {
+      dispatchFestivalBroadcast(target, true);
+      alert(`Website active festival banner set to: ${target.name}`);
+    }
+  };
+
+  const handleClearFestivalOverride = () => {
+    localStorage.removeItem('SAJ_active_festival_override');
+    const todayFest = getCurrentFestival();
+    if (todayFest.isActive) {
+      dispatchFestivalBroadcast(todayFest.festival, true);
+    } else {
+      window.dispatchEvent(new CustomEvent('saj_festival_broadcast', { detail: null }));
+    }
+    alert('Festival override cleared. Website returned to auto calendar schedule.');
   };
 
   // Upload QR Code
@@ -820,7 +903,247 @@ export default function AdminDashboard() {
           </form>
         </div>
 
-        {/* 3. STORE SETTINGS & ALERTS */}
+        {/* 3. AUTOMATED INDIAN FESTIVAL GREETINGS & BROADCAST HUB */}
+        <div style={{ background: '#161616', padding: '28px', borderRadius: '8px', border: '1px solid #2a2a2a', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', marginBottom: '22px' }}>
+            <div>
+              <h2 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.4rem', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>🎉</span> Automated Indian Festival Greetings & Broadcast Hub
+              </h2>
+              <p style={{ color: '#aaa', margin: 0, fontSize: '0.85rem' }}>
+                Automatically monitors the Indian calendar (Dhanteras, Diwali, Navratri, Karwa Chauth, Akshaya Tritiya, Eid, New Year & 20+ festivals) and broadcasts festive greetings to all customers.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleToggleAutoBroadcast}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: autoFestivalBroadcast ? 'rgba(40, 167, 69, 0.15)' : 'rgba(255, 193, 7, 0.15)',
+                color: autoFestivalBroadcast ? '#28a745' : '#ffc107',
+                border: `1px solid ${autoFestivalBroadcast ? '#28a745' : '#ffc107'}`
+              }}
+            >
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: autoFestivalBroadcast ? '#28a745' : '#ffc107' }} />
+              {autoFestivalBroadcast ? 'Auto-Broadcast: ACTIVE' : 'Auto-Broadcast: PAUSED'}
+            </button>
+          </div>
+
+          {/* Today's Active Festival Card */}
+          {(() => {
+            const todayFest = getCurrentFestival();
+            const nextFest = getNextUpcomingFestival();
+            const active = todayFest.isActive ? todayFest.festival : (nextFest ? nextFest.festival : null);
+
+            return (
+              <div style={{
+                background: todayFest.isActive ? 'rgba(123, 17, 34, 0.25)' : '#0d0d0d',
+                border: todayFest.isActive ? '1px solid #7b1122' : '1px solid #333',
+                borderRadius: '8px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '24px' }}>{active?.icon || '🪔'}</span>
+                      <div>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 'bold',
+                          padding: '3px 8px',
+                          borderRadius: '10px',
+                          background: todayFest.isActive ? '#28a745' : 'var(--royal-gold)',
+                          color: '#000',
+                          textTransform: 'uppercase',
+                          marginRight: '8px'
+                        }}>
+                          {todayFest.isActive ? 'Active Today' : `Next in ${nextFest?.daysRemaining} days`}
+                        </span>
+                        <strong style={{ color: '#fff', fontSize: '1.15rem' }}>{active?.name}</strong>
+                        <span style={{ color: '#aaa', fontSize: '0.85rem', marginLeft: '8px' }}>
+                          ({active?.nameHindi} • {active?.nameGujarati})
+                        </span>
+                      </div>
+                    </div>
+
+                    <p style={{ color: '#ffffff', fontSize: '0.92rem', margin: '6px 0 4px', fontWeight: '500' }}>
+                      "{active?.greeting}"
+                    </p>
+                    <p style={{ color: '#ffd700', fontSize: '0.85rem', margin: 0, fontStyle: 'italic' }}>
+                      Showroom Offer: {active?.offer}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      disabled={broadcastingFest}
+                      onClick={() => handleBroadcastFestivalNow(active)}
+                      style={{
+                        padding: '10px 18px',
+                        background: 'var(--royal-gold)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontWeight: '700',
+                        fontSize: '0.82rem',
+                        cursor: broadcastingFest ? 'not-allowed' : 'pointer',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      {broadcastingFest ? 'Broadcasting...' : '🚀 Broadcast Greeting Now'}
+                    </button>
+
+                    <a
+                      href="/"
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        padding: '10px 16px',
+                        background: '#222',
+                        color: '#fff',
+                        border: '1px solid #444',
+                        borderRadius: '4px',
+                        fontWeight: '600',
+                        fontSize: '0.82rem',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      👁️ Preview on Website
+                    </a>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Festival Selector & Custom Offer Dispatcher */}
+          <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '20px' }}>
+            <h4 style={{ color: 'var(--royal-gold)', margin: '0 0 14px', fontSize: '0.98rem' }}>
+              Broadcast Any Festival or Add Custom Festive Offer:
+            </h4>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  Select Indian Festival
+                </label>
+                <select
+                  value={selectedFestId}
+                  onChange={(e) => setSelectedFestId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '11px',
+                    background: '#161616',
+                    border: '1px solid #333',
+                    color: '#fff',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  {INDIAN_FESTIVALS.map((fest) => (
+                    <option key={fest.id} value={fest.id}>
+                      {fest.icon} {fest.name} ({fest.nameGujarati})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  Custom Promotional Offer / Note (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Special 0% Extra Making Charge on 22K Gold Coins & Bridal Sets!"
+                  value={customFestOffer}
+                  onChange={(e) => setCustomFestOffer(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '11px',
+                    background: '#161616',
+                    border: '1px solid #333',
+                    color: '#fff',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                disabled={broadcastingFest}
+                onClick={() => handleBroadcastFestivalNow()}
+                style={{
+                  padding: '10px 20px',
+                  background: 'var(--royal-gold)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: broadcastingFest ? 'not-allowed' : 'pointer',
+                  textTransform: 'uppercase'
+                }}
+              >
+                {broadcastingFest ? 'Broadcasting...' : 'Broadcast Selected Festival'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetFestivalOverride(selectedFestId)}
+                style={{
+                  padding: '10px 18px',
+                  background: '#222',
+                  color: '#fff',
+                  border: '1px solid #444',
+                  borderRadius: '4px',
+                  fontWeight: '600',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Set as Active Website Banner
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearFestivalOverride}
+                style={{
+                  padding: '10px 18px',
+                  background: 'transparent',
+                  color: '#888',
+                  border: '1px solid #333',
+                  borderRadius: '4px',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Reset to Auto Date
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. STORE SETTINGS (UPI & QR) */}
         <div style={{ background: '#161616', padding: '28px', borderRadius: '8px', border: '1px solid #2a2a2a', marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '30px' }}>
           
           {/* UPI */}
@@ -865,35 +1188,6 @@ export default function AdminDashboard() {
               {qrUploading && <span style={{ color: 'var(--royal-gold)', fontSize: '0.82rem' }}>Uploading...</span>}
             </div>
             <p style={{ color: '#666', fontSize: '0.78rem', marginTop: '6px' }}>Upload current showroom UPI QR image</p>
-          </div>
-
-          {/* Push Broadcast */}
-          <div style={{ flex: '1 1 320px' }}>
-            <h3 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.25rem', marginBottom: '14px' }}>
-              Broadcast Notifications
-            </h3>
-            <form onSubmit={handleSendPushAlert} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <input 
-                type="text" 
-                placeholder="Alert Title (e.g. Diwali Collection Live!)" 
-                name="alertTitle" 
-                required 
-                style={{ padding: '10px', width: '100%', background: '#0a0a0a', border: '1px solid #333', color: '#fff', outline: 'none', borderRadius: '4px', boxSizing: 'border-box' }} 
-              />
-              <textarea 
-                placeholder="Message details for customers..." 
-                name="alertBody" 
-                required 
-                style={{ padding: '10px', width: '100%', height: '48px', background: '#0a0a0a', border: '1px solid #333', color: '#fff', outline: 'none', resize: 'none', borderRadius: '4px', boxSizing: 'border-box' }} 
-              />
-              <button 
-                type="submit" 
-                disabled={sendingAlert} 
-                style={{ padding: '10px', background: 'var(--royal-gold)', color: '#fff', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', cursor: sendingAlert ? 'not-allowed' : 'pointer', borderRadius: '4px', fontSize: '0.82rem' }}
-              >
-                {sendingAlert ? 'Broadcasting...' : 'Broadcast Notification'}
-              </button>
-            </form>
           </div>
 
         </div>

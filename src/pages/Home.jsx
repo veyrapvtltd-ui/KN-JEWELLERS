@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
+import { getCurrentFestival, dispatchFestivalBroadcast } from '../lib/festivalGreetings';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
 const bannerImages = [
@@ -188,6 +189,35 @@ export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIosHelpOpen, setIsIosHelpOpen] = useState(false);
   const [showAppPopup, setShowAppPopup] = useState(false);
+  const [activeFestival, setActiveFestival] = useState(null);
+  const [isFestivalDismissed, setIsFestivalDismissed] = useState(false);
+
+  // Automatic Indian Festival Detection & Greeting Broadcast
+  useEffect(() => {
+    const checkFestival = () => {
+      const festivalData = getCurrentFestival();
+      if (festivalData.isActive) {
+        setActiveFestival(festivalData.festival);
+        // Automatically broadcast greeting if auto-broadcast is enabled
+        const autoEnabled = localStorage.getItem('SAJ_auto_festival_broadcast_disabled') !== 'true';
+        if (autoEnabled) {
+          dispatchFestivalBroadcast(festivalData.festival);
+        }
+      }
+    };
+
+    checkFestival();
+
+    const handleFestBroadcastEvent = (e) => {
+      if (e.detail) {
+        setActiveFestival(e.detail);
+        setIsFestivalDismissed(false);
+      }
+    };
+
+    window.addEventListener('saj_festival_broadcast', handleFestBroadcastEvent);
+    return () => window.removeEventListener('saj_festival_broadcast', handleFestBroadcastEvent);
+  }, []);
 
   useEffect(() => {
     const isDismissed = sessionStorage.getItem('SAJ_app_popup_dismissed');
@@ -889,6 +919,82 @@ export default function Home() {
         </div>
       </div>
       
+      {/* Automated Indian Festival Greeting Banner */}
+      {activeFestival && !isFestivalDismissed && (
+        <div 
+          className="festival-greeting-bar"
+          style={{
+            background: 'linear-gradient(90deg, #7b1122 0%, #9c152b 25%, #b8860b 50%, #9c152b 75%, #7b1122 100%)',
+            backgroundSize: '200% auto',
+            color: '#ffffff',
+            padding: '10px 16px',
+            textAlign: 'center',
+            fontSize: '13px',
+            fontWeight: '600',
+            letterSpacing: '0.4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            position: 'relative',
+            zIndex: 998,
+            boxShadow: '0 4px 15px rgba(123, 17, 34, 0.25)',
+            borderBottom: '1px solid rgba(255, 215, 0, 0.35)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <span style={{ fontSize: '18px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
+            <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+              {activeFestival.name}:
+            </span>
+            <span style={{ color: '#ffffff' }}>{activeFestival.greeting}</span>
+            <span style={{ color: '#ffeaa7', fontSize: '12px', fontStyle: 'italic' }}>
+              • {activeFestival.offer}
+            </span>
+            <a 
+              href="#showcase" 
+              onClick={() => handleCategoryClick('WEDDING SET')}
+              style={{
+                marginLeft: '8px',
+                padding: '4px 12px',
+                background: '#ffd700',
+                color: '#7b1122',
+                borderRadius: '20px',
+                textDecoration: 'none',
+                fontSize: '11px',
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                display: 'inline-block',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+              }}
+            >
+              Explore Festive Collection →
+            </a>
+          </div>
+
+          <button 
+            onClick={() => setIsFestivalDismissed(true)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '14px',
+              padding: '4px 8px',
+              opacity: 0.8,
+              position: 'absolute',
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+            title="Dismiss greeting"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 1. Header & Navigation */}
       <header className="header-main">
         <div className="nav-container">
