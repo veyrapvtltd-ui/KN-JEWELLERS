@@ -80,48 +80,8 @@ const circularCategories = [
   { label: 'VIEW ALL', letter: 'V', cat: 'ALL', sub: 'ALL' }
 ];
 
-// Helper to get or calculate realistic product weight
-const getProductWeight = (product) => {
-  if (!product) return '';
-  if (product.weight) return product.weight;
-  
-  // Extract weight from filename/title (e.g. GBN12_28.450 -> 28.45 Grams)
-  const sourceStr = `${product.url || ''} ${product.title || ''}`;
-  const match = sourceStr.match(/[_-](\d{1,3}\.\d{1,3})/);
-  if (match) {
-    return `${parseFloat(match[1]).toFixed(2)} Grams`;
-  }
-
-  let hash = 0;
-  for (let i = 0; i < (product.id || '').length; i++) {
-    hash = product.id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const absHash = Math.abs(hash);
-
-  if (product.category === 'SILVER COLLECTION') {
-    return `${(20 + (absHash % 450) / 10).toFixed(2)} Grams`;
-  } else if (product.category === 'WEDDING SET') {
-    return `${(45 + (absHash % 600) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'RINGS') {
-    return `${(3.5 + (absHash % 50) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'EARRINGS') {
-    return `${(2.8 + (absHash % 65) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'CHAINS') {
-    return `${(12.5 + (absHash % 220) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'BANGLES') {
-    return `${(18.0 + (absHash % 180) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'LONG MANGALSUTRA') {
-    return `${(22.0 + (absHash % 200) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'SHORT MANGALSUTRA') {
-    return `${(8.5 + (absHash % 90) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'NECKLACES') {
-    return `${(28.0 + (absHash % 350) / 10).toFixed(2)} Grams`;
-  } else if (product.subCategory === 'LOCKETS') {
-    return `${(3.2 + (absHash % 55) / 10).toFixed(2)} Grams`;
-  }
-  
-  return `${(10 + (absHash % 150) / 10).toFixed(2)} Grams`;
-};
+// Helper for product weight (Disabled per request)
+const getProductWeight = () => '';
 
 // Consistent Simulated Pricing generator based on product ID
 const getProductPricing = (product) => {
@@ -1923,8 +1883,8 @@ export default function Home() {
                       {product.title}
                     </p>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                      {product.purity && (
+                    {product.purity && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <span style={{
                           fontSize: '10px',
                           fontWeight: '700',
@@ -1938,21 +1898,8 @@ export default function Home() {
                         }}>
                           ✨ {product.purity}
                         </span>
-                      )}
-                      {product.weight && (
-                        <span style={{
-                          fontSize: '10px',
-                          fontWeight: '600',
-                          color: 'var(--peacock-green)',
-                          background: 'rgba(123, 17, 34, 0.06)',
-                          borderRadius: '12px',
-                          padding: '2px 8px',
-                          letterSpacing: '0.3px'
-                        }}>
-                          ⚖️ {product.weight}
-                        </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     {/* Actions Row */}
                     <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: 'auto' }}>
@@ -1972,7 +1919,7 @@ export default function Home() {
                         <Share2 size={16} />
                       </button>
                       <a
-                        href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.${getProductWeight(product) ? `%0A%0AApprox%20Weight:%20${encodeURIComponent(getProductWeight(product))}` : ''}%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${product.id}`}
+                        href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${product.id}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -3522,7 +3469,7 @@ export default function Home() {
                     {/* Action buttons (WhatsApp inquiry and Trash remove) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <a
-                        href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.${getProductWeight(product) ? `%0A%0AApprox%20Weight:%20${encodeURIComponent(getProductWeight(product))}` : ''}%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${product.id}%20from%20my%20wishlist.`}
+                        href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${product.id}%20from%20my%20wishlist.`}
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -3883,7 +3830,7 @@ export default function Home() {
                   <Share2 size={18} />
                 </button>
                 <a
-                  href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(lightboxProduct.title)}.${getProductWeight(lightboxProduct) ? `%0A%0AApprox%20Weight:%20${encodeURIComponent(getProductWeight(lightboxProduct))}` : ''}%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${lightboxProduct.id}`}
+                  href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(lightboxProduct.title)}.%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${lightboxProduct.id}`}
                   target="_blank"
                   rel="noreferrer"
                   style={{

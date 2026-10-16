@@ -10,7 +10,6 @@ export const collection18kProducts = [
     category: 'GENTS',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '7.80 Grams',
     url: '/assets/18K_COLLECTION/18k_gents_imperial_square_ring.jpg'
   },
   {
@@ -19,7 +18,6 @@ export const collection18kProducts = [
     category: 'GENTS',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '9.20 Grams',
     url: '/assets/18K_COLLECTION/18k_gents_royal_ribbed_ring.jpg'
   },
   {
@@ -28,7 +26,6 @@ export const collection18kProducts = [
     category: 'GENTS',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '8.50 Grams',
     url: '/assets/18K_COLLECTION/18k_gents_om_signet_ring.jpg'
   },
   {
@@ -37,7 +34,6 @@ export const collection18kProducts = [
     category: 'GENTS',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '9.80 Grams',
     url: '/assets/18K_COLLECTION/18k_gents_royal_lion_ring.jpg'
   },
   // --- Ladies Rings (5) ---
@@ -47,7 +43,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '4.20 Grams',
     url: '/assets/18K_COLLECTION/18k_rose_gold_crossover_diamond_ring.jpg'
   },
   {
@@ -56,7 +51,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '4.50 Grams',
     url: '/assets/18K_COLLECTION/18k_blooming_floral_diamond_ring.jpg'
   },
   {
@@ -65,7 +59,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '3.90 Grams',
     url: '/assets/18K_COLLECTION/18k_solitaire_diamond_engagement_ring.jpg'
   },
   {
@@ -74,7 +67,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '4.80 Grams',
     url: '/assets/18K_COLLECTION/18k_artisanal_textured_gold_band_ring.jpg'
   },
   {
@@ -83,7 +75,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'RINGS',
     purity: '18KT Plain Gold',
-    weight: '5.10 Grams',
     url: '/assets/18K_COLLECTION/18k_geometric_cage_diamond_ring.jpg'
   },
 
@@ -95,7 +86,6 @@ export const collection18kProducts = [
     subCategory: 'EARRINGS',
     earringType: 'STUDS',
     purity: '18KT Plain Gold',
-    weight: '2.90 Grams',
     url: '/assets/18K_COLLECTION/18k_evil_eye_diamond_studs.jpg'
   },
   {
@@ -105,7 +95,6 @@ export const collection18kProducts = [
     subCategory: 'EARRINGS',
     earringType: 'STUDS',
     purity: '18KT Plain Gold',
-    weight: '3.10 Grams',
     url: '/assets/18K_COLLECTION/18k_oval_solitaire_studs.jpg'
   },
   {
@@ -115,7 +104,6 @@ export const collection18kProducts = [
     subCategory: 'EARRINGS',
     earringType: 'STUDS',
     purity: '18KT Plain Gold',
-    weight: '3.40 Grams',
     url: '/assets/18K_COLLECTION/18k_floral_cluster_diamond_studs.jpg'
   },
   {
@@ -125,7 +113,6 @@ export const collection18kProducts = [
     subCategory: 'EARRINGS',
     earringType: 'HOOPS',
     purity: '18KT Plain Gold',
-    weight: '4.60 Grams',
     url: '/assets/18K_COLLECTION/18k_two_tone_huggie_hoops.jpg'
   },
   {
@@ -135,7 +122,6 @@ export const collection18kProducts = [
     subCategory: 'EARRINGS',
     earringType: 'HOOPS',
     purity: '18KT Plain Gold',
-    weight: '3.80 Grams',
     url: '/assets/18K_COLLECTION/18k_textured_gold_bali_hoops.jpg'
   },
 
@@ -146,7 +132,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'BRACELETS',
     purity: '18KT Plain Gold',
-    weight: '11.50 Grams',
     url: '/assets/18K_COLLECTION/18k_diamond_tennis_bracelet.jpg'
   },
   {
@@ -155,7 +140,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'BRACELETS',
     purity: '18KT Plain Gold',
-    weight: '9.80 Grams',
     url: '/assets/18K_COLLECTION/18k_heart_diamond_bracelet.jpg'
   },
   {
@@ -164,7 +148,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'BRACELETS',
     purity: '18KT Plain Gold',
-    weight: '10.60 Grams',
     url: '/assets/18K_COLLECTION/18k_contemporary_bar_link_bracelet.jpg'
   },
   {
@@ -173,7 +156,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'BANGLES',
     purity: '18KT Plain Gold',
-    weight: '15.40 Grams',
     url: '/assets/18K_COLLECTION/18k_turquoise_evil_eye_kada_bangle.jpg'
   },
   {
@@ -182,7 +164,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'BANGLES',
     purity: '18KT Plain Gold',
-    weight: '17.20 Grams',
     url: '/assets/18K_COLLECTION/18k_mesh_woven_gold_kada_bangle.jpg'
   },
 
@@ -193,7 +174,6 @@ export const collection18kProducts = [
     category: 'GENTS',
     subCategory: 'CHAINS',
     purity: '18KT Plain Gold',
-    weight: '14.20 Grams',
     url: '/assets/18K_COLLECTION/18k_gold_bar_link_chain.jpg'
   },
   {
@@ -202,7 +182,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'CHAINS',
     purity: '18KT Plain Gold',
-    weight: '12.80 Grams',
     url: '/assets/18K_COLLECTION/18k_gold_flat_snake_chain.jpg'
   },
   {
@@ -211,7 +190,6 @@ export const collection18kProducts = [
     category: 'GENTS',
     subCategory: 'CHAINS',
     purity: '18KT Plain Gold',
-    weight: '16.40 Grams',
     url: '/assets/18K_COLLECTION/18k_gold_rope_chain.jpg'
   },
 
@@ -222,7 +200,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'SHORT MANGALSUTRA',
     purity: '18KT Plain Gold',
-    weight: '7.60 Grams',
     url: '/assets/18K_COLLECTION/18k_floral_diamond_short_mangalsutra.jpg'
   },
 
@@ -233,7 +210,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'NECKLACES',
     purity: '18KT Plain Gold',
-    weight: '18.50 Grams',
     url: '/assets/18K_COLLECTION/18k_gold_charm_choker_necklace.jpg'
   },
   {
@@ -242,7 +218,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'NECKLACES',
     purity: '18KT Plain Gold',
-    weight: '8.40 Grams',
     url: '/assets/18K_COLLECTION/18k_teardrop_diamond_pendant_set.jpg'
   },
   {
@@ -251,7 +226,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'NECKLACES',
     purity: '18KT Plain Gold',
-    weight: '9.50 Grams',
     url: '/assets/18K_COLLECTION/18k_geometric_cascade_pendant_set.jpg'
   },
   {
@@ -260,7 +234,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'NECKLACES',
     purity: '18KT Plain Gold',
-    weight: '22.80 Grams',
     url: '/assets/18K_COLLECTION/18k_heart_swirl_necklace_earrings_set.jpg'
   },
   {
@@ -269,7 +242,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'NECKLACES',
     purity: '18KT Plain Gold',
-    weight: '8.90 Grams',
     url: '/assets/18K_COLLECTION/18k_rose_gold_swirl_pendant_set.jpg'
   },
   {
@@ -278,7 +250,6 @@ export const collection18kProducts = [
     category: 'LADIES',
     subCategory: 'NECKLACES',
     purity: '18KT Plain Gold',
-    weight: '34.50 Grams',
     url: '/assets/18K_COLLECTION/18k_royal_scalloped_bridal_diamond_set.jpg'
   }
 ];
