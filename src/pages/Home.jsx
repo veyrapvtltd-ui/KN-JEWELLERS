@@ -9,6 +9,7 @@ import {
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
 import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification, broadcastNotificationToAll, INDIAN_FESTIVALS } from '../lib/festivalGreetings';
+import { collection18kProducts, best18kSellers } from '../data/collection18k';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
 const bannerImages = [
@@ -19,43 +20,46 @@ const bannerImages = [
   }
 ];
 
-// Product collections (Empty - all products removed from web)
-const bestSellerImages = [];
-const bangleImages = [];
+// Product collections - Loaded from 18KT Plain Gold Master Collection
+const bestSellerImages = best18kSellers;
+const bangleImages = collection18kProducts.filter(p => p.subCategory === 'BANGLES');
 const gentsBraceletImages = [];
-const gentsChainsImages = [];
+const gentsChainsImages = collection18kProducts.filter(p => p.category === 'GENTS' && p.subCategory === 'CHAINS');
 const gentsLocketImages = [];
-const gentsRingImages = [];
-const ladiesBraceletImages = [];
-const ladiesRingImages = [];
+const gentsRingImages = collection18kProducts.filter(p => p.category === 'GENTS' && p.subCategory === 'RINGS');
+const ladiesBraceletImages = collection18kProducts.filter(p => p.category === 'LADIES' && p.subCategory === 'BRACELETS');
+const ladiesRingImages = collection18kProducts.filter(p => p.category === 'LADIES' && p.subCategory === 'RINGS');
 const longMangalsutraImages = [];
-const shortMangalsutraImages = [];
-const necklaceImages = [];
-const earringImages = [];
+const shortMangalsutraImages = collection18kProducts.filter(p => p.subCategory === 'SHORT MANGALSUTRA');
+const necklaceImages = collection18kProducts.filter(p => p.subCategory === 'NECKLACES');
+const earringImages = collection18kProducts.filter(p => p.category === 'EARRINGS');
 const weddingSetImages = [];
 const silverImages = [];
-const dailyWearTopsImages = [];
+const dailyWearTopsImages = collection18kProducts.filter(p => p.category === 'EARRINGS' && p.earringType === 'STUDS');
 const jumkaImages = [];
 const suiDhagaImages = [];
-const baliImages = [];
+const baliImages = collection18kProducts.filter(p => p.category === 'EARRINGS' && p.earringType === 'HOOPS');
 const buthiImages = [];
 const kanchainImages = [];
-const ringImages = [];
-const mangalsutraImages = [];
+const ringImages = collection18kProducts.filter(p => p.subCategory === 'RINGS');
+const mangalsutraImages = collection18kProducts.filter(p => p.subCategory === 'SHORT MANGALSUTRA');
 
-const allProducts = [];
+const allProducts = collection18kProducts;
 
-const categories = ['ALL', 'WEDDING SET', 'EARRINGS', 'LADIES'];
+const categories = ['ALL', 'RINGS', 'EARRINGS', 'LADIES', 'GENTS', 'WEDDING SET'];
 
 // Sub-categories per main collection
 const subCategories = {
-  'WEDDING SET': ['ALL'],
-  'EARRINGS': ['ALL', 'DAILY WEAR TOPS', 'JUMKAS', 'SUI DHAGA', 'BUTHI', 'KANCHAINS', 'FANCY'],
-  'LADIES': ['ALL', 'BANGLES', 'SHORT MANGALSUTRA', 'LONG MANGALSUTRA', 'RINGS', 'NECKLACES', 'BRACELETS']
+  'ALL': ['ALL'],
+  'RINGS': ['ALL', 'LADIES RINGS', 'GENTS RINGS'],
+  'EARRINGS': ['ALL', 'DAILY WEAR TOPS', 'STUDS', 'HOOPS', 'FANCY'],
+  'LADIES': ['ALL', 'RINGS', 'BANGLES', 'BRACELETS', 'SHORT MANGALSUTRA', 'NECKLACES', 'CHAINS'],
+  'GENTS': ['ALL', 'RINGS', 'CHAINS'],
+  'WEDDING SET': ['ALL']
 };
 
 // Earring types — shown when EARRINGS is selected
-const earringSubTypes = ['ALL', 'DAILY WEAR TOPS', 'JUMKAS', 'SUI DHAGA', 'BUTHI', 'KANCHAINS', 'FANCY'];
+const earringSubTypes = ['ALL', 'DAILY WEAR TOPS', 'STUDS', 'HOOPS', 'FANCY'];
 
 const marqueeCategories = [
   { name: 'WEDDING SET', label: 'WEDDING COLLECTION', img: '/assets/wedding_collection_banner.jpg' },
@@ -186,8 +190,8 @@ export default function Home() {
   const prevCatSlide = () => {
     setCatSlideIndex((prev) => (prev - 1 + marqueeCategories.length) % marqueeCategories.length);
   };
-  const [activeCategory, setActiveCategory] = useState('WEDDING SET');
-  const [activeSubCategory, setActiveSubCategory] = useState('BANGLES');
+  const [activeCategory, setActiveCategory] = useState('ALL');
+  const [activeSubCategory, setActiveSubCategory] = useState('ALL');
   const [activeEarringType, setActiveEarringType] = useState('ALL');
   const [visibleCount, setVisibleCount] = useState(16);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -1010,31 +1014,85 @@ export default function Home() {
   // Filter products based on selected main + sub + earring type
   const filteredProducts = (() => {
     const combinedProducts = [...dbProducts, ...allProducts];
-    if (activeCategory === 'ALL') return combinedProducts;
-    let base = combinedProducts.filter(p => {
-      if (activeCategory === 'EARRINGS') {
-        return p.category === 'EARRINGS' || p.subCategory === 'EARRINGS' || (p.category === 'LADIES' && p.subCategory === 'EARRINGS');
+    
+    // Top-level ALL
+    if (activeCategory === 'ALL') {
+      if (activeSubCategory !== 'ALL') {
+        return combinedProducts.filter(p => {
+          const sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
+          return sub === activeSubCategory;
+        });
       }
+      return combinedProducts;
+    }
+
+    // Direct RINGS collection tab
+    if (activeCategory === 'RINGS') {
+      let rings = combinedProducts.filter(p => {
+        const sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
+        return sub === 'RINGS' || (p.title || '').toUpperCase().includes('RING');
+      });
+      if (activeSubCategory === 'LADIES RINGS') {
+        return rings.filter(p => p.category === 'LADIES');
+      }
+      if (activeSubCategory === 'GENTS RINGS') {
+        return rings.filter(p => p.category === 'GENTS');
+      }
+      return rings;
+    }
+
+    // Direct EARRINGS collection tab
+    if (activeCategory === 'EARRINGS') {
+      let earrings = combinedProducts.filter(p => {
+        return p.category === 'EARRINGS' || p.subCategory === 'EARRINGS' || (p.category === 'LADIES' && p.subCategory === 'EARRINGS');
+      });
+      if (activeSubCategory !== 'ALL') {
+        earrings = earrings.filter(p => {
+          const eType = (p.earringType || '').toUpperCase();
+          const titleUpper = (p.title || '').toUpperCase();
+          if (activeSubCategory === 'DAILY WEAR TOPS' || activeSubCategory === 'STUDS') {
+            return eType === 'STUDS' || titleUpper.includes('STUD') || titleUpper.includes('TOPS');
+          }
+          if (activeSubCategory === 'HOOPS') {
+            return eType === 'HOOPS' || titleUpper.includes('HOOP') || titleUpper.includes('BALI');
+          }
+          if (activeSubCategory === 'FANCY') {
+            return eType === 'HOOPS' || titleUpper.includes('HUGGIE') || titleUpper.includes('FLORAL');
+          }
+          return eType === activeSubCategory;
+        });
+      }
+      return earrings;
+    }
+
+    // Other categories: LADIES, GENTS, WEDDING SET
+    let base = combinedProducts.filter(p => {
       return p.category === activeCategory;
     });
+
     if (activeSubCategory !== 'ALL') {
       base = base.filter(p => {
         let sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
         const titleUpper = (p.title || '').toUpperCase();
-        if (titleUpper.includes('BANGLE') || titleUpper.includes('GBN')) {
+        if (titleUpper.includes('BANGLE') || titleUpper.includes('GBN') || titleUpper.includes('KADA')) {
           sub = 'BANGLES';
         } else if (titleUpper.includes('SHORT MANGALSUTRA') || titleUpper.includes('GMS')) {
           sub = 'SHORT MANGALSUTRA';
         } else if (titleUpper.includes('LONG MANGALSUTRA') || titleUpper.includes('GGT')) {
           sub = 'LONG MANGALSUTRA';
+        } else if (titleUpper.includes('RING')) {
+          sub = 'RINGS';
+        } else if (titleUpper.includes('BRACELET')) {
+          sub = 'BRACELETS';
+        } else if (titleUpper.includes('CHAIN')) {
+          sub = 'CHAINS';
+        } else if (titleUpper.includes('NECKLACE') || titleUpper.includes('CHOKER') || titleUpper.includes('PENDANT')) {
+          sub = 'NECKLACES';
         }
         return sub === activeSubCategory;
       });
     }
-    // 3rd level: earring type filter
-    if ((activeCategory === 'EARRINGS' || activeSubCategory === 'EARRINGS') && activeEarringType !== 'ALL') {
-      base = base.filter(p => (p.earringType || '').toUpperCase() === activeEarringType);
-    }
+
     return base;
   })();
 
@@ -1865,6 +1923,36 @@ export default function Home() {
                       {product.title}
                     </p>
                     
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                      {product.purity && (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          color: '#b8860b',
+                          background: 'rgba(218, 165, 32, 0.08)',
+                          border: '1px solid rgba(218, 165, 32, 0.3)',
+                          borderRadius: '12px',
+                          padding: '2px 8px',
+                          letterSpacing: '0.4px',
+                          textTransform: 'uppercase'
+                        }}>
+                          ✨ {product.purity}
+                        </span>
+                      )}
+                      {product.weight && (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          color: 'var(--peacock-green)',
+                          background: 'rgba(123, 17, 34, 0.06)',
+                          borderRadius: '12px',
+                          padding: '2px 8px',
+                          letterSpacing: '0.3px'
+                        }}>
+                          ⚖️ {product.weight}
+                        </span>
+                      )}
+                    </div>
 
                     {/* Actions Row */}
                     <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: 'auto' }}>
