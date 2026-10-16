@@ -45,37 +45,34 @@ const mangalsutraImages = [];
 
 const allProducts = [];
 
-const categories = ['ALL', 'GENTS', 'LADIES', 'EARRINGS', 'WEDDING SET'];
+const categories = ['ALL', 'WEDDING SET', 'EARRINGS', 'LADIES'];
 
 // Sub-categories per main collection
 const subCategories = {
-  'GENTS': ['ALL', 'RINGS', 'CHAINS', 'BRACELETS', 'LOCKETS'],
-  'LADIES': ['ALL', 'BANGLES', 'SHORT MANGALSUTRA', 'LONG MANGALSUTRA', 'RINGS', 'NECKLACES', 'BRACELETS'],
+  'WEDDING SET': ['ALL'],
   'EARRINGS': ['ALL', 'DAILY WEAR TOPS', 'JUMKAS', 'SUI DHAGA', 'BUTHI', 'KANCHAINS', 'FANCY'],
-  'WEDDING SET': ['ALL']
+  'LADIES': ['ALL', 'BANGLES', 'SHORT MANGALSUTRA', 'LONG MANGALSUTRA', 'RINGS', 'NECKLACES', 'BRACELETS']
 };
 
 // Earring types — shown when EARRINGS is selected
 const earringSubTypes = ['ALL', 'DAILY WEAR TOPS', 'JUMKAS', 'SUI DHAGA', 'BUTHI', 'KANCHAINS', 'FANCY'];
 
 const marqueeCategories = [
-  { name: 'GENTS', label: 'GENTS COLLECTION', img: '/assets/gents_collection_img.jpg' },
-  { name: 'LADIES', label: 'LADIES COLLECTION', img: '/assets/ladies_collection_img.jpg' },
+  { name: 'WEDDING SET', label: 'WEDDING COLLECTION', img: '/assets/wedding_collection_banner.jpg' },
   { name: 'EARRINGS', label: 'EARRING COLLECTION', img: '/assets/earrings_collection_img.jpg' },
-  { name: 'WEDDING SET', label: 'WEDDING SET', img: '/assets/wedding_collection_banner.jpg' }
+  { name: 'LADIES', label: 'LADIES COLLECTION', img: '/assets/ladies_collection_img.jpg' }
 ];
 
-
-// Circular Category Definitions
+// Circular Category Definitions (Only 3 Collections: Wedding, Earrings, Ladies)
 const circularCategories = [
+  { label: 'WEDDING', letter: 'W', cat: 'WEDDING SET', sub: 'ALL' },
+  { label: 'EARRINGS', letter: 'E', cat: 'EARRINGS', sub: 'ALL' },
   { label: 'BANGLES', letter: 'B', cat: 'LADIES', sub: 'BANGLES' },
   { label: 'RINGS', letter: 'R', cat: 'LADIES', sub: 'RINGS' },
-  { label: 'EARRINGS', letter: 'E', cat: 'EARRINGS', sub: 'ALL' },
-  { label: 'PENDANTS', letter: 'P', cat: 'GENTS', sub: 'LOCKETS' },
+  { label: 'MANGALSUTRA', letter: 'M', cat: 'LADIES', sub: 'SHORT MANGALSUTRA' },
   { label: 'BRACELETS', letter: 'B', cat: 'LADIES', sub: 'BRACELETS' },
   { label: 'ANKLETS', letter: 'A', cat: 'LADIES', sub: 'ALL' },
-  { label: 'CHAINS', letter: 'C', cat: 'GENTS', sub: 'CHAINS' },
-  { label: 'CHAIN + PENDANT', letter: 'CP', cat: 'LADIES', sub: 'NECKLACES' },
+  { label: 'NECKLACES', letter: 'N', cat: 'LADIES', sub: 'NECKLACES' },
   { label: 'VIEW ALL', letter: 'V', cat: 'ALL', sub: 'ALL' }
 ];
 
@@ -165,19 +162,31 @@ export default function Home() {
   const [catSlideIndex, setCatSlideIndex] = useState(0);
   
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const handleViewportChange = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      const isPhonePortrait = width <= 768;
+      const isPhoneLandscape = isTouch && height <= 550 && width <= 1024;
+      setIsMobile(isPhonePortrait || isPhoneLandscape);
+    };
+
+    handleViewportChange();
+    window.addEventListener('resize', handleViewportChange, { passive: true });
+    window.addEventListener('orientationchange', handleViewportChange, { passive: true });
+    return () => {
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('orientationchange', handleViewportChange);
+    };
   }, []);
 
   const nextCatSlide = () => {
-    setCatSlideIndex((prev) => (prev + 1) % 4);
+    setCatSlideIndex((prev) => (prev + 1) % marqueeCategories.length);
   };
   const prevCatSlide = () => {
-    setCatSlideIndex((prev) => (prev - 1 + 4) % 4);
+    setCatSlideIndex((prev) => (prev - 1 + marqueeCategories.length) % marqueeCategories.length);
   };
-  const [activeCategory, setActiveCategory] = useState('LADIES');
+  const [activeCategory, setActiveCategory] = useState('WEDDING SET');
   const [activeSubCategory, setActiveSubCategory] = useState('BANGLES');
   const [activeEarringType, setActiveEarringType] = useState('ALL');
   const [visibleCount, setVisibleCount] = useState(16);
@@ -927,68 +936,126 @@ export default function Home() {
             background: 'linear-gradient(90deg, #7b1122 0%, #9c152b 25%, #b8860b 50%, #9c152b 75%, #7b1122 100%)',
             backgroundSize: '200% auto',
             color: '#ffffff',
-            padding: '10px 16px',
+            padding: isMobile ? '8px 36px 8px 12px' : '10px 48px 10px 20px',
             textAlign: 'center',
-            fontSize: '13px',
+            fontSize: isMobile ? '11px' : '13px',
             fontWeight: '600',
             letterSpacing: '0.4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
             position: 'relative',
             zIndex: 998,
             boxShadow: '0 4px 15px rgba(123, 17, 34, 0.25)',
-            borderBottom: '1px solid rgba(255, 215, 0, 0.35)'
+            borderBottom: '1px solid rgba(255, 215, 0, 0.35)',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span style={{ fontSize: '18px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
-            <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-              {activeFestival.name}:
-            </span>
-            <span style={{ color: '#ffffff' }}>{activeFestival.greeting}</span>
-            <span style={{ color: '#ffeaa7', fontSize: '12px', fontStyle: 'italic' }}>
-              • {activeFestival.offer}
-            </span>
-            <a 
-              href="#showcase" 
-              onClick={() => handleCategoryClick('WEDDING SET')}
-              style={{
-                marginLeft: '8px',
-                padding: '4px 12px',
-                background: '#ffd700',
-                color: '#7b1122',
-                borderRadius: '20px',
-                textDecoration: 'none',
-                fontSize: '11px',
-                fontWeight: '800',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                display: 'inline-block',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-              }}
-            >
-              Explore Festive Collection →
-            </a>
-          </div>
+          {isMobile ? (
+            /* Mobile Layout (Clean Vertical Proportion with Gujarati Focus) */
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', maxWidth: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '15px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
+                <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.5px' }}>
+                  {activeFestival.nameGujarati ? activeFestival.nameGujarati : activeFestival.name}
+                </span>
+                <span style={{ 
+                  background: 'rgba(255, 215, 0, 0.2)', 
+                  border: '1px solid rgba(255, 215, 0, 0.4)', 
+                  color: '#ffeaa7', 
+                  fontSize: '9px', 
+                  padding: '1px 6px', 
+                  borderRadius: '10px',
+                  fontWeight: '700'
+                }}>
+                  શુભ પર્વ
+                </span>
+              </div>
+              <div style={{ color: '#ffffff', fontSize: '10.5px', lineHeight: '1.35', opacity: 0.95 }}>
+                {activeFestival.greetingGujarati || activeFestival.greeting}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ color: '#ffeaa7', fontSize: '10px', fontStyle: 'italic' }}>
+                  • {activeFestival.offer}
+                </span>
+                <a 
+                  href="#showcase" 
+                  onClick={() => handleCategoryClick('WEDDING SET')}
+                  style={{
+                    padding: '3px 10px',
+                    background: '#ffd700',
+                    color: '#7b1122',
+                    borderRadius: '16px',
+                    textDecoration: 'none',
+                    fontSize: '10px',
+                    fontWeight: '800',
+                    letterSpacing: '0.4px',
+                    display: 'inline-block',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Explore Collection →
+                </a>
+              </div>
+            </div>
+          ) : (
+            /* Desktop Layout */
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <span style={{ fontSize: '18px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
+              <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                {activeFestival.nameGujarati ? `${activeFestival.nameGujarati} (${activeFestival.name}):` : `${activeFestival.name}:`}
+              </span>
+              <span style={{ color: '#ffffff' }}>{activeFestival.greetingGujarati || activeFestival.greeting}</span>
+              <span style={{ color: '#ffeaa7', fontSize: '12px', fontStyle: 'italic' }}>
+                • {activeFestival.offer}
+              </span>
+              <a 
+                href="#showcase" 
+                onClick={() => handleCategoryClick('WEDDING SET')}
+                style={{
+                  marginLeft: '8px',
+                  padding: '4px 12px',
+                  background: '#ffd700',
+                  color: '#7b1122',
+                  borderRadius: '20px',
+                  textDecoration: 'none',
+                  fontSize: '11px',
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  display: 'inline-block',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+                }}
+              >
+                Explore Festive Collection →
+              </a>
+            </div>
+          )}
 
+          {/* Dismiss button neatly positioned in top-right corner, NEVER overlapping text */}
           <button 
             onClick={() => setIsFestivalDismissed(true)}
+            aria-label="Dismiss greeting"
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#ffffff',
+              background: 'rgba(0, 0, 0, 0.25)',
+              border: '1px solid rgba(255, 215, 0, 0.35)',
+              color: '#ffd700',
               cursor: 'pointer',
-              fontSize: '14px',
-              padding: '4px 8px',
-              opacity: 0.8,
+              fontSize: '11px',
+              fontWeight: '700',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)'
+              right: '8px',
+              top: isMobile ? '8px' : '50%',
+              transform: isMobile ? 'none' : 'translateY(-50%)',
+              padding: 0
             }}
-            title="Dismiss greeting"
           >
             ✕
           </button>
@@ -1245,7 +1312,7 @@ export default function Home() {
             <div className="title-divider" style={{ margin: '15px auto 0' }} />
           </div>
 
-          <div className="category-slider-wrapper" style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
+          <div className="category-slider-wrapper" style={{ position: 'relative', width: '100%', maxWidth: '100%', overflow: 'hidden', padding: isMobile ? '0 10px' : '0' }}>
             
             {/* Left Control Arrow */}
             {isMobile && (
@@ -1253,33 +1320,35 @@ export default function Home() {
                 onClick={prevCatSlide}
                 style={{
                   position: 'absolute',
-                  left: '-10px',
+                  left: '4px',
+                  top: '40%',
+                  transform: 'translateY(-50%)',
                   zIndex: 10,
                   background: '#ffffff',
-                  border: '1px solid rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(123, 17, 34, 0.2)',
                   borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
+                  width: '32px',
+                  height: '32px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                   cursor: 'pointer',
                   color: 'var(--peacock-green)'
                 }}
                 aria-label="Previous category"
               >
-                <ChevronLeft style={{ width: '18px', height: '18px' }} />
+                <ChevronLeft style={{ width: '16px', height: '16px' }} />
               </button>
             )}
 
             {/* Slide Container Viewport */}
-            <div style={{ width: '100%', overflow: 'hidden' }}>
+            <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
               <div 
                 style={{
                   display: 'flex',
                   transition: 'transform 0.4s ease-in-out',
-                  transform: `translateX(-${catSlideIndex * (isMobile ? 80 : 0)}%)`,
+                  transform: `translateX(-${catSlideIndex * (isMobile ? 86 : 0)}%)`,
                   gap: '20px'
                 }}
               >
@@ -1288,7 +1357,7 @@ export default function Home() {
                     key={mCat.name} 
                     onClick={() => handleCategoryClick(mCat.name)}
                     style={{
-                      flex: isMobile ? '0 0 75%' : '0 0 calc(25% - 15px)',
+                      flex: isMobile ? '0 0 84%' : '0 0 calc(33.333% - 14px)',
                       background: '#ffffff',
                       borderRadius: '16px',
                       overflow: 'hidden',
@@ -1363,24 +1432,49 @@ export default function Home() {
                 onClick={nextCatSlide}
                 style={{
                   position: 'absolute',
-                  right: '-10px',
+                  right: '4px',
+                  top: '40%',
+                  transform: 'translateY(-50%)',
                   zIndex: 10,
                   background: '#ffffff',
-                  border: '1px solid rgba(0,0,0,0.1)',
+                  border: '1px solid rgba(123, 17, 34, 0.2)',
                   borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
+                  width: '32px',
+                  height: '32px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                   cursor: 'pointer',
                   color: 'var(--peacock-green)'
                 }}
                 aria-label="Next category"
               >
-                <ChevronRight style={{ width: '18px', height: '18px' }} />
+                <ChevronRight style={{ width: '16px', height: '16px' }} />
               </button>
+            )}
+
+            {/* Mobile Slide Indicator Dots for the 3 Collections */}
+            {isMobile && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '16px', width: '100%' }}>
+                {marqueeCategories.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    onClick={() => setCatSlideIndex(dotIdx)}
+                    aria-label={`Go to slide ${dotIdx + 1}`}
+                    style={{
+                      width: catSlideIndex === dotIdx ? '20px' : '8px',
+                      height: '8px',
+                      borderRadius: '4px',
+                      background: catSlideIndex === dotIdx ? 'var(--royal-gold)' : 'rgba(123, 17, 34, 0.2)',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  />
+                ))}
+              </div>
             )}
 
           </div>
@@ -3467,7 +3561,9 @@ export default function Home() {
       {showAppPopup && (
         <div style={{
           position: 'fixed',
-          top: 0, left: 0, width: '100vw', height: '100vh',
+          inset: 0,
+          width: '100%',
+          height: '100%',
           zIndex: 99999,
           background: 'rgba(15, 23, 42, 0.7)',
           backdropFilter: 'blur(12px)',
@@ -3475,18 +3571,22 @@ export default function Home() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '20px'
+          padding: '16px',
+          boxSizing: 'border-box'
         }}>
           <div style={{
             background: 'linear-gradient(145deg, #ffffff 0%, #ffffff 100%)',
             borderRadius: '24px',
             maxWidth: '440px',
             width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             padding: '32px 28px',
             boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(123, 17, 34, 0.35)',
             position: 'relative',
             animation: 'animaticScaleIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            textAlign: 'center'
+            textAlign: 'center',
+            boxSizing: 'border-box'
           }}>
             {/* Close Button */}
             <button

@@ -64,18 +64,39 @@
   100% { left: 120%; }
 }
 
-html, body {
+html {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+  position: relative;
   font-family: var(--font-sans);
   background-color: var(--ivory-bg);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
-  max-width: 100vw;
-  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+  position: relative;
 }
 
 /* Custom Scrollbar */
@@ -2468,3 +2489,99 @@ html, body {
   .form-card-title { font-size: 1.5rem !important; }
   .contact-form-block { padding: 15px !important; }
 }
+
+/* ==========================================================================
+   MOBILE SCREEN ORIENTATION & SCREEN-LOCK ELIMINATION (PORTRAIT & LANDSCAPE)
+   ========================================================================== */
+
+/* Universal mobile box-sizing and screen lock prevention */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Eliminate horizontal panning/screen-lock everywhere */
+html, body, #root, section, header, footer, main, .section-inner {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Mobile Landscape & Height-Constrained Orientation Fixes */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  html, body, #root {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  .header-main {
+    position: sticky !important;
+    padding: 2px 0 !important;
+  }
+
+  .nav-container {
+    padding: 4px 16px !important;
+    min-height: 48px !important;
+  }
+
+  .festival-greeting-bar {
+    padding: 6px 36px 6px 12px !important;
+    font-size: 10.5px !important;
+  }
+
+  .hero-banner-full {
+    min-height: 220px !important;
+    max-height: 75vh !important;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .section-title {
+    font-size: 1.35rem !important;
+    margin-bottom: 6px !important;
+  }
+
+  .section-header {
+    margin-bottom: 16px !important;
+  }
+
+  .category-slider-wrapper {
+    overflow: hidden !important;
+  }
+
+  .category-card-slide {
+    flex: 0 0 45% !important;
+  }
+}
+
+/* Mobile Portrait Orientations (up to 480px) */
+@media screen and (max-width: 480px) {
+  html, body, #root {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  .hero-banner-full {
+    min-height: 200px !important;
+  }
+
+  .category-card-slide {
+    flex: 0 0 86% !important;
+  }
+
+  .tabs-scroll-container {
+    padding: 0 10px !important;
+    gap: 14px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pills-scroll-container {
+    padding: 4px 10px 14px !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

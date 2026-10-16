@@ -1038,7 +1038,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  Select Indian Festival
+                  Select Festival (All Gujarati & Indian Celebrations)
                 </label>
                 <select
                   value={selectedFestId}
@@ -1057,7 +1057,7 @@ export default function AdminDashboard() {
                 >
                   {INDIAN_FESTIVALS.map((fest) => (
                     <option key={fest.id} value={fest.id}>
-                      {fest.icon} {fest.name} ({fest.nameGujarati})
+                      {fest.icon} {fest.nameGujarati ? `${fest.nameGujarati} - ${fest.name}` : fest.name} {fest.isGujaratiMain ? '⭐ [મુખ્ય]' : ''}
                     </option>
                   ))}
                 </select>
