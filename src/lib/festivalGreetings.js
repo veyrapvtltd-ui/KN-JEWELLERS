@@ -1154,6 +1154,7 @@ export async function dispatchFestivalBroadcast(festival, force = false) {
     festivalId: festival.id,
     festivalName: festival.name,
     title: festival.title,
+    offer: festival.offer,
     date: todayStr,
     timestamp: new Date().toISOString()
   });
@@ -1161,8 +1162,10 @@ export async function dispatchFestivalBroadcast(festival, force = false) {
 
   // Try browser push notification if permitted or requested
   const notifyTitle = festival.title || festival.name || '👑 Shree Aradhna Jewellers';
-  const notifyBody = `${festival.greeting || ''}\n${festival.offer || 'Visit our Gandhidham & Adipur showrooms for festival offers.'}`;
-  sendSystemNotification(notifyTitle, notifyBody, `festival-${festival.id}`);
+  const notifyBody = `${festival.greetingGujarati || festival.greeting || ''} • ${festival.offer || 'Visit our Gandhidham & Adipur showrooms for festival offers.'}`;
+  
+  // Universal multi-device broadcast (local OS notification + BroadcastChannel + Supabase realtime)
+  await broadcastNotificationToAll(notifyTitle, notifyBody);
 
   // Dispatch custom DOM event so website banner & popup reactively update
   window.dispatchEvent(new CustomEvent('saj_festival_broadcast', { detail: festival }));

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
-import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification, broadcastNotificationToAll } from '../lib/festivalGreetings';
+import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification, broadcastNotificationToAll, INDIAN_FESTIVALS } from '../lib/festivalGreetings';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
 const bannerImages = [
@@ -315,6 +315,15 @@ export default function Home() {
       `📢 Showroom Alert to All: Today 22K Gold ₹${goldRates.gold22k}/g | Silver ₹${goldRates.silver}/g. Special festive offers active at Gandhidham & Adipur!`
     );
     alert('📢 Broadcast notification dispatched to all open devices, tabs, and notification centers!');
+  };
+
+  const handleBroadcastFestivalNow = async () => {
+    const festData = getCurrentFestival();
+    const fest = festData.isActive ? festData.festival : INDIAN_FESTIVALS.find(f => f.id === 'sharad_navratri');
+    if (fest) {
+      await dispatchFestivalBroadcast(fest, true);
+      alert(`🎉 Festive message for "${fest.name}" broadcasted to all open devices, website tabs & notification trays!`);
+    }
   };
 
   const requestNotificationPermission = () => {
@@ -1204,6 +1213,26 @@ export default function Home() {
                   >
                     Explore Collection →
                   </a>
+                  <button
+                    type="button"
+                    onClick={handleBroadcastFestivalNow}
+                    style={{
+                      padding: '3px 8px',
+                      background: 'rgba(255, 215, 0, 0.25)',
+                      border: '1px solid #ffd700',
+                      color: '#ffd700',
+                      borderRadius: '16px',
+                      fontSize: '9.5px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    📢 Broadcast
+                  </button>
                 </div>
               </div>
             ) : (
@@ -1237,6 +1266,27 @@ export default function Home() {
                 >
                   Explore Festive Collection →
                 </a>
+                <button
+                  type="button"
+                  onClick={handleBroadcastFestivalNow}
+                  style={{
+                    marginLeft: '6px',
+                    padding: '4px 12px',
+                    background: 'rgba(255, 215, 0, 0.25)',
+                    border: '1px solid #ffd700',
+                    color: '#ffd700',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="Broadcast this festive message to all open devices and tabs"
+                >
+                  📢 Broadcast Message
+                </button>
               </div>
             )}
 
@@ -2804,7 +2854,32 @@ export default function Home() {
               }}
               className="pwa-broadcast-btn"
             >
-              📢 Broadcast to All
+              📢 Broadcast Live Rates
+            </button>
+
+            {/* Broadcast Festive Message Button */}
+            <button
+              onClick={handleBroadcastFestivalNow}
+              style={{
+                background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 100%)',
+                color: '#ffd700',
+                border: '1.5px solid #ffd700',
+                padding: '14px 24px',
+                borderRadius: '30px',
+                fontWeight: '800',
+                fontSize: '12px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(123, 17, 34, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              className="pwa-festive-btn"
+            >
+              🪔 Broadcast Festive Message
             </button>
 
             {/* iOS Instructions Trigger */}
