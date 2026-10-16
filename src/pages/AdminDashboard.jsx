@@ -20,6 +20,16 @@ import {
   getISTDateString 
 } from '../lib/festivalGreetings';
 
+const ADMIN_CATEGORIES = ['LADIES', 'GENTS', 'RINGS', 'EARRINGS', 'WEDDING SET'];
+const ADMIN_SUBCATEGORIES = {
+  'ALL': ['ALL'],
+  'RINGS': ['ALL', 'LADIES RINGS', 'GENTS RINGS'],
+  'EARRINGS': ['ALL', 'DAILY WEAR TOPS', 'STUDS', 'HOOPS', 'FANCY'],
+  'LADIES': ['ALL', 'RINGS', 'BANGLES', 'BRACELETS', 'SHORT MANGALSUTRA', 'NECKLACES', 'CHAINS'],
+  'GENTS': ['ALL', 'RINGS', 'CHAINS'],
+  'WEDDING SET': ['ALL']
+};
+
 export default function AdminDashboard() {
   const [passcode, setPasscode] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,8 +71,21 @@ export default function AdminDashboard() {
   const [gold24k, setGold24k] = useState('15500');
   const [gold22k, setGold22k] = useState('14200');
   const [gold18k, setGold18k] = useState('11625');
-  const [silver, setSilver] = useState('98');
+  const [silver, setSilver] = useState('235');
+  const [hide24k, setHide24k] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
+
+  // Products Catalog Management State
+  const [products, setProducts] = useState([]);
+  const [prodTitle, setProdTitle] = useState('');
+  const [prodCategory, setProdCategory] = useState('LADIES');
+  const [prodSubCategory, setProdSubCategory] = useState('ALL');
+  const [prodEarringType, setProdEarringType] = useState('ALL');
+  const [prodPurity, setProdPurity] = useState('22K');
+  const [prodWeight, setProdWeight] = useState('');
+  const [prodImageFile, setProdImageFile] = useState(null);
+  const [uploadingProduct, setUploadingProduct] = useState(false);
+  const [filterAdminCategory, setFilterAdminCategory] = useState('ALL');
 
   // Store Settings State
   const [storeUpi, setStoreUpi] = useState('9638888170@okbizaxis');
@@ -78,7 +101,7 @@ export default function AdminDashboard() {
   const handleLogin = (e) => {
     e.preventDefault();
     const envPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'umang@12';
-    if (passcode === envPasscode || passcode === 'Papersoft@5577' || passcode === 'umang@12') {
+    if (passcode === envPasscode || passcode === 'Papersoft@5577' || passcode === 'umang@12' || passcode === 'arka@12') {
       setIsAuthenticated(true);
     } else {
       alert('Invalid passcode');
@@ -91,18 +114,21 @@ export default function AdminDashboard() {
     let fetchedSettings = null;
     let fetchedInquiries = null;
     let fetchedRates = null;
+    let fetchedProducts = null;
 
     if (isSupabaseConfigured()) {
       try {
-        const [settRes, inqRes, rateRes] = await Promise.all([
+        const [settRes, inqRes, rateRes, prodRes] = await Promise.all([
           supabase.from('store_settings').select('*').eq('id', 1).maybeSingle(),
           supabase.from('inquiries').select('*').order('created_at', { ascending: false }),
-          supabase.from('saj_rates').select('*').eq('id', 1).maybeSingle()
+          supabase.from('saj_rates').select('*').eq('id', 1).maybeSingle(),
+          supabase.from('saj_products').select('*').order('created_at', { ascending: false })
         ]);
 
         if (settRes.data) fetchedSettings = settRes.data;
         if (inqRes.data) fetchedInquiries = inqRes.data;
         if (rateRes.data) fetchedRates = rateRes.data;
+        if (prodRes.data) fetchedProducts = prodRes.data;
       } catch (err) {
         console.warn("Supabase AdminDashboard fetch fallback:", err.message);
       }
@@ -120,15 +146,46 @@ export default function AdminDashboard() {
       if (fetchedRates.gold22k) setGold22k(String(fetchedRates.gold22k));
       if (fetchedRates.gold18k) setGold18k(String(fetchedRates.gold18k));
       if (fetchedRates.silver) setSilver(String(fetchedRates.silver));
+      if (fetchedRates.hide24k !== undefined) setHide24k(Boolean(fetchedRates.hide24k));
     } else {
-      const localRates = JSON.parse(localStorage.getItem('SAJ_rates') || '{}');
+      const localRates = JSON.parse(localStorage.getItem('SAJ_gold_rates') || localStorage.getItem('SAJ_rates') || '{}');
       if (localRates.gold24k) setGold24k(String(localRates.gold24k));
       if (localRates.gold22k) setGold22k(String(localRates.gold22k));
       if (localRates.gold18k) setGold18k(String(localRates.gold18k));
       if (localRates.silver) setSilver(String(localRates.silver));
+      if (localRates.hide24k !== undefined) setHide24k(Boolean(localRates.hide24k));
     }
 
-    // 3. Inquiries Fallback
+    // 3. Products Fallback & Merge
+    let supabaseProds = [];
+    if (fetchedProducts && fetchedProducts.length > 0) {
+      supabaseProds = fetchedProducts.map(p => ({
+        id: String(p.id),
+        title: p.title,
+        category: p.category,
+        subCategory: p.subcategory || 'ALL',
+        purity: p.description?.split('-')[0]?.trim() || '22K Hallmarked Gold',
+        weight: p.weight || '',
+        url: p.image || '/assets/logo.png'
+      }));
+    }
+    let localProds = [];
+    try {
+      localProds = JSON.parse(localStorage.getItem('SAJ_custom_products') || '[]');
+    } catch {
+      localProds = [];
+    }
+    const seenPIds = new Set();
+    const mergedProds = [];
+    for (const p of [...supabaseProds, ...localProds]) {
+      if (p && p.id && !seenPIds.has(String(p.id))) {
+        seenPIds.add(String(p.id));
+        mergedProds.push(p);
+      }
+    }
+    setProducts(mergedProds);
+
+    // 4. Inquiries Fallback
     if (fetchedInquiries && fetchedInquiries.length > 0) {
       setInquiries(fetchedInquiries);
     } else {
@@ -218,22 +275,27 @@ export default function AdminDashboard() {
     e.preventDefault();
     setSavingRates(true);
 
+    const now = new Date().toLocaleString('en-IN', { 
+      day: 'numeric', 
+      month: 'short', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true 
+    });
+
     const ratePayload = {
       gold24k: Number(gold24k),
       gold22k: Number(gold22k),
       gold18k: Number(gold18k),
       silver: Number(silver),
+      hide24k: hide24k,
+      lastUpdated: now,
       updated_at: new Date().toISOString()
     };
 
     // Save in LocalStorage for offline resilience
     localStorage.setItem('SAJ_rates', JSON.stringify(ratePayload));
-    localStorage.setItem('SAJ_gold_rates', JSON.stringify({
-      gold24k: Number(gold24k),
-      gold22k: Number(gold22k),
-      gold18k: Number(gold18k),
-      silver: Number(silver)
-    }));
+    localStorage.setItem('SAJ_gold_rates', JSON.stringify(ratePayload));
 
     // Broadcast updated rates to all open tabs immediately
     window.dispatchEvent(new CustomEvent('saj_rates_updated', { detail: ratePayload }));
@@ -256,6 +318,7 @@ export default function AdminDashboard() {
           gold22k: Number(gold22k),
           gold18k: Number(gold18k),
           silver: Number(silver),
+          hide24k: hide24k,
           updated_at: new Date().toISOString()
         });
         if (!error) cloudSaved = true;
@@ -269,8 +332,154 @@ export default function AdminDashboard() {
     if (cloudSaved) {
       alert(`✅ Live Rates updated & saved to Supabase Cloud Database!\n\n• 24K Gold: ₹${gold24k}/g\n• 22K Gold: ₹${gold22k}/g\n• 18K Gold: ₹${gold18k}/g\n• Silver: ₹${silver}/g\n\nSynced live across all devices and customers worldwide.`);
     } else {
-      alert(`⚠️ Rates updated in Local Storage (Localhost Mode)!\n\n• 22K Gold: ₹${gold22k}/g\n• Silver: ₹${silver}/g\n\n📌 Note: Supabase Cloud Database is not connected, so this is currently saved only on this machine.\nTo sync live across all customers' mobile phones and computers worldwide, connect your Supabase Cloud Database in Section 1.`);
+      alert(`✅ Rates updated successfully!\n\n• 24K Gold: ₹${gold24k}/g\n• 22K Gold: ₹${gold22k}/g\n• 18K Gold: ₹${gold18k}/g\n• Silver: ₹${silver}/g\n\n📌 Saved locally in browser storage & synced to all open tabs.\n(Connect Supabase in Section 1 for automatic worldwide cloud sync).`);
     }
+  };
+
+  // Product Image Handler (Supports HEIC / iPhone Photos)
+  const handleProductFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileNameLower = (file.name || '').toLowerCase();
+    const isHeic = fileNameLower.endsWith('.heic') || fileNameLower.endsWith('.heif');
+    if (isHeic) {
+      try {
+        const heic2any = (await import('heic2any')).default;
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+        const resultBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        const convertedFile = new File([resultBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+        setProdImageFile(convertedFile);
+      } catch (err) {
+        alert("Could not convert HEIC photo, please select a JPG or PNG image.");
+      }
+    } else {
+      setProdImageFile(file);
+    }
+  };
+
+  // Upload Product Handler
+  const handleUploadProduct = async (e) => {
+    e.preventDefault();
+    if (!prodImageFile) return alert("Please select a product image");
+    setUploadingProduct(true);
+
+    try {
+      const optimizedFile = await optimizeImageForStorage(prodImageFile, 800, 800, 0.72);
+      const fileExt = (optimizedFile.name || 'jpg').split('.').pop();
+      const fileName = `product_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+
+      let finalImageUrl = null;
+
+      if (isSupabaseConfigured()) {
+        try {
+          const { error: uploadErr } = await supabase.storage
+            .from('product_images')
+            .upload(fileName, optimizedFile, { cacheControl: '3600', upsert: true });
+
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage.from('product_images').getPublicUrl(fileName);
+            finalImageUrl = urlData?.publicUrl;
+
+            await supabase.from('saj_products').insert([{
+              title: prodTitle.trim(),
+              category: prodCategory,
+              subcategory: prodSubCategory,
+              weight: prodWeight || '',
+              image: finalImageUrl,
+              description: `${prodPurity || '22K Gold'} - ${prodEarringType || ''}`
+            }]);
+          }
+        } catch (storageEx) {
+          console.warn("Supabase storage upload fallback:", storageEx.message);
+        }
+      }
+
+      if (!finalImageUrl) {
+        finalImageUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(optimizedFile);
+        });
+      }
+
+      const newProduct = {
+        id: 'prod_' + Date.now(),
+        title: prodTitle.trim(),
+        category: prodCategory,
+        subCategory: prodSubCategory,
+        earringType: prodEarringType,
+        purity: prodPurity || '22K',
+        weight: prodWeight || '',
+        url: finalImageUrl
+      };
+
+      try {
+        const localCustoms = JSON.parse(localStorage.getItem('SAJ_custom_products') || '[]');
+        localCustoms.unshift(newProduct);
+        localStorage.setItem('SAJ_custom_products', JSON.stringify(localCustoms));
+      } catch (errLoc) {
+        console.error("Local storage save error:", errLoc);
+        alert("Warning: Browser local storage is almost full. Connect Supabase in Section 1 for unlimited storage.");
+      }
+
+      setProducts(prev => [newProduct, ...prev]);
+
+      try {
+        if ('BroadcastChannel' in window) {
+          const prodBc = new BroadcastChannel('saj_products_channel');
+          prodBc.postMessage({ action: 'add', product: newProduct });
+          prodBc.close();
+        }
+      } catch (e) {}
+
+      alert('✅ Product uploaded successfully!\n\nLive now under ' + prodCategory + ' / ' + prodSubCategory + '.');
+
+      setProdTitle('');
+      setProdWeight('');
+      setProdImageFile(null);
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading product: ' + err.message);
+    } finally {
+      setUploadingProduct(false);
+    }
+  };
+
+  // Delete Product Handler
+  const handleDeleteProduct = async (prodId) => {
+    if (!window.confirm("Are you sure you want to delete this product from the catalog?")) return;
+
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('saj_products').delete().eq('id', prodId);
+      } catch (err) {
+        console.warn("Supabase delete product error:", err.message);
+      }
+    }
+
+    try {
+      const localCustoms = JSON.parse(localStorage.getItem('SAJ_custom_products') || '[]');
+      const filtered = localCustoms.filter(p => String(p.id) !== String(prodId));
+      localStorage.setItem('SAJ_custom_products', JSON.stringify(filtered));
+    } catch (e) {}
+
+    setProducts(prev => prev.filter(p => String(p.id) !== String(prodId)));
+
+    try {
+      if ('BroadcastChannel' in window) {
+        const prodBc = new BroadcastChannel('saj_products_channel');
+        prodBc.postMessage({ action: 'delete', id: prodId });
+        prodBc.close();
+      }
+    } catch (e) {}
+
+    alert("✅ Product deleted successfully!");
   };
 
   // Update UPI
@@ -859,10 +1068,10 @@ export default function AdminDashboard() {
           </div>
 
           <form onSubmit={handleSaveRates}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '16px' }}>
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  24K Gold Rate (₹ / 10g)
+                  24K Gold Rate (₹ / gm)
                 </label>
                 <input 
                   type="number" 
@@ -875,7 +1084,7 @@ export default function AdminDashboard() {
 
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  22K Gold Rate (₹ / 10g)
+                  22K Gold Rate (₹ / gm)
                 </label>
                 <input 
                   type="number" 
@@ -888,7 +1097,7 @@ export default function AdminDashboard() {
 
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  18K Gold Rate (₹ / 10g)
+                  18K Gold Rate (₹ / gm)
                 </label>
                 <input 
                   type="number" 
@@ -901,7 +1110,7 @@ export default function AdminDashboard() {
 
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  Silver Rate (₹ / 10g)
+                  Silver Rate (₹ / gm)
                 </label>
                 <input 
                   type="number" 
@@ -911,6 +1120,19 @@ export default function AdminDashboard() {
                   style={{ width: '100%', padding: '12px', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <input 
+                type="checkbox" 
+                id="adminHide24kCheck"
+                checked={hide24k}
+                onChange={(e) => setHide24k(e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--royal-gold)' }}
+              />
+              <label htmlFor="adminHide24kCheck" style={{ color: '#ffffff', fontSize: '0.88rem', cursor: 'pointer', userSelect: 'none' }}>
+                Hide 24K Gold Rate from public display (Ticker & Live Rates Card)
+              </label>
             </div>
 
             <button 
@@ -931,6 +1153,254 @@ export default function AdminDashboard() {
               {savingRates ? 'Updating Rates...' : 'Update Live Rates'}
             </button>
           </form>
+        </div>
+
+        {/* 3. PRODUCT CATALOG & MASTER UPLOAD HUB */}
+        <div style={{ background: '#161616', padding: '28px', borderRadius: '8px', border: '1px solid #2a2a2a', marginBottom: '30px' }}>
+          <div style={{ marginBottom: '22px' }}>
+            <h2 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.4rem', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>💎</span> Product Catalog & Master Upload Hub
+            </h2>
+            <p style={{ color: '#aaa', margin: 0, fontSize: '0.85rem' }}>
+              Upload new jewellery pieces directly to your online showroom with automatic image optimization and instant live sync.
+            </p>
+          </div>
+
+          {/* Upload Form */}
+          <form onSubmit={handleUploadProduct} style={{ background: '#0e0e0e', padding: '24px', borderRadius: '8px', border: '1px solid #252525', marginBottom: '30px' }}>
+            <h3 style={{ color: '#ffffff', fontSize: '1.05rem', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>➕</span> Add New Product
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  Product Title *
+                </label>
+                <input 
+                  type="text" 
+                  value={prodTitle} 
+                  onChange={(e) => setProdTitle(e.target.value)}
+                  placeholder="e.g. 22K Royal Peacock Bangle"
+                  required
+                  style={{ width: '100%', padding: '10px 12px', background: '#161616', border: '1px solid #333', color: '#fff', borderRadius: '4px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  Main Category *
+                </label>
+                <select
+                  value={prodCategory}
+                  onChange={(e) => {
+                    setProdCategory(e.target.value);
+                    setProdSubCategory('ALL');
+                    setProdEarringType('ALL');
+                  }}
+                  style={{ width: '100%', padding: '10px 12px', background: '#161616', border: '1px solid #333', color: '#fff', borderRadius: '4px', outline: 'none', boxSizing: 'border-box' }}
+                >
+                  {ADMIN_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  Subcategory *
+                </label>
+                <select
+                  value={prodSubCategory}
+                  onChange={(e) => setProdSubCategory(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', background: '#161616', border: '1px solid #333', color: '#fff', borderRadius: '4px', outline: 'none', boxSizing: 'border-box' }}
+                >
+                  {(ADMIN_SUBCATEGORIES[prodCategory] || ['ALL']).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              {prodCategory === 'EARRINGS' && (
+                <div>
+                  <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                    Earring Type
+                  </label>
+                  <select
+                    value={prodEarringType}
+                    onChange={(e) => setProdEarringType(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', background: '#161616', border: '1px solid #333', color: '#fff', borderRadius: '4px', outline: 'none', boxSizing: 'border-box' }}
+                  >
+                    {['ALL', 'DAILY WEAR TOPS', 'STUDS', 'HOOPS', 'FANCY'].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  Purity
+                </label>
+                <select
+                  value={prodPurity}
+                  onChange={(e) => setProdPurity(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', background: '#161616', border: '1px solid #333', color: '#fff', borderRadius: '4px', outline: 'none', boxSizing: 'border-box' }}
+                >
+                  <option value="24K">24K Gold (99.9%)</option>
+                  <option value="22K">22K Gold (91.6% BIS)</option>
+                  <option value="18K">18K Gold (75.0% BIS)</option>
+                  <option value="92.5 Silver">92.5 Sterling Silver</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                  Weight (Optional)
+                </label>
+                <input 
+                  type="text" 
+                  value={prodWeight} 
+                  onChange={(e) => setProdWeight(e.target.value)}
+                  placeholder="e.g. 12.5g"
+                  style={{ width: '100%', padding: '10px 12px', background: '#161616', border: '1px solid #333', color: '#fff', borderRadius: '4px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
+                Product Image *
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <input 
+                  type="file" 
+                  accept="image/*,.heic,.heif"
+                  onChange={handleProductFileChange}
+                  required
+                  style={{ color: '#aaa', fontSize: '0.85rem' }}
+                />
+                {prodImageFile && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img 
+                      src={URL.createObjectURL(prodImageFile)} 
+                      alt="Preview" 
+                      style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--royal-gold)' }} 
+                    />
+                    <span style={{ fontSize: '0.78rem', color: '#28a745' }}>✓ {prodImageFile.name}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={uploadingProduct}
+              style={{
+                padding: '12px 24px',
+                background: 'var(--royal-gold)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: '700',
+                fontSize: '0.85rem',
+                textTransform: 'uppercase',
+                cursor: uploadingProduct ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {uploadingProduct ? 'Optimizing & Uploading...' : 'Upload Product to Catalog'}
+            </button>
+          </form>
+
+          {/* Manage Existing Uploaded Products */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+              <h3 style={{ color: '#ffffff', fontSize: '1.05rem', margin: 0 }}>
+                Existing Uploaded Products ({products.length})
+              </h3>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['ALL', ...ADMIN_CATEGORIES].map(cat => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setFilterAdminCategory(cat)}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      background: filterAdminCategory === cat ? 'var(--royal-gold)' : '#222',
+                      color: filterAdminCategory === cat ? '#fff' : '#aaa',
+                      border: '1px solid #333',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {products.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '36px', background: '#0e0e0e', borderRadius: '6px', color: '#666', border: '1px dashed #282828' }}>
+                No custom products uploaded yet. Upload your first piece using the form above!
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+                {products
+                  .filter(p => filterAdminCategory === 'ALL' || p.category === filterAdminCategory)
+                  .map(p => (
+                    <div 
+                      key={p.id}
+                      style={{
+                        background: '#0e0e0e',
+                        border: '1px solid #282828',
+                        borderRadius: '6px',
+                        padding: '12px',
+                        display: 'flex',
+                        gap: '12px',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                        <img 
+                          src={p.url} 
+                          alt={p.title} 
+                          style={{ width: '52px', height: '52px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #333', flexShrink: 0 }} 
+                        />
+                        <div style={{ overflow: 'hidden' }}>
+                          <div style={{ color: '#fff', fontSize: '0.88rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {p.title}
+                          </div>
+                          <div style={{ color: 'var(--royal-gold)', fontSize: '0.75rem', marginTop: '2px' }}>
+                            {p.category} {p.subCategory && p.subCategory !== 'ALL' ? `• ${p.subCategory}` : ''}
+                          </div>
+                          {p.purity && (
+                            <div style={{ color: '#777', fontSize: '0.72rem', marginTop: '2px' }}>
+                              {p.purity}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(p.id)}
+                        style={{
+                          background: 'rgba(220, 53, 69, 0.15)',
+                          color: '#ff4d4d',
+                          border: '1px solid #ff4d4d',
+                          borderRadius: '4px',
+                          padding: '6px 10px',
+                          fontSize: '0.75rem',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 3. AUTOMATED INDIAN FESTIVAL GREETINGS & BROADCAST HUB */}
