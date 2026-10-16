@@ -1754,28 +1754,31 @@ export default function Home() {
               style={{
                 background: 'linear-gradient(145deg, #ffffff 0%, #faf5f5 100%)',
                 border: '1.5px solid rgba(123, 17, 34, 0.2)',
-                borderRadius: '16px',
-                overflow: 'hidden',
+                borderRadius: '20px',
                 boxShadow: '0 8px 30px rgba(123, 17, 34, 0.08)',
                 margin: '20px 0 30px',
+                padding: isMobile ? '12px' : '18px',
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : 'minmax(320px, 46%) 1fr',
-                alignItems: 'stretch',
+                gap: isMobile ? '16px' : '28px',
+                alignItems: 'center',
                 width: '100%',
                 maxWidth: '100%',
                 boxSizing: 'border-box'
               }}
             >
-              {/* Image banner - Pure Edge-to-Edge Luxury Bridal Set */}
+              {/* Image banner - Framed with Elegant Border Space */}
               <div style={{ 
                 position: 'relative', 
                 overflow: 'hidden', 
                 background: '#4a0b14', 
                 width: '100%', 
-                minHeight: isMobile ? '380px' : '500px',
+                minHeight: isMobile ? '360px' : '490px',
                 height: '100%',
                 display: 'flex',
-                borderRadius: isMobile ? '16px 16px 0 0' : '16px 0 0 16px'
+                borderRadius: '14px',
+                border: '1.5px solid rgba(212, 175, 55, 0.35)',
+                boxShadow: '0 8px 24px rgba(74, 11, 20, 0.22)'
               }}>
                 <img 
                   src="/assets/wedding_collection_banner.jpg" 
@@ -1790,14 +1793,14 @@ export default function Home() {
                 />
                 <div style={{
                   position: 'absolute',
-                  top: '16px',
-                  left: '16px',
+                  top: '14px',
+                  left: '14px',
                   background: 'rgba(123, 17, 34, 0.92)',
                   backdropFilter: 'blur(8px)',
                   color: '#ffffff',
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
+                  padding: '5px 12px',
+                  borderRadius: '18px',
+                  fontSize: '10.5px',
                   fontWeight: '700',
                   letterSpacing: '1px',
                   border: '1px solid rgba(255, 215, 0, 0.4)',
@@ -1813,7 +1816,7 @@ export default function Home() {
               </div>
 
               {/* Details & CTA */}
-              <div style={{ padding: isMobile ? '24px 20px' : '36px 36px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ padding: isMobile ? '6px 4px 12px' : '12px 16px', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <span style={{
                   background: 'var(--royal-gold)',
                   color: '#ffffff',
