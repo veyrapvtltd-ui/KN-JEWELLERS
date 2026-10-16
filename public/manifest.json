@@ -1,23 +1,25 @@
 {
-  "short_name": "SHREE ARADHNA",
-  "name": "SHREE ARADHNA JEWELLERS",
+  "name": "Shree Aradhna Jewellers",
+  "short_name": "Shree Aradhna Jewellers",
+  "description": "Shree Aradhna Jewellers - Luxury BIS Hallmarked Gold, Diamond & Silver Jewellery in Gandhidham & Adipur, Gujarat.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7b1122",
+  "orientation": "any",
   "icons": [
     {
-      "src": "assets/logo.png",
+      "src": "/assets/logo.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/logo.png",
+      "src": "/assets/logo.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
-  ],
-  "start_url": "/",
-  "background_color": "#ffffff",
-  "theme_color": "#7b1122",
-  "display": "standalone",
-  "orientation": "portrait"
+  ]
 }
