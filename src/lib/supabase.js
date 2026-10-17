@@ -27,10 +27,10 @@ export const getSupabaseConfig = () => {
 
   // Built-in default Supabase cloud configuration
   if (!url) {
-    url = 'https://xfkcnmhophacnluofauu.supabase.co';
+    url = 'https://hiflildcmdmjjpuyzfxe.supabase.co';
   }
   if (!key) {
-    key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhma2NubWhvcGhhY25sdW9mYXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTI2NzcsImV4cCI6MjEwMzU2ODY3N30.gqApRPsnJeFcOVk1XQnQiw_GSii3W1FszzfsBud4K-Y';
+    key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxpbGRjbWRtampwdXl6ZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxOTc2NzAsImV4cCI6MjEwNzc3MzY3MH0.WLwylnfNqJwYJyDmibvshD6Oti1wUv3nJqadpW6JiPw';
   }
 
   return {
