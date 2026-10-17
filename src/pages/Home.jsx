@@ -128,6 +128,45 @@ const getProductPricing = (product) => {
   };
 };
 
+// Detect if web app is already downloaded / installed as PWA or running standalone
+const checkIsAppInstalled = () => {
+  if (typeof window === 'undefined') return false;
+
+  // 1. Standard W3C display-mode matches standalone / fullscreen / minimal-ui
+  try {
+    if (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches
+    ) {
+      return true;
+    }
+  } catch (e) {}
+
+  // 2. iOS Safari standalone mode (Add to Home Screen)
+  try {
+    if (window.navigator && window.navigator.standalone === true) {
+      return true;
+    }
+  } catch (e) {}
+
+  // 3. Android TWA / app launcher referrer
+  try {
+    if (document.referrer && (document.referrer.startsWith('android-app://') || document.referrer.includes('app-installed'))) {
+      return true;
+    }
+  } catch (e) {}
+
+  // 4. Saved installation status in localStorage
+  try {
+    if (localStorage.getItem('SAJ_pwa_installed') === 'true') {
+      return true;
+    }
+  } catch (e) {}
+
+  return false;
+};
+
 export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -167,6 +206,7 @@ export default function Home() {
   const [dbProducts, setDbProducts] = useState([]);
   const [isExportingZip, setIsExportingZip] = useState(false);
   
+  const [isAppInstalledOnDevice, setIsAppInstalledOnDevice] = useState(() => checkIsAppInstalled());
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIosHelpOpen, setIsIosHelpOpen] = useState(false);
   const [showAppPopup, setShowAppPopup] = useState(false);
@@ -200,19 +240,73 @@ export default function Home() {
     return () => window.removeEventListener('saj_festival_broadcast', handleFestBroadcastEvent);
   }, []);
 
+  // App Download Popup Controller - Strictly respects already installed or dismissed users
   useEffect(() => {
-    const isDismissed = sessionStorage.getItem('SAJ_app_popup_dismissed');
+    // If the app is already downloaded/installed, do NOT show popup under any circumstances
+    if (checkIsAppInstalled()) {
+      setIsAppInstalledOnDevice(true);
+      setShowAppPopup(false);
+      try {
+        localStorage.setItem('SAJ_pwa_installed', 'true');
+      } catch (e) {}
+      return;
+    }
+
+    // Check if dismissed before (stored permanently in localStorage, never push user repeatedly)
+    const isDismissed = localStorage.getItem('SAJ_app_popup_dismissed') === 'true' ||
+                        sessionStorage.getItem('SAJ_app_popup_dismissed') === 'true';
     if (!isDismissed) {
       const timer = setTimeout(() => {
-        setShowAppPopup(true);
-      }, 1000);
+        if (!checkIsAppInstalled()) {
+          setShowAppPopup(true);
+        }
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, []);
 
+  // Listen to browser's native 'appinstalled' event & display-mode changes in real time
+  useEffect(() => {
+    const handleAppInstalled = () => {
+      console.log('SHREE ARADHNA JEWELLERS App downloaded & installed!');
+      try {
+        localStorage.setItem('SAJ_pwa_installed', 'true');
+      } catch (e) {}
+      setIsAppInstalledOnDevice(true);
+      setShowAppPopup(false);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    let mql = null;
+    try {
+      mql = window.matchMedia('(display-mode: standalone)');
+      const handleModeChange = (e) => {
+        if (e.matches) {
+          try {
+            localStorage.setItem('SAJ_pwa_installed', 'true');
+          } catch (err) {}
+          setIsAppInstalledOnDevice(true);
+          setShowAppPopup(false);
+        }
+      };
+      if (mql.addEventListener) mql.addEventListener('change', handleModeChange);
+      else if (mql.addListener) mql.addListener(handleModeChange);
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
   const closeAppPopup = () => {
     setShowAppPopup(false);
-    sessionStorage.setItem('SAJ_app_popup_dismissed', 'true');
+    // Persist in localStorage so user is not prompted again
+    try {
+      localStorage.setItem('SAJ_app_popup_dismissed', 'true');
+      sessionStorage.setItem('SAJ_app_popup_dismissed', 'true');
+    } catch (e) {}
   };
 
   // Helper utility to convert VAPID public key string into Uint8Array format
@@ -340,6 +434,12 @@ export default function Home() {
   }, []);
 
   const handleInstallClick = async () => {
+    // If the app is already detected as installed, inform the user cleanly
+    if (isAppInstalledOnDevice || checkIsAppInstalled()) {
+      alert("✅ SHREE ARADHNA JEWELLERS App is already downloaded and installed on this device!");
+      return;
+    }
+
     // Request notification permission right when they tap install
     requestNotificationPermission();
 
@@ -347,9 +447,21 @@ export default function Home() {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log(`User choice outcome: ${outcome}`);
+      if (outcome === 'accepted') {
+        try {
+          localStorage.setItem('SAJ_pwa_installed', 'true');
+        } catch (e) {}
+        setIsAppInstalledOnDevice(true);
+        setShowAppPopup(false);
+      }
       setDeferredPrompt(null);
     } else {
-      alert("To install: Tap the browser menu button (e.g. three dots in Chrome) and choose 'Add to Home Screen' or 'Install App'.");
+      const isIos = /iphone|ipad|ipod/.test(window.navigator?.userAgent?.toLowerCase() || '');
+      if (isIos) {
+        setIsIosHelpOpen(true);
+      } else {
+        alert("To install: Tap the browser menu button (e.g. three dots in Chrome) and choose 'Add to Home Screen' or 'Install App'.");
+      }
     }
   };
 
@@ -2898,29 +3010,51 @@ export default function Home() {
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
             {/* Install Button (Android/Chrome/General) */}
-            <button
-              onClick={handleInstallClick}
-              style={{
-                background: 'var(--royal-gold)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '14px 28px',
-                borderRadius: '30px',
-                fontWeight: '700',
-                fontSize: '12px',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(123, 17, 34, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s ease'
-              }}
-              className="pwa-install-btn"
-            >
-              📥 Install Web App
-            </button>
+            {isAppInstalledOnDevice ? (
+              <div
+                style={{
+                  background: 'rgba(40, 167, 69, 0.12)',
+                  color: '#28a745',
+                  border: '1.5px solid #28a745',
+                  padding: '14px 28px',
+                  borderRadius: '30px',
+                  fontWeight: '700',
+                  fontSize: '12px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(40, 167, 69, 0.15)'
+                }}
+              >
+                ✅ App Downloaded & Active
+              </div>
+            ) : (
+              <button
+                onClick={handleInstallClick}
+                style={{
+                  background: 'var(--royal-gold)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '14px 28px',
+                  borderRadius: '30px',
+                  fontWeight: '700',
+                  fontSize: '12px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 24px rgba(123, 17, 34, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.3s ease'
+                }}
+                className="pwa-install-btn"
+              >
+                📥 Install Web App
+              </button>
+            )}
 
             {/* Enable Price Alerts Button (Calls requestNotificationPermission under user gesture) */}
             <button
@@ -4034,8 +4168,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* Clean Animatic App Download Popup Modal */}
-      {showAppPopup && (
+      {/* Clean Animatic App Download Popup Modal - Only shown if app is NOT already downloaded/installed */}
+      {showAppPopup && !isAppInstalledOnDevice && (
         <div style={{
           position: 'fixed',
           inset: 0,
