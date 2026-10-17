@@ -434,7 +434,12 @@ ON CONFLICT (id) DO UPDATE SET
     gold22k = EXCLUDED.gold22k,
     gold18k = EXCLUDED.gold18k,
     silver = EXCLUDED.silver,
-    hide24k = EXCLUDED.hide24k;
+    hide24k = EXCLUDED.hide24k,
+    updated_at = now();
+
+-- Compatibility views for alternative table names
+CREATE OR REPLACE VIEW public.hardik_rates AS SELECT * FROM public.saj_rates;
+CREATE OR REPLACE VIEW public.rates AS SELECT * FROM public.saj_rates;
 
 -- 3. CUSTOM USERS
 CREATE TABLE IF NOT EXISTS public.custom_users (
@@ -475,12 +480,21 @@ CREATE TABLE IF NOT EXISTS public.saj_products (
     created_at timestamp with time zone DEFAULT now()
 );
 
+-- 6. BROADCAST NOTIFICATIONS HISTORY
+CREATE TABLE IF NOT EXISTS public.broadcast_notifications (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    title text NOT NULL,
+    body text NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
 -- ENABLE RLS & PUBLIC ACCESS
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saj_rates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.custom_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saj_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.broadcast_notifications ENABLE ROW LEVEL SECURITY;
 
 DO $$ 
 BEGIN
@@ -498,6 +512,25 @@ BEGIN
 
     DROP POLICY IF EXISTS "Public Full Access saj_products" ON public.saj_products;
     CREATE POLICY "Public Full Access saj_products" ON public.saj_products FOR ALL TO public USING (true) WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Public Full Access broadcast_notifications" ON public.broadcast_notifications;
+    CREATE POLICY "Public Full Access broadcast_notifications" ON public.broadcast_notifications FOR ALL TO public USING (true) WITH CHECK (true);
+END $$;
+
+-- REALTIME REPLICATION
+ALTER TABLE public.saj_rates REPLICA IDENTITY FULL;
+ALTER TABLE public.saj_products REPLICA IDENTITY FULL;
+
+DO $$ 
+BEGIN
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.saj_rates;
+    EXCEPTION WHEN duplicate_object THEN
+    END;
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.saj_products;
+    EXCEPTION WHEN duplicate_object THEN
+    END;
 END $$;
 
 -- STORAGE BUCKETS
@@ -517,10 +550,16 @@ BEGIN
     DROP POLICY IF EXISTS "Public Upload payment_screenshots" ON storage.objects;
     CREATE POLICY "Public Upload payment_screenshots" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = 'payment_screenshots');
 
+    DROP POLICY IF EXISTS "Public Update payment_screenshots" ON storage.objects;
+    CREATE POLICY "Public Update payment_screenshots" ON storage.objects FOR UPDATE TO public USING (bucket_id = 'payment_screenshots');
+
     DROP POLICY IF EXISTS "Public Read product_images" ON storage.objects;
     CREATE POLICY "Public Read product_images" ON storage.objects FOR SELECT TO public USING (bucket_id = 'product_images');
 
     DROP POLICY IF EXISTS "Public Upload product_images" ON storage.objects;
     CREATE POLICY "Public Upload product_images" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = 'product_images');
+
+    DROP POLICY IF EXISTS "Public Update product_images" ON storage.objects;
+    CREATE POLICY "Public Update product_images" ON storage.objects FOR UPDATE TO public USING (bucket_id = 'product_images');
 END $$;
 `;

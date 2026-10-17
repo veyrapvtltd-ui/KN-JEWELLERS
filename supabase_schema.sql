@@ -49,7 +49,12 @@ ON CONFLICT (id) DO UPDATE SET
     gold22k = EXCLUDED.gold22k,
     gold18k = EXCLUDED.gold18k,
     silver = EXCLUDED.silver,
-    hide24k = EXCLUDED.hide24k;
+    hide24k = EXCLUDED.hide24k,
+    updated_at = now();
+
+-- Compatibility views for legacy or alternative rate queries
+CREATE OR REPLACE VIEW public.hardik_rates AS SELECT * FROM public.saj_rates;
+CREATE OR REPLACE VIEW public.rates AS SELECT * FROM public.saj_rates;
 
 -- 3. CUSTOM USERS (CUSTOMER PROFILES)
 CREATE TABLE IF NOT EXISTS public.custom_users (
@@ -71,7 +76,7 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
     branch text,
     appointment_date text,
     appointment_time text,
-    inquiry_type text DEFAULT 'Appointment', -- 'Appointment', 'Custom Order', 'Product Inquiry'
+    inquiry_type text DEFAULT 'Appointment',
     product_title text,
     notes text,
     created_at timestamp with time zone DEFAULT now()
@@ -90,6 +95,14 @@ CREATE TABLE IF NOT EXISTS public.saj_products (
     created_at timestamp with time zone DEFAULT now()
 );
 
+-- 6. BROADCAST NOTIFICATIONS HISTORY
+CREATE TABLE IF NOT EXISTS public.broadcast_notifications (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    title text NOT NULL,
+    body text NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
 -- =========================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- =========================================================================
@@ -99,6 +112,7 @@ ALTER TABLE public.saj_rates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.custom_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saj_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.broadcast_notifications ENABLE ROW LEVEL SECURITY;
 
 DO $$ 
 BEGIN
@@ -116,6 +130,30 @@ BEGIN
 
     DROP POLICY IF EXISTS "Public Full Access saj_products" ON public.saj_products;
     CREATE POLICY "Public Full Access saj_products" ON public.saj_products FOR ALL TO public USING (true) WITH CHECK (true);
+
+    DROP POLICY IF EXISTS "Public Full Access broadcast_notifications" ON public.broadcast_notifications;
+    CREATE POLICY "Public Full Access broadcast_notifications" ON public.broadcast_notifications FOR ALL TO public USING (true) WITH CHECK (true);
+END $$;
+
+-- =========================================================================
+-- REALTIME SUBSCRIPTIONS
+-- =========================================================================
+
+ALTER TABLE public.saj_rates REPLICA IDENTITY FULL;
+ALTER TABLE public.saj_products REPLICA IDENTITY FULL;
+
+DO $$ 
+BEGIN
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.saj_rates;
+    EXCEPTION WHEN duplicate_object THEN
+        -- already added
+    END;
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.saj_products;
+    EXCEPTION WHEN duplicate_object THEN
+        -- already added
+    END;
 END $$;
 
 -- =========================================================================
