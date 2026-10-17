@@ -367,12 +367,16 @@ export async function saveLiveRates(ratesData) {
             silver: normalized.silver,
             updated_at: normalized.updated_at
           });
-          if (!retry.error) supabaseSaved = true;
+          if (!retry.error) {
+            supabaseSaved = true;
+            break; // Stop! Successfully saved. Avoid firing multiple database events across tables.
+          }
         } else if (!error) {
           supabaseSaved = true;
+          break; // Stop! Successfully saved. Avoid firing multiple database events across tables.
         }
       } catch (err) {
-        // Table may not exist, proceed
+        // Table may not exist, proceed to next candidate
       }
     }
   }
@@ -411,9 +415,14 @@ export async function saveLiveRates(ratesData) {
       : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`;
 
     const { broadcastNotificationToAll } = await import('./festivalGreetings');
+    const senderId = typeof window !== 'undefined'
+      ? (window.__saj_client_id || (window.__saj_client_id = 'saj_' + Math.random().toString(36).substring(2, 9)))
+      : 'server';
+
     await broadcastNotificationToAll('👑 LIVE MARKET RATE UPDATE', rateBody, {
       rates: normalized,
-      subtitle: 'BIS 916 Hallmarked • Just Updated'
+      subtitle: 'BIS 916 Hallmarked • Just Updated',
+      senderId
     });
   } catch (notifErr) {
     console.warn('[LiveRates] Notification broadcast error:', notifErr.message);

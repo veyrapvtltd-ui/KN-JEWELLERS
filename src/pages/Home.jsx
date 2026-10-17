@@ -598,13 +598,29 @@ export default function Home() {
   }, []);
 
   const lastNotifiedRateRef = useRef('');
+  const lastNotificationTimeRef = useRef(0);
+  const notificationTimeoutRef = useRef(null);
+  const lastAnnouncementKeyRef = useRef('');
+  const lastAnnouncementTimeRef = useRef(0);
 
-  // Universal Live Rate Toast & Native Push Notification Trigger
-  const triggerLiveRateToast = (rates) => {
+  // Single unified rate notification controller with strict debouncing & deduplication
+  const showLiveRateToast = (rates, options = {}) => {
     if (!rates || !rates.gold22k) return;
+
     const rateKey = `${rates.gold24k}-${rates.gold22k}-${rates.gold18k}-${rates.silver}-${Boolean(rates.hide24k)}`;
-    if (lastNotifiedRateRef.current === rateKey) return;
+    const now = Date.now();
+
+    // 1. Deduplication: exact same rate notified within the last 60 seconds -> drop duplicate
+    if (lastNotifiedRateRef.current === rateKey && (now - lastNotificationTimeRef.current < 60000)) {
+      return;
+    }
+    // 2. Strict cooldown: drop any rate notification firing within 5 seconds of the previous one
+    if (now - lastNotificationTimeRef.current < 5000) {
+      return;
+    }
+
     lastNotifiedRateRef.current = rateKey;
+    lastNotificationTimeRef.current = now;
 
     const g24 = Number(rates.gold24k || 15500).toLocaleString('en-IN');
     const g22 = Number(rates.gold22k || 14200).toLocaleString('en-IN');
@@ -620,8 +636,8 @@ export default function Home() {
       : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`;
 
     setPwaNotificationData({
-      title: '👑 LIVE MARKET RATE UPDATE',
-      subtitle: 'BIS 916 Hallmarked • Just Updated',
+      title: options.title || '👑 LIVE MARKET RATE UPDATE',
+      subtitle: options.subtitle || 'BIS 916 Hallmarked • Just Updated',
       rates: {
         gold24k: rates.gold24k,
         gold22k: rates.gold22k,
@@ -632,16 +648,22 @@ export default function Home() {
       body: formattedSummary
     });
     setShowPwaNotification(true);
-    setTimeout(() => setShowPwaNotification(false), 8000);
 
-    // Also trigger native device push notification if permission granted
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+    notificationTimeoutRef.current = setTimeout(() => {
+      setShowPwaNotification(false);
+    }, 8000);
+
+    // Native Push Notification with fixed tag so browser/OS replaces instead of creating multiple bubbles
+    if (!options.skipNative && 'Notification' in window && Notification.permission === 'granted') {
       try {
         const notifOptions = {
           body: multiLineSummary,
           icon: '/assets/logo.png',
           badge: '/assets/logo.png',
-          tag: `live-rate-${Date.now()}`
+          tag: 'saj-live-rate-update'
         };
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           navigator.serviceWorker.ready.then(reg => {
@@ -654,58 +676,100 @@ export default function Home() {
     }
   };
 
-  // Listen for custom notifications triggered anywhere (Current Window, Cross-Tab BroadcastChannel, or Supabase Realtime)
-  useEffect(() => {
-    const handleNotificationPayload = (payload) => {
-      if (!payload) return;
-      const title = payload.title || '👑 LIVE MARKET RATE UPDATE';
-      const body = payload.body || 'Live updates from Shree Aradhna Jewellers';
-      const rates = payload.rates || null;
-      const subtitle = payload.subtitle || (rates ? 'BIS 916 Hallmarked • Just Updated' : 'Showroom Announcement');
+  // Generic showroom announcement notification handler
+  const handleAnnouncementPayload = (payload) => {
+    if (!payload) return;
 
-      setPwaNotificationData({
-        title,
-        subtitle,
-        rates,
-        body
+    // Filter out messages that originated from this exact window (prevent self-echo)
+    if (payload.senderId && typeof window !== 'undefined' && payload.senderId === window.__saj_client_id) {
+      return;
+    }
+
+    // If payload contains rates, route to showLiveRateToast
+    if (payload.rates && payload.rates.gold22k) {
+      showLiveRateToast(payload.rates, {
+        title: payload.title,
+        subtitle: payload.subtitle
       });
-      setShowPwaNotification(true);
-      setTimeout(() => setShowPwaNotification(false), 8000);
+      return;
+    }
 
-      // Trigger native notification if permitted
-      if ('Notification' in window && Notification.permission === 'granted') {
-        try {
-          const notifOptions = {
-            body,
-            icon: '/assets/logo.png',
-            badge: '/assets/logo.png',
-            tag: `notif-${Date.now()}`
-          };
-          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.ready.then(reg => {
-              reg.showNotification(title, notifOptions);
-            });
-          } else {
-            new Notification(title, notifOptions);
-          }
-        } catch (e) {}
+    const now = Date.now();
+    const key = `${payload.title || ''}-${payload.body || ''}`;
+    if (lastAnnouncementKeyRef.current === key && (now - lastAnnouncementTimeRef.current < 20000)) {
+      return;
+    }
+    if (now - lastAnnouncementTimeRef.current < 5000) {
+      return;
+    }
+
+    lastAnnouncementKeyRef.current = key;
+    lastAnnouncementTimeRef.current = now;
+
+    const title = payload.title || '👑 LIVE MARKET RATE UPDATE';
+    const body = payload.body || 'Live updates from Shree Aradhna Jewellers';
+
+    setPwaNotificationData({
+      title,
+      subtitle: payload.subtitle || 'Showroom Announcement',
+      rates: null,
+      body
+    });
+    setShowPwaNotification(true);
+
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+    notificationTimeoutRef.current = setTimeout(() => {
+      setShowPwaNotification(false);
+    }, 8000);
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        const notifOptions = {
+          body,
+          icon: '/assets/logo.png',
+          badge: '/assets/logo.png',
+          tag: 'saj-announcement'
+        };
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(title, notifOptions);
+          });
+        } else {
+          new Notification(title, notifOptions);
+        }
+      } catch (e) {}
+    }
+  };
+
+  // Global Realtime & Notification Listeners
+  useEffect(() => {
+    // 1. Local DOM custom notification (e.g. from local broadcastNotificationToAll)
+    const handleCustomNotify = (e) => {
+      const data = e.detail;
+      if (data?.rates) {
+        showLiveRateToast(data.rates, {
+          title: data.title,
+          subtitle: data.subtitle,
+          skipNative: true // native notification already handled by sendSystemNotification
+        });
+      } else {
+        handleAnnouncementPayload(data);
       }
     };
-
-    // 1. Current Window Custom Event
-    const handleCustomNotify = (e) => handleNotificationPayload(e.detail);
     window.addEventListener('saj_custom_notification', handleCustomNotify);
 
-    // 2. Cross-Tab BroadcastChannel for all open tabs & PWA instances
+    // 2. Cross-Tab BroadcastChannel for other open tabs
     let bc = null;
     try {
       if ('BroadcastChannel' in window) {
         bc = new BroadcastChannel('saj_notifications');
-        bc.onmessage = (event) => handleNotificationPayload(event.data);
+        bc.onmessage = (event) => handleAnnouncementPayload(event.data);
       }
     } catch (e) {}
 
-    // 3. Supabase Realtime Channels (Broadcast + Postgres Changes on rates tables)
+    // 3. Supabase Realtime Channels (Worldwide devices & other clients)
     let supabaseChannel = null;
     let dbRatesChannel = null;
     try {
@@ -713,35 +777,18 @@ export default function Home() {
         supabaseChannel = supabase
           .channel('saj_public_broadcast')
           .on('broadcast', { event: 'new_notification' }, (payload) => {
-            handleNotificationPayload(payload.payload);
+            handleAnnouncementPayload(payload.payload);
           })
           .subscribe();
 
-        // Listen for direct database changes in Supabase rates tables
+        // Listen for direct database changes in Supabase saj_rates table
         dbRatesChannel = supabase
           .channel('saj_rates_db_listener')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'saj_rates' }, async (payload) => {
-            console.log('[Supabase Realtime] Database change in saj_rates:', payload);
             const fresh = await fetchLiveRates();
             if (fresh) {
               setGoldRates(prev => ({ ...prev, ...fresh }));
-              triggerLiveRateToast(fresh);
-            }
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'hardik_rates' }, async (payload) => {
-            console.log('[Supabase Realtime] Database change in hardik_rates:', payload);
-            const fresh = await fetchLiveRates();
-            if (fresh) {
-              setGoldRates(prev => ({ ...prev, ...fresh }));
-              triggerLiveRateToast(fresh);
-            }
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'rates' }, async (payload) => {
-            console.log('[Supabase Realtime] Database change in rates:', payload);
-            const fresh = await fetchLiveRates();
-            if (fresh) {
-              setGoldRates(prev => ({ ...prev, ...fresh }));
-              triggerLiveRateToast(fresh);
+              showLiveRateToast(fresh);
             }
           })
           .subscribe();
@@ -753,7 +800,7 @@ export default function Home() {
       const fresh = await fetchLiveRates();
       if (fresh) {
         setGoldRates(prev => ({ ...prev, ...fresh }));
-        triggerLiveRateToast(fresh);
+        showLiveRateToast(fresh);
       }
     };
     window.addEventListener('saj_supabase_config_changed', handleConfigChanged);
@@ -764,17 +811,18 @@ export default function Home() {
       if (bc) bc.close();
       if (supabaseChannel) supabase.removeChannel(supabaseChannel);
       if (dbRatesChannel) supabase.removeChannel(dbRatesChannel);
+      if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
     };
   }, []);
 
-  // Real-time Rate Sync Across All Open Tabs & Windows (LocalStorage + BroadcastChannel)
+  // Real-time Rate Sync Across Open Tabs (LocalStorage + BroadcastChannel)
   useEffect(() => {
     const handleStorageChange = (e) => {
       if ((e.key === 'SAJ_gold_rates' || e.key === 'SAJ_rates') && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
           setGoldRates(prev => ({ ...prev, ...parsed }));
-          triggerLiveRateToast(parsed);
+          showLiveRateToast(parsed);
         } catch (err) {}
       }
     };
@@ -783,7 +831,7 @@ export default function Home() {
     const handleRatesUpdatedEvent = (e) => {
       if (e.detail) {
         setGoldRates(prev => ({ ...prev, ...e.detail }));
-        triggerLiveRateToast(e.detail);
+        // State updated immediately; notification is handled once by broadcast system
       }
     };
     window.addEventListener('saj_rates_updated', handleRatesUpdatedEvent);
@@ -795,7 +843,7 @@ export default function Home() {
         ratesBc.onmessage = (event) => {
           if (event.data) {
             setGoldRates(prev => ({ ...prev, ...event.data }));
-            triggerLiveRateToast(event.data);
+            showLiveRateToast(event.data);
           }
         };
       }
@@ -878,6 +926,7 @@ export default function Home() {
           setGoldRates(prev => ({ ...prev, ...liveRates }));
           if (liveRates.gold22k) {
             lastNotifiedRateRef.current = `${liveRates.gold24k}-${liveRates.gold22k}-${liveRates.gold18k}-${liveRates.silver}-${Boolean(liveRates.hide24k)}`;
+            lastNotificationTimeRef.current = Date.now();
           }
         }
       } catch (err) {

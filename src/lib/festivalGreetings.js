@@ -1172,12 +1172,17 @@ export async function dispatchFestivalBroadcast(festival, force = false) {
   return true;
 }
 
+// Native notification debounce cache to prevent duplicate sounds/bubbles
+let lastNativeNotifTag = '';
+let lastNativeNotifTime = 0;
+
 /**
  * Universal system notification sender (ServiceWorker + Native Notification + Event)
  */
-export function sendSystemNotification(title, body, tag = 'saj-alert') {
+export function sendSystemNotification(title, body, tag = 'saj-alert', extraPayload = null) {
   if (typeof window === 'undefined') return;
 
+  const now = Date.now();
   const options = {
     body,
     icon: '/assets/logo.png',
@@ -1187,31 +1192,37 @@ export function sendSystemNotification(title, body, tag = 'saj-alert') {
     data: { url: window.location.origin }
   };
 
-  if ('Notification' in window) {
-    if (Notification.permission === 'granted') {
-      try {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification(title, options);
-          });
-        } else {
-          new Notification(title, options);
+  // Only fire native OS notification if not already sent within 5 seconds for this tag
+  if (now - lastNativeNotifTime > 5000 || lastNativeNotifTag !== tag) {
+    lastNativeNotifTag = tag;
+    lastNativeNotifTime = now;
+
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(reg => {
+              reg.showNotification(title, options);
+            });
+          } else {
+            new Notification(title, options);
+          }
+        } catch (e) {
+          console.warn('Native notification failed:', e);
         }
-      } catch (e) {
-        console.warn('Native notification failed:', e);
+      } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            new Notification(title, options);
+          }
+        });
       }
-    } else if (Notification.permission === 'default') {
-      Notification.requestPermission().then(perm => {
-        if (perm === 'granted') {
-          new Notification(title, options);
-        }
-      });
     }
   }
 
-  // Always broadcast DOM event for in-app floating toast
+  // Always broadcast DOM event for in-app floating toast with complete payload
   window.dispatchEvent(new CustomEvent('saj_custom_notification', {
-    detail: { title, body }
+    detail: extraPayload || { title, body }
   }));
 }
 
@@ -1221,15 +1232,21 @@ export function sendSystemNotification(title, body, tag = 'saj-alert') {
 export async function broadcastNotificationToAll(title, body, extraData = {}) {
   if (typeof window === 'undefined') return;
 
+  const senderId = extraData.senderId || (typeof window !== 'undefined'
+    ? (window.__saj_client_id || (window.__saj_client_id = 'saj_' + Math.random().toString(36).substring(2, 9)))
+    : 'server');
+
   const payload = {
     title: title || '👑 Shree Aradhna Jewellers',
     body: body || 'Live Gold Rate Update! Hallmarked 22K/24K rates & showroom offers active in Gandhidham & Adipur.',
     timestamp: new Date().toISOString(),
+    senderId,
     ...extraData
   };
 
-  // 1. Dispatch locally on current device
-  sendSystemNotification(payload.title, payload.body, `broadcast-${Date.now()}`);
+  // 1. Dispatch locally on current device with stable tag to prevent multiple OS bubbles
+  const stableTag = extraData.rates ? 'saj-live-rate-update' : 'saj-announcement';
+  sendSystemNotification(payload.title, payload.body, stableTag, payload);
 
   // 2. Cross-tab BroadcastChannel to wake up all open tabs & PWA instances
   try {
