@@ -2600,3 +2600,24 @@ html, body, #root, section, header, footer, main, .section-inner {
   }
 }
 
+/* ── Live Rate Notification Animation ── */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(110%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toastPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+

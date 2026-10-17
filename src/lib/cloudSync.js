@@ -401,12 +401,20 @@ export async function saveLiveRates(ratesData) {
 
   // 6. Broadcast Live Rate Notification to all devices, tabs & notification trays
   try {
+    const g24 = Number(normalized.gold24k).toLocaleString('en-IN');
+    const g22 = Number(normalized.gold22k).toLocaleString('en-IN');
+    const g18 = Number(normalized.gold18k).toLocaleString('en-IN');
+    const sil = Number(normalized.silver).toLocaleString('en-IN');
+
     const rateBody = normalized.hide24k
-      ? `👑 Today's Live Rates: 22K Gold ₹${normalized.gold22k}/g | 18K Gold ₹${normalized.gold18k}/g | Silver ₹${normalized.silver}/g.`
-      : `👑 Today's Live Rates: 24K Gold ₹${normalized.gold24k}/g | 22K Gold ₹${normalized.gold22k}/g | 18K Gold ₹${normalized.gold18k}/g | Silver ₹${normalized.silver}/g.`;
+      ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`
+      : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`;
 
     const { broadcastNotificationToAll } = await import('./festivalGreetings');
-    await broadcastNotificationToAll('👑 LIVE GOLD RATE UPDATE', rateBody);
+    await broadcastNotificationToAll('👑 LIVE MARKET RATE UPDATE', rateBody, {
+      rates: normalized,
+      subtitle: 'BIS 916 Hallmarked • Just Updated'
+    });
   } catch (notifErr) {
     console.warn('[LiveRates] Notification broadcast error:', notifErr.message);
   }

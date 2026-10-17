@@ -1218,13 +1218,14 @@ export function sendSystemNotification(title, body, tag = 'saj-alert') {
 /**
  * Broadcast notification to ALL devices, tabs, PWAs, and worldwide Supabase realtime subscribers
  */
-export async function broadcastNotificationToAll(title, body) {
+export async function broadcastNotificationToAll(title, body, extraData = {}) {
   if (typeof window === 'undefined') return;
 
   const payload = {
     title: title || '👑 Shree Aradhna Jewellers',
     body: body || 'Live Gold Rate Update! Hallmarked 22K/24K rates & showroom offers active in Gandhidham & Adipur.',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    ...extraData
   };
 
   // 1. Dispatch locally on current device

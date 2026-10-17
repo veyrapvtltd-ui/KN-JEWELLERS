@@ -587,8 +587,10 @@ export default function Home() {
 
   const [showPwaNotification, setShowPwaNotification] = useState(false);
   const [pwaNotificationData, setPwaNotificationData] = useState({
-    title: 'LIVE RATE ALERT',
-    body: 'Gold rates updated! Check today\'s latest hallmarked rates.'
+    title: '👑 LIVE MARKET RATE UPDATE',
+    subtitle: 'BIS 916 Hallmarked • Live Market Rate',
+    rates: null,
+    body: 'Gold & silver rates updated! Check today\'s latest hallmarked showroom rates.'
   });
 
   useEffect(() => {
@@ -596,7 +598,6 @@ export default function Home() {
   }, []);
 
   const lastNotifiedRateRef = useRef('');
-  const isInitialRatesMount = useRef(true);
 
   // Universal Live Rate Toast & Native Push Notification Trigger
   const triggerLiveRateToast = (rates) => {
@@ -605,36 +606,49 @@ export default function Home() {
     if (lastNotifiedRateRef.current === rateKey) return;
     lastNotifiedRateRef.current = rateKey;
 
-    const body = rates.hide24k
-      ? `👑 Today's Live Rates: 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`
-      : `👑 Today's Live Rates: 24K Gold ₹${rates.gold24k}/g | 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`;
+    const g24 = Number(rates.gold24k || 15500).toLocaleString('en-IN');
+    const g22 = Number(rates.gold22k || 14200).toLocaleString('en-IN');
+    const g18 = Number(rates.gold18k || 11625).toLocaleString('en-IN');
+    const sil = Number(rates.silver || 235).toLocaleString('en-IN');
+
+    const formattedSummary = rates.hide24k
+      ? `22K (916): ₹${g22}/g • 18K (750): ₹${g18}/g • Silver: ₹${sil}/g`
+      : `24K (999): ₹${g24}/g • 22K (916): ₹${g22}/g • 18K (750): ₹${g18}/g • Silver: ₹${sil}/g`;
+
+    const multiLineSummary = rates.hide24k
+      ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`
+      : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`;
 
     setPwaNotificationData({
-      title: '👑 LIVE GOLD RATE UPDATE',
-      body
+      title: '👑 LIVE MARKET RATE UPDATE',
+      subtitle: 'BIS 916 Hallmarked • Just Updated',
+      rates: {
+        gold24k: rates.gold24k,
+        gold22k: rates.gold22k,
+        gold18k: rates.gold18k,
+        silver: rates.silver,
+        hide24k: Boolean(rates.hide24k)
+      },
+      body: formattedSummary
     });
     setShowPwaNotification(true);
-    setTimeout(() => setShowPwaNotification(false), 7000);
+    setTimeout(() => setShowPwaNotification(false), 8000);
 
     // Also trigger native device push notification if permission granted
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
+        const notifOptions = {
+          body: multiLineSummary,
+          icon: '/assets/logo.png',
+          badge: '/assets/logo.png',
+          tag: `live-rate-${Date.now()}`
+        };
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification('👑 LIVE GOLD RATE UPDATE', {
-              body,
-              icon: '/assets/logo.png',
-              badge: '/assets/logo.png',
-              tag: `live-rate-${Date.now()}`
-            });
+            reg.showNotification('👑 LIVE MARKET RATE UPDATE', notifOptions);
           });
         } else {
-          new Notification('👑 LIVE GOLD RATE UPDATE', {
-            body,
-            icon: '/assets/logo.png',
-            badge: '/assets/logo.png',
-            tag: `live-rate-${Date.now()}`
-          });
+          new Notification('👑 LIVE MARKET RATE UPDATE', notifOptions);
         }
       } catch (e) {}
     }
@@ -644,32 +658,35 @@ export default function Home() {
   useEffect(() => {
     const handleNotificationPayload = (payload) => {
       if (!payload) return;
-      const title = payload.title || '👑 SHREE ARADHNA JEWELLERS';
+      const title = payload.title || '👑 LIVE MARKET RATE UPDATE';
       const body = payload.body || 'Live updates from Shree Aradhna Jewellers';
+      const rates = payload.rates || null;
+      const subtitle = payload.subtitle || (rates ? 'BIS 916 Hallmarked • Just Updated' : 'Showroom Announcement');
 
-      setPwaNotificationData({ title, body });
+      setPwaNotificationData({
+        title,
+        subtitle,
+        rates,
+        body
+      });
       setShowPwaNotification(true);
-      setTimeout(() => setShowPwaNotification(false), 7000);
+      setTimeout(() => setShowPwaNotification(false), 8000);
 
       // Trigger native notification if permitted
       if ('Notification' in window && Notification.permission === 'granted') {
         try {
+          const notifOptions = {
+            body,
+            icon: '/assets/logo.png',
+            badge: '/assets/logo.png',
+            tag: `notif-${Date.now()}`
+          };
           if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.ready.then(reg => {
-              reg.showNotification(title, {
-                body,
-                icon: '/assets/logo.png',
-                badge: '/assets/logo.png',
-                tag: `notif-${Date.now()}`
-              });
+              reg.showNotification(title, notifOptions);
             });
           } else {
-            new Notification(title, {
-              body,
-              icon: '/assets/logo.png',
-              badge: '/assets/logo.png',
-              tag: `notif-${Date.now()}`
-            });
+            new Notification(title, notifOptions);
           }
         } catch (e) {}
       }
@@ -791,20 +808,6 @@ export default function Home() {
     };
   }, []);
 
-  // Show notification whenever goldRates changes after initial mount (e.g. from network or admin action)
-  useEffect(() => {
-    if (isInitialRatesMount.current) {
-      isInitialRatesMount.current = false;
-      // Initialize with current rates key so initial load doesn't trigger spurious notification
-      if (goldRates.gold22k) {
-        lastNotifiedRateRef.current = `${goldRates.gold24k}-${goldRates.gold22k}-${goldRates.gold18k}-${goldRates.silver}-${Boolean(goldRates.hide24k)}`;
-      }
-      return;
-    }
-    if (goldRates.gold22k) {
-      triggerLiveRateToast(goldRates);
-    }
-  }, [goldRates]);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
   const [passcode, setPasscode] = useState('');
@@ -873,6 +876,9 @@ export default function Home() {
         const liveRates = await fetchLiveRates();
         if (isMounted && liveRates) {
           setGoldRates(prev => ({ ...prev, ...liveRates }));
+          if (liveRates.gold22k) {
+            lastNotifiedRateRef.current = `${liveRates.gold24k}-${liveRates.gold22k}-${liveRates.gold18k}-${liveRates.silver}-${Boolean(liveRates.hide24k)}`;
+          }
         }
       } catch (err) {
         console.warn("[LiveRates] Startup fetch fallback:", err);
@@ -1715,7 +1721,7 @@ export default function Home() {
               <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>24K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(99.9%)</span></div>
                 <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{goldRates.gold24k} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                  ₹{Number(goldRates.gold24k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
                 </div>
               </div>
             )}
@@ -1724,7 +1730,7 @@ export default function Home() {
             <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>22K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(91.6%)</span></div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                ₹{goldRates.gold22k} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                ₹{Number(goldRates.gold22k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
               </div>
             </div>
 
@@ -1733,7 +1739,7 @@ export default function Home() {
               <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>18K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(75.0%)</span></div>
                 <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{goldRates.gold18k} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                  ₹{Number(goldRates.gold18k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
                 </div>
               </div>
             )}
@@ -1742,7 +1748,7 @@ export default function Home() {
             <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>SILVER</div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: '#6b7280', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                ₹{goldRates.silver} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                ₹{Number(goldRates.silver || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
               </div>
             </div>
           </div>
@@ -4183,78 +4189,229 @@ export default function Home() {
         </div>
       )}
 
-      {/* â”€â”€ PWA Standalone Rate Update Notification â”€â”€ */}
+      {/* ── Luxury Live Rate & Announcement Notification Toast ── */}
       {showPwaNotification && (
         <div
+          role="alert"
+          aria-live="assertive"
           style={{
             position: 'fixed',
-            top: '80px',
+            top: '24px',
             right: '20px',
-            zIndex: 10000,
-            background: '#ffffff',
-            border: '1px solid rgba(123, 17, 34, 0.25)',
-            borderRadius: '16px',
-            padding: '16px 20px',
-            boxShadow: '0 16px 36px rgba(123, 17, 34, 0.15)',
-            maxWidth: '320px',
-            width: 'calc(100% - 40px)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '12px',
-            animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            boxSizing: 'border-box'
+            zIndex: 100000,
+            background: 'linear-gradient(145deg, #ffffff 0%, #fffdf8 100%)',
+            border: '1.5px solid rgba(212, 175, 55, 0.55)',
+            borderRadius: '20px',
+            padding: '16px 18px',
+            boxShadow: '0 20px 48px rgba(123, 17, 34, 0.18), 0 4px 16px rgba(212, 175, 55, 0.15)',
+            maxWidth: '420px',
+            width: 'calc(100% - 32px)',
+            animation: 'slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            boxSizing: 'border-box',
+            fontFamily: 'var(--font-sans)'
           }}
         >
-          {/* Bell Icon */}
-          <div style={{
-            background: 'rgba(123, 17, 34, 0.08)',
-            borderRadius: '50%',
-            width: '36px',
-            height: '36px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '16px',
-            flexShrink: 0
-          }}>
-            🔔
+          {/* Header Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 50%, #b8860b 100%)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                color: '#fff',
+                boxShadow: '0 3px 8px rgba(123, 17, 34, 0.28)',
+                flexShrink: 0
+              }}>
+                👑
+              </div>
+              <div>
+                <h4 style={{
+                  margin: 0,
+                  fontSize: '12.5px',
+                  fontWeight: '800',
+                  color: '#7b1122',
+                  letterSpacing: '0.6px',
+                  textTransform: 'uppercase'
+                }}>
+                  {pwaNotificationData.title || 'LIVE MARKET RATE UPDATE'}
+                </h4>
+                <div style={{
+                  fontSize: '10.5px',
+                  color: '#8c6d1f',
+                  fontWeight: '600',
+                  letterSpacing: '0.3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  marginTop: '1px'
+                }}>
+                  <span style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#10b981',
+                    display: 'inline-block',
+                    boxShadow: '0 0 6px #10b981'
+                  }}></span>
+                  {pwaNotificationData.subtitle || 'BIS 916 Hallmarked • Just Updated'}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowPwaNotification(false)}
+              aria-label="Close notification"
+              style={{
+                background: 'rgba(123, 17, 34, 0.08)',
+                border: 'none',
+                color: '#7b1122',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                lineHeight: 1,
+                transition: 'background 0.2s ease'
+              }}
+            >
+              ✕
+            </button>
           </div>
 
-          <div style={{ flexGrow: 1 }}>
-            <h4 style={{
-              margin: '0 0 4px',
-              fontFamily: 'var(--font-sans)',
-              fontSize: '13px',
-              fontWeight: '700',
-              color: 'var(--peacock-green)',
-              letterSpacing: '0.5px'
+          {/* Structured Rate Cards Grid (When rates data exists) */}
+          {pwaNotificationData.rates ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: pwaNotificationData.rates.hide24k ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+              gap: '8px',
+              marginTop: '10px',
+              marginBottom: '10px'
             }}>
-              {pwaNotificationData.title}
-            </h4>
+              {/* 24K Gold Card */}
+              {!pwaNotificationData.rates.hide24k && (
+                <div style={{
+                  background: '#ffffff',
+                  border: '1px solid rgba(212, 175, 55, 0.4)',
+                  borderRadius: '10px',
+                  padding: '7px 8px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
+                }}>
+                  <div style={{ fontSize: '9px', fontWeight: '700', color: '#8c6d1f', letterSpacing: '0.4px' }}>
+                    24K (999 PURE)
+                  </div>
+                  <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1a1a1a', margin: '2px 0 0' }}>
+                    ₹{Number(pwaNotificationData.rates.gold24k || 15500).toLocaleString('en-IN')}
+                    <span style={{ fontSize: '9px', fontWeight: '500', color: '#666', marginLeft: '2px' }}>/g</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 22K Gold Card - Main Highlight */}
+              <div style={{
+                background: 'linear-gradient(135deg, #fff9e6 0%, #fff2c6 100%)',
+                border: '1.5px solid #d4af37',
+                borderRadius: '10px',
+                padding: '7px 8px',
+                textAlign: 'center',
+                boxShadow: '0 2px 7px rgba(212, 175, 55, 0.2)'
+              }}>
+                <div style={{ fontSize: '9px', fontWeight: '800', color: '#7b1122', letterSpacing: '0.4px' }}>
+                  👑 22K (916 BIS)
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: '900', color: '#7b1122', margin: '2px 0 0' }}>
+                  ₹{Number(pwaNotificationData.rates.gold22k || 14200).toLocaleString('en-IN')}
+                  <span style={{ fontSize: '9.5px', fontWeight: '600', color: '#8c6d1f', marginLeft: '2px' }}>/g</span>
+                </div>
+              </div>
+
+              {/* 18K Gold Card */}
+              <div style={{
+                background: '#ffffff',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
+                borderRadius: '10px',
+                padding: '7px 8px',
+                textAlign: 'center',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ fontSize: '9px', fontWeight: '700', color: '#8c6d1f', letterSpacing: '0.4px' }}>
+                  18K (750 HM)
+                </div>
+                <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1a1a1a', margin: '2px 0 0' }}>
+                  ₹{Number(pwaNotificationData.rates.gold18k || 11625).toLocaleString('en-IN')}
+                  <span style={{ fontSize: '9px', fontWeight: '500', color: '#666', marginLeft: '2px' }}>/g</span>
+                </div>
+              </div>
+
+              {/* Silver Card */}
+              <div style={{
+                background: 'linear-gradient(135deg, #f8f9fa 0%, #edf2f7 100%)',
+                border: '1px solid #cbd5e1',
+                borderRadius: '10px',
+                padding: '7px 8px',
+                textAlign: 'center',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ fontSize: '9px', fontWeight: '700', color: '#475569', letterSpacing: '0.4px' }}>
+                  SILVER (999)
+                </div>
+                <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1e293b', margin: '2px 0 0' }}>
+                  ₹{Number(pwaNotificationData.rates.silver || 235).toLocaleString('en-IN')}
+                  <span style={{ fontSize: '9px', fontWeight: '500', color: '#64748b', marginLeft: '2px' }}>/g</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Plain Announcement Body fallback */
             <p style={{
-              margin: 0,
-              fontSize: '11px',
-              color: '#555555',
-              lineHeight: '1.4'
+              margin: '8px 0',
+              fontSize: '12px',
+              color: '#444444',
+              lineHeight: '1.5',
+              whiteSpace: 'pre-line'
             }}>
               {pwaNotificationData.body}
             </p>
-          </div>
+          )}
 
-          <button
-            onClick={() => setShowPwaNotification(false)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#999999',
-              fontSize: '14px',
-              cursor: 'pointer',
-              padding: 0,
-              lineHeight: 1
-            }}
-          >
-            ✕
-          </button>
+          {/* Footer Note */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingTop: '8px',
+            borderTop: '1px solid rgba(212, 175, 55, 0.25)',
+            fontSize: '10px',
+            color: '#888888'
+          }}>
+            <span>Showroom live board synced</span>
+            <a
+              href="#showcase"
+              onClick={() => {
+                setShowPwaNotification(false);
+                const el = document.getElementById('showcase');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{
+                color: '#7b1122',
+                fontWeight: '700',
+                textDecoration: 'none',
+                letterSpacing: '0.4px'
+              }}
+            >
+              EXPLORE DESIGNS →
+            </a>
+          </div>
         </div>
       )}
 
