@@ -337,6 +337,18 @@ export async function saveLiveRates(ratesData) {
     console.warn('[LiveRates] GitHub commit error:', ghErr.message);
   }
 
+  // 6. Broadcast Live Rate Notification to all devices, tabs & notification trays
+  try {
+    const rateBody = normalized.hide24k
+      ? `👑 Today's Live Rates: 22K Gold ₹${normalized.gold22k}/g | 18K Gold ₹${normalized.gold18k}/g | Silver ₹${normalized.silver}/g.`
+      : `👑 Today's Live Rates: 24K Gold ₹${normalized.gold24k}/g | 22K Gold ₹${normalized.gold22k}/g | 18K Gold ₹${normalized.gold18k}/g | Silver ₹${normalized.silver}/g.`;
+
+    const { broadcastNotificationToAll } = await import('./festivalGreetings');
+    await broadcastNotificationToAll('👑 LIVE GOLD RATE UPDATE', rateBody);
+  } catch (notifErr) {
+    console.warn('[LiveRates] Notification broadcast error:', notifErr.message);
+  }
+
   return {
     success: true,
     rates: normalized,

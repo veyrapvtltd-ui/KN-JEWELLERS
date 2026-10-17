@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import heic2any from 'heic2any';
 import { 
@@ -663,6 +663,51 @@ export default function Home() {
     };
   }, []);
 
+  const lastNotifiedRateRef = useRef('');
+  const isInitialRatesMount = useRef(true);
+
+  // Universal Live Rate Toast & Native Push Notification Trigger
+  const triggerLiveRateToast = (rates) => {
+    if (!rates || !rates.gold22k) return;
+    const rateKey = `${rates.gold24k}-${rates.gold22k}-${rates.gold18k}-${rates.silver}-${Boolean(rates.hide24k)}`;
+    if (lastNotifiedRateRef.current === rateKey) return;
+    lastNotifiedRateRef.current = rateKey;
+
+    const body = rates.hide24k
+      ? `👑 Today's Live Rates: 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`
+      : `👑 Today's Live Rates: 24K Gold ₹${rates.gold24k}/g | 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`;
+
+    setPwaNotificationData({
+      title: '👑 LIVE GOLD RATE UPDATE',
+      body
+    });
+    setShowPwaNotification(true);
+    setTimeout(() => setShowPwaNotification(false), 7000);
+
+    // Also trigger native device push notification if permission granted
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification('👑 LIVE GOLD RATE UPDATE', {
+              body,
+              icon: '/assets/logo.png',
+              badge: '/assets/logo.png',
+              tag: `live-rate-${Date.now()}`
+            });
+          });
+        } else {
+          new Notification('👑 LIVE GOLD RATE UPDATE', {
+            body,
+            icon: '/assets/logo.png',
+            badge: '/assets/logo.png',
+            tag: `live-rate-${Date.now()}`
+          });
+        }
+      } catch (e) {}
+    }
+  };
+
   // Real-time Rate Sync Across All Open Tabs & Windows (LocalStorage + BroadcastChannel)
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -670,6 +715,7 @@ export default function Home() {
         try {
           const parsed = JSON.parse(e.newValue);
           setGoldRates(prev => ({ ...prev, ...parsed }));
+          triggerLiveRateToast(parsed);
         } catch (err) {}
       }
     };
@@ -678,6 +724,7 @@ export default function Home() {
     const handleRatesUpdatedEvent = (e) => {
       if (e.detail) {
         setGoldRates(prev => ({ ...prev, ...e.detail }));
+        triggerLiveRateToast(e.detail);
       }
     };
     window.addEventListener('saj_rates_updated', handleRatesUpdatedEvent);
@@ -689,6 +736,7 @@ export default function Home() {
         ratesBc.onmessage = (event) => {
           if (event.data) {
             setGoldRates(prev => ({ ...prev, ...event.data }));
+            triggerLiveRateToast(event.data);
           }
         };
       }
@@ -701,18 +749,18 @@ export default function Home() {
     };
   }, []);
 
+  // Show notification whenever goldRates changes after initial mount (e.g. from network or admin action)
   useEffect(() => {
-    // Check if running in standalone PWA mode
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone && goldRates.gold22k) {
-      const timer = setTimeout(() => {
-        setPwaNotificationData({
-          title: '👑 LIVE RATE ALERT',
-          body: `Gold rates updated! 22K: ₹${goldRates.gold22k}/g | Silver: ₹${goldRates.silver}/g.`
-        });
-        setShowPwaNotification(true);
-      }, 1500);
-      return () => clearTimeout(timer);
+    if (isInitialRatesMount.current) {
+      isInitialRatesMount.current = false;
+      // Initialize with current rates key so initial load doesn't trigger spurious notification
+      if (goldRates.gold22k) {
+        lastNotifiedRateRef.current = `${goldRates.gold24k}-${goldRates.gold22k}-${goldRates.gold18k}-${goldRates.silver}-${Boolean(goldRates.hide24k)}`;
+      }
+      return;
+    }
+    if (goldRates.gold22k) {
+      triggerLiveRateToast(goldRates);
     }
   }, [goldRates]);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
