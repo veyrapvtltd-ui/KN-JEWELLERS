@@ -595,6 +595,51 @@ export default function Home() {
     document.title = "Shree Aradhna Jewellers | Premium Gold & Silver Jewellery";
   }, []);
 
+  const lastNotifiedRateRef = useRef('');
+  const isInitialRatesMount = useRef(true);
+
+  // Universal Live Rate Toast & Native Push Notification Trigger
+  const triggerLiveRateToast = (rates) => {
+    if (!rates || !rates.gold22k) return;
+    const rateKey = `${rates.gold24k}-${rates.gold22k}-${rates.gold18k}-${rates.silver}-${Boolean(rates.hide24k)}`;
+    if (lastNotifiedRateRef.current === rateKey) return;
+    lastNotifiedRateRef.current = rateKey;
+
+    const body = rates.hide24k
+      ? `👑 Today's Live Rates: 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`
+      : `👑 Today's Live Rates: 24K Gold ₹${rates.gold24k}/g | 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`;
+
+    setPwaNotificationData({
+      title: '👑 LIVE GOLD RATE UPDATE',
+      body
+    });
+    setShowPwaNotification(true);
+    setTimeout(() => setShowPwaNotification(false), 7000);
+
+    // Also trigger native device push notification if permission granted
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification('👑 LIVE GOLD RATE UPDATE', {
+              body,
+              icon: '/assets/logo.png',
+              badge: '/assets/logo.png',
+              tag: `live-rate-${Date.now()}`
+            });
+          });
+        } else {
+          new Notification('👑 LIVE GOLD RATE UPDATE', {
+            body,
+            icon: '/assets/logo.png',
+            badge: '/assets/logo.png',
+            tag: `live-rate-${Date.now()}`
+          });
+        }
+      } catch (e) {}
+    }
+  };
+
   // Listen for custom notifications triggered anywhere (Current Window, Cross-Tab BroadcastChannel, or Supabase Realtime)
   useEffect(() => {
     const handleNotificationPayload = (payload) => {
@@ -643,8 +688,9 @@ export default function Home() {
       }
     } catch (e) {}
 
-    // 3. Supabase Realtime Channel
+    // 3. Supabase Realtime Channels (Broadcast + Postgres Changes on rates tables)
     let supabaseChannel = null;
+    let dbRatesChannel = null;
     try {
       if (isSupabaseConfigured()) {
         supabaseChannel = supabase
@@ -653,60 +699,56 @@ export default function Home() {
             handleNotificationPayload(payload.payload);
           })
           .subscribe();
+
+        // Listen for direct database changes in Supabase rates tables
+        dbRatesChannel = supabase
+          .channel('saj_rates_db_listener')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'saj_rates' }, async (payload) => {
+            console.log('[Supabase Realtime] Database change in saj_rates:', payload);
+            const fresh = await fetchLiveRates();
+            if (fresh) {
+              setGoldRates(prev => ({ ...prev, ...fresh }));
+              triggerLiveRateToast(fresh);
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'hardik_rates' }, async (payload) => {
+            console.log('[Supabase Realtime] Database change in hardik_rates:', payload);
+            const fresh = await fetchLiveRates();
+            if (fresh) {
+              setGoldRates(prev => ({ ...prev, ...fresh }));
+              triggerLiveRateToast(fresh);
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'rates' }, async (payload) => {
+            console.log('[Supabase Realtime] Database change in rates:', payload);
+            const fresh = await fetchLiveRates();
+            if (fresh) {
+              setGoldRates(prev => ({ ...prev, ...fresh }));
+              triggerLiveRateToast(fresh);
+            }
+          })
+          .subscribe();
       }
     } catch (e) {}
 
+    // 4. Supabase Config Changed Event (e.g. updated in /admin)
+    const handleConfigChanged = async () => {
+      const fresh = await fetchLiveRates();
+      if (fresh) {
+        setGoldRates(prev => ({ ...prev, ...fresh }));
+        triggerLiveRateToast(fresh);
+      }
+    };
+    window.addEventListener('saj_supabase_config_changed', handleConfigChanged);
+
     return () => {
       window.removeEventListener('saj_custom_notification', handleCustomNotify);
+      window.removeEventListener('saj_supabase_config_changed', handleConfigChanged);
       if (bc) bc.close();
       if (supabaseChannel) supabase.removeChannel(supabaseChannel);
+      if (dbRatesChannel) supabase.removeChannel(dbRatesChannel);
     };
   }, []);
-
-  const lastNotifiedRateRef = useRef('');
-  const isInitialRatesMount = useRef(true);
-
-  // Universal Live Rate Toast & Native Push Notification Trigger
-  const triggerLiveRateToast = (rates) => {
-    if (!rates || !rates.gold22k) return;
-    const rateKey = `${rates.gold24k}-${rates.gold22k}-${rates.gold18k}-${rates.silver}-${Boolean(rates.hide24k)}`;
-    if (lastNotifiedRateRef.current === rateKey) return;
-    lastNotifiedRateRef.current = rateKey;
-
-    const body = rates.hide24k
-      ? `👑 Today's Live Rates: 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`
-      : `👑 Today's Live Rates: 24K Gold ₹${rates.gold24k}/g | 22K Gold ₹${rates.gold22k}/g | 18K Gold ₹${rates.gold18k}/g | Silver ₹${rates.silver}/g.`;
-
-    setPwaNotificationData({
-      title: '👑 LIVE GOLD RATE UPDATE',
-      body
-    });
-    setShowPwaNotification(true);
-    setTimeout(() => setShowPwaNotification(false), 7000);
-
-    // Also trigger native device push notification if permission granted
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification('👑 LIVE GOLD RATE UPDATE', {
-              body,
-              icon: '/assets/logo.png',
-              badge: '/assets/logo.png',
-              tag: `live-rate-${Date.now()}`
-            });
-          });
-        } else {
-          new Notification('👑 LIVE GOLD RATE UPDATE', {
-            body,
-            icon: '/assets/logo.png',
-            badge: '/assets/logo.png',
-            tag: `live-rate-${Date.now()}`
-          });
-        }
-      } catch (e) {}
-    }
-  };
 
   // Real-time Rate Sync Across All Open Tabs & Windows (LocalStorage + BroadcastChannel)
   useEffect(() => {

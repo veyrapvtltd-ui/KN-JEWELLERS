@@ -140,29 +140,88 @@ export const DEFAULT_RATES = {
 export async function fetchLiveRates() {
   let rates = null;
 
-  // 1. Supabase
+  // 1. Supabase Cloud (Multi-table and multi-column fallback)
   if (isSupabaseConfigured()) {
-    try {
-      const { data: dbRates, error } = await supabase
-        .from('saj_rates')
-        .select('*')
-        .eq('id', 1)
-        .maybeSingle();
+    const candidateTables = ['saj_rates', 'hardik_rates', 'rates', 'gold_rates', 'live_rates', 'store_rates', 'laxmi_rates'];
 
-      if (!error && dbRates && dbRates.gold22k) {
-        rates = {
-          gold24k: Number(dbRates.gold24k) || DEFAULT_RATES.gold24k,
-          gold22k: Number(dbRates.gold22k) || DEFAULT_RATES.gold22k,
-          gold18k: Number(dbRates.gold18k) || DEFAULT_RATES.gold18k,
-          silver: Number(dbRates.silver) || DEFAULT_RATES.silver,
-          hide24k: dbRates.hide24k !== undefined ? Boolean(dbRates.hide24k) : false,
-          lastUpdated: dbRates.updated_at 
-            ? new Date(dbRates.updated_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
-            : 'Today'
-        };
+    for (const tbl of candidateTables) {
+      try {
+        let dbRates = null;
+
+        // Try order by updated_at descending
+        const { data: byUpdated, error: errUpdated } = await supabase
+          .from(tbl)
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (!errUpdated && byUpdated && byUpdated.length > 0) {
+          dbRates = byUpdated[0];
+        }
+
+        // Try order by id descending
+        if (!dbRates) {
+          const { data: byIdDesc, error: errIdDesc } = await supabase
+            .from(tbl)
+            .select('*')
+            .order('id', { ascending: false })
+            .limit(1);
+
+          if (!errIdDesc && byIdDesc && byIdDesc.length > 0) {
+            dbRates = byIdDesc[0];
+          }
+        }
+
+        // Try id = 1
+        if (!dbRates) {
+          const { data: byId1 } = await supabase
+            .from(tbl)
+            .select('*')
+            .eq('id', 1)
+            .maybeSingle();
+
+          if (byId1) {
+            dbRates = byId1;
+          }
+        }
+
+        // Try any row limit 1
+        if (!dbRates) {
+          const { data: anyRow } = await supabase
+            .from(tbl)
+            .select('*')
+            .limit(1);
+
+          if (anyRow && anyRow.length > 0) {
+            dbRates = anyRow[0];
+          }
+        }
+
+        if (dbRates) {
+          const g24 = Number(dbRates.gold24k ?? dbRates.gold_24k ?? dbRates.rate24k ?? dbRates.rate_24k ?? dbRates.gold24 ?? dbRates.rate24 ?? dbRates.price24k);
+          const g22 = Number(dbRates.gold22k ?? dbRates.gold_22k ?? dbRates.rate22k ?? dbRates.rate_22k ?? dbRates.gold22 ?? dbRates.rate22 ?? dbRates.price22k);
+          const g18 = Number(dbRates.gold18k ?? dbRates.gold_18k ?? dbRates.rate18k ?? dbRates.rate_18k ?? dbRates.gold18 ?? dbRates.rate18 ?? dbRates.price18k);
+          const sil = Number(dbRates.silver ?? dbRates.silver_rate ?? dbRates.silverrate ?? dbRates.silver_price ?? dbRates.silverPrice);
+          const hide24 = Boolean(dbRates.hide24k ?? dbRates.hide_24k ?? false);
+
+          if (g22 > 0 || g24 > 0) {
+            rates = {
+              gold24k: g24 || DEFAULT_RATES.gold24k,
+              gold22k: g22 || DEFAULT_RATES.gold22k,
+              gold18k: g18 || DEFAULT_RATES.gold18k,
+              silver: sil || DEFAULT_RATES.silver,
+              hide24k: hide24,
+              lastUpdated: dbRates.updated_at 
+                ? new Date(dbRates.updated_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
+                : (dbRates.lastUpdated || 'Today')
+            };
+            console.log(`[LiveRates] ✅ Supabase rates loaded from table '${tbl}':`, rates);
+            break;
+          }
+        }
+      } catch (e) {
+        // Continue to check next candidate table
       }
-    } catch (e) {
-      console.warn('[LiveRates] Supabase fetch fallback:', e.message);
     }
   }
 
@@ -282,36 +341,39 @@ export async function saveLiveRates(ratesData) {
     }
   } catch (e) {}
 
-  // 4. Supabase Cloud Sync
+  // 4. Supabase Cloud Sync (Sync to saj_rates, hardik_rates, or rates)
   let supabaseSaved = false;
   if (isSupabaseConfigured()) {
-    try {
-      let { error } = await supabase.from('saj_rates').upsert({
-        id: 1,
-        gold24k: normalized.gold24k,
-        gold22k: normalized.gold22k,
-        gold18k: normalized.gold18k,
-        silver: normalized.silver,
-        hide24k: normalized.hide24k,
-        updated_at: normalized.updated_at
-      });
-
-      // Defensive fallback if hide24k column does not exist in DB
-      if (error && (error.code === '42703' || error.message?.includes('hide24k') || error.code === 'PGRST204')) {
-        const retry = await supabase.from('saj_rates').upsert({
+    const candidateSaveTables = ['saj_rates', 'hardik_rates', 'rates'];
+    for (const tbl of candidateSaveTables) {
+      try {
+        let { error } = await supabase.from(tbl).upsert({
           id: 1,
           gold24k: normalized.gold24k,
           gold22k: normalized.gold22k,
           gold18k: normalized.gold18k,
           silver: normalized.silver,
+          hide24k: normalized.hide24k,
           updated_at: normalized.updated_at
         });
-        if (!retry.error) supabaseSaved = true;
-      } else if (!error) {
-        supabaseSaved = true;
+
+        // Defensive fallback if hide24k column does not exist in DB
+        if (error && (error.code === '42703' || error.message?.includes('hide24k') || error.code === 'PGRST204')) {
+          const retry = await supabase.from(tbl).upsert({
+            id: 1,
+            gold24k: normalized.gold24k,
+            gold22k: normalized.gold22k,
+            gold18k: normalized.gold18k,
+            silver: normalized.silver,
+            updated_at: normalized.updated_at
+          });
+          if (!retry.error) supabaseSaved = true;
+        } else if (!error) {
+          supabaseSaved = true;
+        }
+      } catch (err) {
+        // Table may not exist, proceed
       }
-    } catch (err) {
-      console.warn('[LiveRates] Supabase upsert error:', err.message);
     }
   }
 

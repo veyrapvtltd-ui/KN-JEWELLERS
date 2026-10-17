@@ -1,13 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Get current Supabase credentials (localStorage priority -> import.meta.env fallback)
+// Get current Supabase credentials (localStorage priority -> import.meta.env fallback -> default project)
 export const getSupabaseConfig = () => {
   let url = '';
   let key = '';
 
   if (typeof window !== 'undefined') {
-    url = localStorage.getItem('SAJ_supabase_url') || '';
-    key = localStorage.getItem('SAJ_supabase_anon_key') || '';
+    url = 
+      localStorage.getItem('SAJ_supabase_url') || 
+      localStorage.getItem('hardik_supabase_url') || 
+      localStorage.getItem('supabase_url') || 
+      '';
+    key = 
+      localStorage.getItem('SAJ_supabase_anon_key') || 
+      localStorage.getItem('hardik_supabase_anon_key') || 
+      localStorage.getItem('supabase_anon_key') || 
+      '';
   }
 
   if (!url) {
@@ -15,6 +23,14 @@ export const getSupabaseConfig = () => {
   }
   if (!key) {
     key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  }
+
+  // Built-in default Supabase cloud configuration
+  if (!url) {
+    url = 'https://xfkcnmhophacnluofauu.supabase.co';
+  }
+  if (!key) {
+    key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhma2NubWhvcGhhY25sdW9mYXV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTI2NzcsImV4cCI6MjEwMzU2ODY3N30.gqApRPsnJeFcOVk1XQnQiw_GSii3W1FszzfsBud4K-Y';
   }
 
   return {
@@ -28,11 +44,10 @@ export const isSupabaseConfigured = () => {
   const { url, key } = getSupabaseConfig();
   if (!url || !key) return false;
 
-  // Filter out placeholders or outdated/dead endpoints
+  // Filter out placeholders or dummy endpoints
   const isPlaceholder = 
     url.includes('your-project') || 
     url.includes('placeholder-project') ||
-    url.includes('xfkcnmhophacnluofauu') ||
     key.includes('your-anon-key') ||
     key.includes('placeholder-anon-key');
 
