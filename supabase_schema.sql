@@ -33,14 +33,23 @@ CREATE TABLE IF NOT EXISTS public.saj_rates (
     gold24k numeric DEFAULT 15500,
     gold22k numeric DEFAULT 14200,
     gold18k numeric DEFAULT 11625,
-    silver numeric DEFAULT 98,
+    silver numeric DEFAULT 235,
+    hide24k boolean DEFAULT false,
     updated_at timestamp with time zone DEFAULT now()
 );
 
+-- Ensure hide24k exists if table was created earlier
+ALTER TABLE public.saj_rates ADD COLUMN IF NOT EXISTS hide24k boolean DEFAULT false;
+
 -- Seed initial rates
-INSERT INTO public.saj_rates (id, gold24k, gold22k, gold18k, silver)
-VALUES (1, 15500, 14200, 11625, 98)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.saj_rates (id, gold24k, gold22k, gold18k, silver, hide24k)
+VALUES (1, 15500, 14200, 11625, 235, false)
+ON CONFLICT (id) DO UPDATE SET
+    gold24k = EXCLUDED.gold24k,
+    gold22k = EXCLUDED.gold22k,
+    gold18k = EXCLUDED.gold18k,
+    silver = EXCLUDED.silver,
+    hide24k = EXCLUDED.hide24k;
 
 -- 3. CUSTOM USERS (CUSTOMER PROFILES)
 CREATE TABLE IF NOT EXISTS public.custom_users (

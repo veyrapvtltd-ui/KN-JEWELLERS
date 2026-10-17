@@ -7,6 +7,14 @@ import {
   ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { 
+  fetchLiveRates, 
+  saveLiveRates, 
+  fetchCustomProducts, 
+  saveCustomProduct, 
+  deleteCustomProduct,
+  DEFAULT_RATES 
+} from '../lib/cloudSync';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
 import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification, broadcastNotificationToAll, INDIAN_FESTIVALS } from '../lib/festivalGreetings';
 import { collection18kProducts, best18kSellers } from '../data/collection18k';
@@ -655,96 +663,53 @@ export default function Home() {
     }
   };
 
-  // Load public rates and products on startup
+  // Load live rates and products on startup with global multi-tier fallback
   useEffect(() => {
-    const fetchRatesAndProducts = async () => {
-      // 1. Fetch live rates from Supabase if configured
-      if (isSupabaseConfigured()) {
-        try {
-          const { data: dbRates } = await supabase
-            .from('saj_rates')
-            .select('*')
-            .eq('id', 1)
-            .maybeSingle();
-
-          if (dbRates) {
-            const formattedRates = {
-              gold24k: Number(dbRates.gold24k) || 15500,
-              gold22k: Number(dbRates.gold22k) || 14200,
-              gold18k: Number(dbRates.gold18k) || 11625,
-              silver: Number(dbRates.silver) || 235,
-              hide24k: dbRates.hide24k !== undefined ? Boolean(dbRates.hide24k) : false,
-              lastUpdated: dbRates.updated_at ? new Date(dbRates.updated_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Today'
-            };
-            setGoldRates(prev => ({ ...prev, ...formattedRates }));
-            localStorage.setItem('SAJ_rates', JSON.stringify(formattedRates));
-            localStorage.setItem('SAJ_gold_rates', JSON.stringify(formattedRates));
-          }
-        } catch (err) {
-          console.warn("Supabase rates fetch fallback:", err.message);
-        }
-      }
-
-      // 2. Local storage / rates.json fallback
+    let isMounted = true;
+    const initData = async () => {
       try {
-        const storedRates = localStorage.getItem('SAJ_gold_rates') || localStorage.getItem('SAJ_rates');
-        if (storedRates) {
-          const parsed = JSON.parse(storedRates);
-          setGoldRates(prev => ({ ...prev, ...parsed }));
-        } else {
-          const res = await fetch('/assets/rates.json');
-          if (res.ok) {
-            const jsonRates = await res.json();
-            setGoldRates(prev => ({ ...prev, ...jsonRates }));
-          }
+        const liveRates = await fetchLiveRates();
+        if (isMounted && liveRates) {
+          setGoldRates(prev => ({ ...prev, ...liveRates }));
         }
-      } catch (e) {
-        console.warn("Rates loading fallback:", e);
-      }
-      
-      // 3. Products catalog state (merges Supabase + LocalStorage)
-      let supabaseProducts = [];
-      if (isSupabaseConfigured()) {
-        try {
-          const { data: pData } = await supabase
-            .from('saj_products')
-            .select('*')
-            .order('created_at', { ascending: false });
-          if (pData && pData.length > 0) {
-            supabaseProducts = pData.map(p => ({
-              id: String(p.id),
-              title: p.title,
-              category: p.category,
-              subCategory: p.subcategory || 'ALL',
-              purity: p.description?.split('-')[0]?.trim() || '22K Hallmarked Gold',
-              weight: p.weight || '',
-              url: p.image || '/assets/logo.png',
-              price: p.price
-            }));
-          }
-        } catch (dbErr) {
-          console.warn("Supabase products fetch fallback:", dbErr);
-        }
+      } catch (err) {
+        console.warn("[LiveRates] Startup fetch fallback:", err);
       }
 
-      let localProducts = [];
       try {
-        localProducts = JSON.parse(localStorage.getItem('SAJ_custom_products') || '[]');
-      } catch {
-        localProducts = [];
-      }
-
-      const seenIds = new Set();
-      const combined = [];
-      for (const p of [...supabaseProducts, ...localProducts]) {
-        if (p && p.id && !seenIds.has(String(p.id))) {
-          seenIds.add(String(p.id));
-          combined.push(p);
+        const customProds = await fetchCustomProducts();
+        if (isMounted && customProds) {
+          setDbProducts(customProds);
         }
+      } catch (err) {
+        console.warn("[CustomProducts] Startup fetch fallback:", err);
       }
-      setDbProducts(combined);
     };
-    fetchRatesAndProducts();
+    initData();
+
+    // Listen for product catalog events across open tabs
+    let prodBc = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        prodBc = new BroadcastChannel('saj_products_channel');
+        prodBc.onmessage = (event) => {
+          if (!event.data) return;
+          const { action, product, productId } = event.data;
+          if (action === 'add' && product) {
+            setDbProducts(prev => [product, ...prev.filter(p => String(p.id) !== String(product.id))]);
+          } else if (action === 'update' && product) {
+            setDbProducts(prev => prev.map(p => String(p.id) === String(product.id) ? { ...p, ...product } : p));
+          } else if (action === 'delete' && productId) {
+            setDbProducts(prev => prev.filter(p => String(p.id) !== String(productId)));
+          }
+        };
+      }
+    } catch (e) {}
+
+    return () => {
+      isMounted = false;
+      if (prodBc) prodBc.close();
+    };
   }, []);
 
   // Auto-advance banner carousel
@@ -850,29 +815,18 @@ export default function Home() {
           if (!uploadErr) {
             const { data: urlData } = supabase.storage.from('product_images').getPublicUrl(fileName);
             finalImageUrl = urlData?.publicUrl;
-
-            // Also persist in Supabase saj_products table
-            await supabase.from('saj_products').insert([{
-              title: upTitle.trim(),
-              category: upCategory,
-              subcategory: upSubCategory,
-              weight: upWeight || '',
-              image: finalImageUrl,
-              description: `${upPurity || '22K Gold'} - ${upEarringType || ''}`
-            }]);
           }
         } catch (storageEx) {
           console.warn("Supabase product storage upload fallback:", storageEx.message);
         }
       }
 
-      // Step 3: Fallback to compact Data URL for LocalStorage
+      // Step 3: Fallback to compact Data URL
       if (!finalImageUrl) {
         finalImageUrl = await fileToDataUrl(optimizedFile);
       }
 
       const finalProduct = {
-        id: 'prod_' + Date.now(),
         title: upTitle.trim(),
         category: upCategory,
         subCategory: upSubCategory,
@@ -882,29 +836,14 @@ export default function Home() {
         url: finalImageUrl
       };
 
-      // Save locally in localStorage with quota safety
-      try {
-        const localCustoms = JSON.parse(localStorage.getItem('SAJ_custom_products') || '[]');
-        localCustoms.unshift(finalProduct);
-        localStorage.setItem('SAJ_custom_products', JSON.stringify(localCustoms));
-      } catch (errLoc) {
-        console.error("Local storage save error:", errLoc);
-        alert("Warning: Browser local storage is almost full. Connect Supabase in /admin for unlimited cloud product storage.");
+      const result = await saveCustomProduct(finalProduct);
+      setDbProducts(prev => [result.product, ...prev.filter(p => String(p.id) !== String(result.product.id))]);
+
+      if (result.globalSyncActive) {
+        alert('✅ Product uploaded & globally synced!\n\nIt is now live in the catalog and synced across GitHub Global Network & Supabase.');
+      } else {
+        alert('✅ Product uploaded successfully!\n\nLive now under ' + upCategory + ' / ' + upSubCategory + ' (saved locally & synced across open tabs).');
       }
-
-      // Update state immediately
-      setDbProducts(prev => [finalProduct, ...prev]);
-
-      // Broadcast product update to other open tabs
-      try {
-        if ('BroadcastChannel' in window) {
-          const prodBc = new BroadcastChannel('saj_products_channel');
-          prodBc.postMessage({ action: 'add', product: finalProduct });
-          prodBc.close();
-        }
-      } catch (e) {}
-
-      alert('✅ Product uploaded successfully!\n\nIt is now live in the catalog and will appear under ' + upCategory + ' / ' + upSubCategory + '.');
 
       // Reset form
       setUpTitle('');
@@ -922,35 +861,14 @@ export default function Home() {
   const handleDeleteProduct = async (prodId) => {
     if (!window.confirm("Are you sure you want to delete this product from the catalog?")) return;
 
-    // Delete from Supabase if connected
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase.from('saj_products').delete().eq('id', prodId);
-      } catch (err) {
-        console.warn("Supabase delete product error:", err.message);
-      }
+    try {
+      await deleteCustomProduct(prodId);
+      setDbProducts(prev => prev.filter(p => String(p.id) !== String(prodId)));
+      alert("✅ Product deleted and synced successfully!");
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Error deleting product: " + err.message);
     }
-
-    // Delete from LocalStorage
-    try {
-      const localCustoms = JSON.parse(localStorage.getItem('SAJ_custom_products') || '[]');
-      const filtered = localCustoms.filter(p => String(p.id) !== String(prodId));
-      localStorage.setItem('SAJ_custom_products', JSON.stringify(filtered));
-    } catch (e) {}
-
-    // Update state immediately
-    setDbProducts(prev => prev.filter(p => String(p.id) !== String(prodId)));
-
-    // Broadcast delete to other open tabs
-    try {
-      if ('BroadcastChannel' in window) {
-        const prodBc = new BroadcastChannel('saj_products_channel');
-        prodBc.postMessage({ action: 'delete', id: prodId });
-        prodBc.close();
-      }
-    } catch (e) {}
-
-    alert("✅ Product deleted successfully!");
   };
 
   const handleExportProductsZip = async () => {
@@ -977,61 +895,27 @@ export default function Home() {
 
   const handleSaveRates = async (e) => {
     e.preventDefault();
-    const now = new Date().toLocaleString('en-IN', { 
-      day: 'numeric', 
-      month: 'short', 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: true 
-    });
-    const newRates = {
-      ...goldRates,
-      gold24k: Number(temp24k),
-      gold22k: Number(temp22k),
-      gold18k: Number(temp18k),
-      silver: Number(tempSilver),
-      hide24k: tempHide24k,
-      lastUpdated: now
-    };
-
-    setGoldRates(newRates);
-    localStorage.setItem('SAJ_gold_rates', JSON.stringify(newRates));
-    localStorage.setItem('SAJ_rates', JSON.stringify(newRates));
-
-    // Broadcast updated rates to all open tabs immediately
-    window.dispatchEvent(new CustomEvent('saj_rates_updated', { detail: newRates }));
     try {
-      if ('BroadcastChannel' in window) {
-        const bc = new BroadcastChannel('saj_rates_channel');
-        bc.postMessage(newRates);
-        bc.close();
-      }
-    } catch (e) {}
+      const result = await saveLiveRates({
+        gold24k: temp24k,
+        gold22k: temp22k,
+        gold18k: temp18k,
+        silver: tempSilver,
+        hide24k: tempHide24k
+      });
 
-    let cloudSaved = false;
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabase.from('saj_rates').upsert({
-          id: 1,
-          gold24k: Number(temp24k),
-          gold22k: Number(temp22k),
-          gold18k: Number(temp18k),
-          silver: Number(tempSilver),
-          hide24k: tempHide24k,
-          updated_at: new Date().toISOString()
-        });
-        if (!error) cloudSaved = true;
-      } catch (err) {
-        console.warn("Supabase rate save failed:", err.message);
-      }
-    }
+      setGoldRates(result.rates);
 
-    if (cloudSaved) {
-      alert(`✅ Live Rates updated & saved to Supabase Cloud Database!\n\n• 24K Gold: ₹${temp24k}/g\n• 22K Gold: ₹${temp22k}/g\n• 18K Gold: ₹${temp18k}/g\n• Silver: ₹${tempSilver}/g\n\nSynced live across all devices and customers worldwide.`);
-    } else {
-      alert(`✅ Rates updated successfully!\n\n• 24K Gold: ₹${temp24k}/g\n• 22K Gold: ₹${temp22k}/g\n• 18K Gold: ₹${temp18k}/g\n• Silver: ₹${tempSilver}/g\n\n📌 Saved in browser storage & synced to all open tabs.\n(Connect Supabase in /admin for automatic worldwide cloud sync).`);
+      if (result.globalSyncActive) {
+        alert(`✅ Live Rates updated & globally synced!\n\n• 24K Gold: ₹${temp24k}/g\n• 22K Gold: ₹${temp22k}/g\n• 18K Gold: ₹${temp18k}/g\n• Silver: ₹${tempSilver}/g\n\n🌐 Synced across GitHub Global Network & Supabase Cloud.\nCustomers visiting from any mobile phone or browser will immediately see these live rates.`);
+      } else {
+        alert(`✅ Rates updated successfully!\n\n• 24K Gold: ₹${temp24k}/g\n• 22K Gold: ₹${temp22k}/g\n• 18K Gold: ₹${temp18k}/g\n• Silver: ₹${tempSilver}/g\n\n📌 Saved locally in browser storage & synced to all open tabs.`);
+      }
+      setIsAdminOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('Error updating live rates: ' + err.message);
     }
-    setIsAdminOpen(false);
   };
 
   const handleAdminLogout = () => {
@@ -1571,21 +1455,52 @@ export default function Home() {
           width: '100%',
           textAlign: 'center'
         }}>
-          <h2 style={{
-            fontSize: '14px',
-            fontWeight: '700',
-            letterSpacing: '2px',
-            color: 'var(--text-dark)',
-            margin: '0 0 24px 0',
-            textTransform: 'uppercase',
+          <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px'
+            gap: '14px',
+            margin: '0 0 24px 0',
+            flexWrap: 'wrap'
           }}>
-            <span className="ping-dot" style={{ position: 'relative', top: '0', transform: 'none' }}></span>
-            TODAY'S LIVE RATES
-          </h2>
+            <h2 style={{
+              fontSize: '14px',
+              fontWeight: '700',
+              letterSpacing: '2px',
+              color: 'var(--text-dark)',
+              margin: 0,
+              textTransform: 'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span className="ping-dot" style={{ position: 'relative', top: '0', transform: 'none' }}></span>
+              TODAY'S LIVE RATES
+            </h2>
+
+            <button
+              onClick={() => setIsAdminOpen(true)}
+              title="Quick Update Live Rates & Product Catalog"
+              style={{
+                background: 'linear-gradient(135deg, rgba(123, 17, 34, 0.08), rgba(212, 175, 55, 0.15))',
+                border: '1px solid rgba(123, 17, 34, 0.35)',
+                color: 'var(--royal-gold)',
+                padding: '5px 12px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: '700',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <span>✏️</span> EDIT LIVE RATES
+            </button>
+          </div>
           
           <div style={{
             display: 'flex',
