@@ -1261,15 +1261,23 @@ export async function broadcastNotificationToAll(title, body, extraData = {}) {
     const { isSupabaseConfigured, supabase } = await import('./supabase');
     if (isSupabaseConfigured()) {
       const channel = supabase.channel('saj_public_broadcast');
-      channel.subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          channel.send({
-            type: 'broadcast',
-            event: 'new_notification',
-            payload
-          });
-        }
-      });
+      if (channel.state === 'joined') {
+        await channel.send({
+          type: 'broadcast',
+          event: 'new_notification',
+          payload
+        });
+      } else {
+        channel.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await channel.send({
+              type: 'broadcast',
+              event: 'new_notification',
+              payload
+            });
+          }
+        });
+      }
 
       // Save notification to store
       try {

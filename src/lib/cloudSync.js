@@ -419,6 +419,68 @@ export async function saveLiveRates(ratesData) {
     console.warn('[LiveRates] GitHub commit error:', ghErr.message);
   }
 
+  // 6. Realtime Push Broadcast & Persistent Notification Store across all customer devices worldwide
+  if (isSupabaseConfigured()) {
+    try {
+      const g24 = Number(normalized.gold24k).toLocaleString('en-IN');
+      const g22 = Number(normalized.gold22k).toLocaleString('en-IN');
+      const g18 = Number(normalized.gold18k).toLocaleString('en-IN');
+      const sil = Number(normalized.silver).toLocaleString('en-IN');
+
+      const formattedSummary = normalized.hide24k
+        ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\n\nShowroom rates live at Gandhidham & Adipur.`
+        : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\n\nShowroom rates live at Gandhidham & Adipur.`;
+
+      const broadcastPayload = {
+        title: '👑 LIVE MARKET RATE UPDATE',
+        subtitle: 'BIS 916 Hallmarked • Just Updated',
+        body: formattedSummary,
+        rates: normalized,
+        timestamp: new Date().toISOString(),
+        force: true
+      };
+
+      // 6a. Insert into broadcast_notifications for persistent catchup & db triggers
+      await supabase.from('broadcast_notifications').insert([{
+        title: broadcastPayload.title,
+        body: broadcastPayload.body,
+        created_at: broadcastPayload.timestamp
+      }]);
+
+      // 6b. Realtime WebSocket Broadcast to all active browser windows & mobile devices
+      const pubChan = supabase.channel('saj_public_broadcast');
+      if (pubChan.state === 'joined') {
+        await pubChan.send({
+          type: 'broadcast',
+          event: 'new_notification',
+          payload: broadcastPayload
+        });
+      } else {
+        pubChan.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await pubChan.send({
+              type: 'broadcast',
+              event: 'new_notification',
+              payload: broadcastPayload
+            });
+          }
+        });
+      }
+
+      // 6c. Local custom event & cross-tab BroadcastChannel
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('saj_custom_notification', { detail: broadcastPayload }));
+        if ('BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('saj_notifications');
+          bc.postMessage(broadcastPayload);
+          bc.close();
+        }
+      }
+    } catch (bErr) {
+      console.warn('[LiveRates] Realtime rate broadcast error:', bErr);
+    }
+  }
+
   console.log('[LiveRates] ✅ Live rates updated and synced successfully:', normalized);
 
   return {

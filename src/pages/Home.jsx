@@ -712,8 +712,8 @@ export default function Home() {
   const handleAnnouncementPayload = (payload) => {
     if (!payload) return;
 
-    // Filter out messages that originated from this exact window (prevent self-echo)
-    if (payload.senderId && typeof window !== 'undefined' && payload.senderId === window.__saj_client_id) {
+    // Filter out messages that originated from this exact window (prevent self-echo) unless forced
+    if (!payload.force && payload.senderId && typeof window !== 'undefined' && payload.senderId === window.__saj_client_id) {
       return;
     }
 
@@ -824,12 +824,20 @@ export default function Home() {
     // 3. Supabase Realtime Channels (Worldwide devices & other clients)
     let supabaseChannel = null;
     let dbRatesChannel = null;
+    let notifDbChannel = null;
+
     try {
       if (isSupabaseConfigured()) {
+        // Realtime Broadcast Channel
         supabaseChannel = supabase
           .channel('saj_public_broadcast')
           .on('broadcast', { event: 'new_notification' }, (payload) => {
-            handleAnnouncementPayload(payload.payload);
+            const data = payload?.payload || payload;
+            handleAnnouncementPayload({ ...data, force: true });
+          })
+          .on('broadcast', { event: '*' }, (payload) => {
+            const data = payload?.payload || payload;
+            handleAnnouncementPayload({ ...data, force: true });
           })
           .subscribe();
 
@@ -854,6 +862,20 @@ export default function Home() {
             }
           })
           .subscribe();
+
+        // Listen for newly pushed broadcast rows in broadcast_notifications table
+        notifDbChannel = supabase
+          .channel('saj_broadcast_db_listener')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'broadcast_notifications' }, (payload) => {
+            if (payload?.new) {
+              handleAnnouncementPayload({
+                title: payload.new.title,
+                body: payload.new.body,
+                force: true
+              });
+            }
+          })
+          .subscribe();
       }
     } catch (e) {}
 
@@ -872,6 +894,7 @@ export default function Home() {
       if (bc) bc.close();
       if (supabaseChannel) supabase.removeChannel(supabaseChannel);
       if (dbRatesChannel) supabase.removeChannel(dbRatesChannel);
+      if (notifDbChannel) supabase.removeChannel(notifDbChannel);
       if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
     };
   }, []);
@@ -915,7 +938,13 @@ export default function Home() {
   }, []);
 
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [isAuthed, setIsAuthed] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(() => {
+    try {
+      return localStorage.getItem('SAJ_admin_authenticated') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
   const [passcode, setPasscode] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -982,14 +1011,57 @@ export default function Home() {
         const liveRates = await fetchLiveRates();
         if (isMounted && liveRates) {
           setGoldRates(prev => ({ ...prev, ...liveRates }));
-          if (liveRates.gold22k) {
-            lastNotifiedRateRef.current = `${liveRates.gold24k}-${liveRates.gold22k}-${liveRates.gold18k}-${liveRates.silver}-${Boolean(liveRates.hide24k)}`;
-            lastNotificationTimeRef.current = Date.now();
-          }
+          
+          // Show live market rate welcome toast once per browsing session
+          try {
+            const sessionKey = 'saj_session_live_rate_notified';
+            if (!sessionStorage.getItem(sessionKey) && liveRates.gold22k) {
+              sessionStorage.setItem(sessionKey, 'true');
+              setTimeout(() => {
+                if (isMounted) {
+                  showLiveRateToast(liveRates, {
+                    title: '👑 LIVE MARKET RATE UPDATE',
+                    subtitle: 'BIS 916 Hallmarked • Today\'s Live Rates',
+                    force: true,
+                    skipNative: true
+                  });
+                }
+              }, 1200);
+            }
+          } catch (e) {}
         }
       } catch (err) {
         console.warn("[LiveRates] Startup fetch fallback:", err);
       }
+
+      // Catch up on recent admin broadcasts within the last 30 minutes
+      try {
+        if (isSupabaseConfigured()) {
+          const { data: recentNotifs } = await supabase
+            .from('broadcast_notifications')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (recentNotifs && recentNotifs.length > 0 && isMounted) {
+            const latest = recentNotifs[0];
+            const notifAgeMs = Date.now() - new Date(latest.created_at).getTime();
+            const notifKey = `saj_seen_bcast_${latest.id || latest.created_at}`;
+            if (notifAgeMs < 30 * 60 * 1000 && !sessionStorage.getItem(notifKey)) {
+              sessionStorage.setItem(notifKey, 'true');
+              setTimeout(() => {
+                if (isMounted) {
+                  handleAnnouncementPayload({
+                    title: latest.title,
+                    body: latest.body,
+                    force: true
+                  });
+                }
+              }, 2200);
+            }
+          }
+        }
+      } catch (e) {}
 
       try {
         const customProds = await fetchCustomProducts();
@@ -1096,6 +1168,7 @@ export default function Home() {
     const envPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'umang@12';
     if (passcode === envPasscode || passcode === 'umang@12' || passcode === 'arka@12' || passcode === 'Papersoft@5577') {
       setIsAuthed(true);
+      try { localStorage.setItem('SAJ_admin_authenticated', 'true'); } catch (e) {}
       setErrorMsg('');
       setTemp24k(goldRates.gold24k || 15085);
       setTemp22k(goldRates.gold22k || 13818);
@@ -1239,6 +1312,7 @@ export default function Home() {
 
   const handleAdminLogout = () => {
     setIsAuthed(false);
+    try { localStorage.removeItem('SAJ_admin_authenticated'); } catch (e) {}
     setPasscode('');
     setErrorMsg('');
   };
@@ -1797,28 +1871,30 @@ export default function Home() {
               TODAY'S LIVE RATES
             </h2>
 
-            <button
-              onClick={() => setIsAdminOpen(true)}
-              title="Quick Update Live Rates & Product Catalog"
-              style={{
-                background: 'linear-gradient(135deg, rgba(123, 17, 34, 0.08), rgba(212, 175, 55, 0.15))',
-                border: '1px solid rgba(123, 17, 34, 0.35)',
-                color: 'var(--royal-gold)',
-                padding: '5px 12px',
-                borderRadius: '20px',
-                fontSize: '11px',
-                fontWeight: '700',
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <span>✏️</span> EDIT LIVE RATES
-            </button>
+            {isAuthed && (
+              <button
+                onClick={() => setIsAdminOpen(true)}
+                title="Quick Update Live Rates & Product Catalog"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(123, 17, 34, 0.08), rgba(212, 175, 55, 0.15))',
+                  border: '1px solid rgba(123, 17, 34, 0.35)',
+                  color: 'var(--royal-gold)',
+                  padding: '5px 12px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  letterSpacing: '1px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span>✏️</span> EDIT LIVE RATES
+              </button>
+            )}
           </div>
           
           <div style={{
@@ -4503,9 +4579,35 @@ export default function Home() {
             paddingTop: '8px',
             borderTop: '1px solid rgba(212, 175, 55, 0.25)',
             fontSize: '10px',
-            color: '#888888'
+            color: '#888888',
+            gap: '8px'
           }}>
-            <span>Showroom live board synced</span>
+            {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  requestNotificationPermission();
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '3px 8px',
+                  fontSize: '9.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 5px rgba(123, 17, 34, 0.25)'
+                }}
+              >
+                🔔 Enable Lock Screen Alerts
+              </button>
+            ) : (
+              <span>Showroom live board synced</span>
+            )}
             <a
               href="#showcase"
               onClick={() => {
