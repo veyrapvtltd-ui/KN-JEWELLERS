@@ -77,10 +77,10 @@ export default function AdminDashboard() {
   });
 
   // Live Rates State
-  const [gold24k, setGold24k] = useState('15500');
-  const [gold22k, setGold22k] = useState('14200');
-  const [gold18k, setGold18k] = useState('11625');
-  const [silver, setSilver] = useState('235');
+  const [gold24k, setGold24k] = useState('15085');
+  const [gold22k, setGold22k] = useState('13818');
+  const [gold18k, setGold18k] = useState('11465');
+  const [silver, setSilver] = useState('214');
   const [hide24k, setHide24k] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
 

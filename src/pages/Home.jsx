@@ -563,27 +563,38 @@ export default function Home() {
       const saved = localStorage.getItem('SAJ_gold_rates') || localStorage.getItem('SAJ_rates');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return {
-          gold24k: 15500,
-          gold22k: 14200,
-          gold18k: 11625,
-          silver: 235,
-          hide24k: false,
-          ...parsed,
-          lastUpdated: parsed.lastUpdated || 'Today'
-        };
+        if (parsed.gold24k === 15500 && parsed.gold22k === 14200) {
+          // Stale cache from old hardcoded build - clear
+          localStorage.removeItem('SAJ_gold_rates');
+          localStorage.removeItem('SAJ_rates');
+        } else if (parsed.gold22k > 0) {
+          return {
+            gold24k: 15085,
+            gold22k: 13818,
+            gold18k: 11465,
+            silver: 214,
+            hide24k: false,
+            ...parsed,
+            lastUpdated: parsed.lastUpdated || 'Today'
+          };
+        }
       }
     } catch (e) {}
     return {
-      gold24k: 15500,
-      gold22k: 14200,
-      gold18k: 11625,
-      silver: 235,
+      gold24k: 15085,
+      gold22k: 13818,
+      gold18k: 11465,
+      silver: 214,
       hide24k: false,
-      lastUpdated: new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }),
+      lastUpdated: 'Today',
       updatedAt: Date.now()
     };
   });
+
+  const currentRatesRef = useRef(goldRates);
+  useEffect(() => {
+    currentRatesRef.current = goldRates;
+  }, [goldRates]);
 
   const [showPwaNotification, setShowPwaNotification] = useState(false);
   const [pwaNotificationData, setPwaNotificationData] = useState({
@@ -614,18 +625,18 @@ export default function Home() {
     if (lastNotifiedRateRef.current === rateKey && (now - lastNotificationTimeRef.current < 60000)) {
       return;
     }
-    // 2. Strict cooldown: drop any rate notification firing within 5 seconds of the previous one
-    if (now - lastNotificationTimeRef.current < 5000) {
+    // 2. Strict cooldown: drop any rate notification firing within 4 seconds of the previous one
+    if (now - lastNotificationTimeRef.current < 4000) {
       return;
     }
 
     lastNotifiedRateRef.current = rateKey;
     lastNotificationTimeRef.current = now;
 
-    const g24 = Number(rates.gold24k || 15500).toLocaleString('en-IN');
-    const g22 = Number(rates.gold22k || 14200).toLocaleString('en-IN');
-    const g18 = Number(rates.gold18k || 11625).toLocaleString('en-IN');
-    const sil = Number(rates.silver || 235).toLocaleString('en-IN');
+    const g24 = Number(rates.gold24k || 15085).toLocaleString('en-IN');
+    const g22 = Number(rates.gold22k || 13818).toLocaleString('en-IN');
+    const g18 = Number(rates.gold18k || 11465).toLocaleString('en-IN');
+    const sil = Number(rates.silver || 214).toLocaleString('en-IN');
 
     const formattedSummary = rates.hide24k
       ? `22K (916): ₹${g22}/g • 18K (750): ₹${g18}/g • Silver: ₹${sil}/g`
@@ -745,22 +756,33 @@ export default function Home() {
 
   // Global Realtime & Notification Listeners
   useEffect(() => {
-    // 1. Local DOM custom notification (e.g. from local broadcastNotificationToAll)
+    // 1. Local DOM custom notification (e.g. from local showroom announcements)
     const handleCustomNotify = (e) => {
       const data = e.detail;
       if (data?.rates) {
-        showLiveRateToast(data.rates, {
-          title: data.title,
-          subtitle: data.subtitle,
-          skipNative: true // native notification already handled by sendSystemNotification
-        });
+        const current = currentRatesRef.current;
+        const isDiff = (
+          Number(data.rates.gold24k) !== Number(current.gold24k) ||
+          Number(data.rates.gold22k) !== Number(current.gold22k) ||
+          Number(data.rates.gold18k) !== Number(current.gold18k) ||
+          Number(data.rates.silver) !== Number(current.silver) ||
+          Boolean(data.rates.hide24k) !== Boolean(current.hide24k)
+        );
+        if (isDiff) {
+          setGoldRates(prev => ({ ...prev, ...data.rates }));
+          showLiveRateToast(data.rates, {
+            title: data.title,
+            subtitle: data.subtitle,
+            skipNative: true
+          });
+        }
       } else {
         handleAnnouncementPayload(data);
       }
     };
     window.addEventListener('saj_custom_notification', handleCustomNotify);
 
-    // 2. Cross-Tab BroadcastChannel for other open tabs
+    // 2. Cross-Tab BroadcastChannel for showroom announcements
     let bc = null;
     try {
       if ('BroadcastChannel' in window) {
@@ -784,11 +806,21 @@ export default function Home() {
         // Listen for direct database changes in Supabase saj_rates table
         dbRatesChannel = supabase
           .channel('saj_rates_db_listener')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'saj_rates' }, async (payload) => {
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'saj_rates' }, async () => {
             const fresh = await fetchLiveRates();
-            if (fresh) {
-              setGoldRates(prev => ({ ...prev, ...fresh }));
-              showLiveRateToast(fresh);
+            if (fresh && fresh.gold22k) {
+              const current = currentRatesRef.current;
+              const isDiff = (
+                Number(fresh.gold24k) !== Number(current.gold24k) ||
+                Number(fresh.gold22k) !== Number(current.gold22k) ||
+                Number(fresh.gold18k) !== Number(current.gold18k) ||
+                Number(fresh.silver) !== Number(current.silver) ||
+                Boolean(fresh.hide24k) !== Boolean(current.hide24k)
+              );
+              if (isDiff) {
+                setGoldRates(prev => ({ ...prev, ...fresh }));
+                showLiveRateToast(fresh);
+              }
             }
           })
           .subscribe();
@@ -800,7 +832,6 @@ export default function Home() {
       const fresh = await fetchLiveRates();
       if (fresh) {
         setGoldRates(prev => ({ ...prev, ...fresh }));
-        showLiveRateToast(fresh);
       }
     };
     window.addEventListener('saj_supabase_config_changed', handleConfigChanged);
@@ -815,23 +846,11 @@ export default function Home() {
     };
   }, []);
 
-  // Real-time Rate Sync Across Open Tabs (LocalStorage + BroadcastChannel)
+  // Dedicated Real-time Rate Sync Across Open Tabs (BroadcastChannel)
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if ((e.key === 'SAJ_gold_rates' || e.key === 'SAJ_rates') && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          setGoldRates(prev => ({ ...prev, ...parsed }));
-          showLiveRateToast(parsed);
-        } catch (err) {}
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-
     const handleRatesUpdatedEvent = (e) => {
       if (e.detail) {
         setGoldRates(prev => ({ ...prev, ...e.detail }));
-        // State updated immediately; notification is handled once by broadcast system
       }
     };
     window.addEventListener('saj_rates_updated', handleRatesUpdatedEvent);
@@ -841,16 +860,25 @@ export default function Home() {
       if ('BroadcastChannel' in window) {
         ratesBc = new BroadcastChannel('saj_rates_channel');
         ratesBc.onmessage = (event) => {
-          if (event.data) {
-            setGoldRates(prev => ({ ...prev, ...event.data }));
-            showLiveRateToast(event.data);
+          if (event.data && event.data.gold22k) {
+            const current = currentRatesRef.current;
+            const isDiff = (
+              Number(event.data.gold24k) !== Number(current.gold24k) ||
+              Number(event.data.gold22k) !== Number(current.gold22k) ||
+              Number(event.data.gold18k) !== Number(current.gold18k) ||
+              Number(event.data.silver) !== Number(current.silver) ||
+              Boolean(event.data.hide24k) !== Boolean(current.hide24k)
+            );
+            if (isDiff) {
+              setGoldRates(prev => ({ ...prev, ...event.data }));
+              showLiveRateToast(event.data);
+            }
           }
         };
       }
     } catch (e) {}
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('saj_rates_updated', handleRatesUpdatedEvent);
       if (ratesBc) ratesBc.close();
     };
@@ -862,10 +890,10 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState('');
   
   // Rate Edit Form States
-  const [temp24k, setTemp24k] = useState(goldRates.gold24k || 15500);
-  const [temp22k, setTemp22k] = useState(goldRates.gold22k || 14200);
-  const [temp18k, setTemp18k] = useState(goldRates.gold18k || 11625);
-  const [tempSilver, setTempSilver] = useState(goldRates.silver || 235);
+  const [temp24k, setTemp24k] = useState(goldRates.gold24k || 15085);
+  const [temp22k, setTemp22k] = useState(goldRates.gold22k || 13818);
+  const [temp18k, setTemp18k] = useState(goldRates.gold18k || 11465);
+  const [tempSilver, setTempSilver] = useState(goldRates.silver || 214);
   const [tempHide24k, setTempHide24k] = useState(Boolean(goldRates.hide24k));
 
   // Product Upload States
@@ -1039,10 +1067,10 @@ export default function Home() {
     if (passcode === envPasscode || passcode === 'umang@12' || passcode === 'arka@12' || passcode === 'Papersoft@5577') {
       setIsAuthed(true);
       setErrorMsg('');
-      setTemp24k(goldRates.gold24k || 15500);
-      setTemp22k(goldRates.gold22k || 14200);
-      setTemp18k(goldRates.gold18k || 11625);
-      setTempSilver(goldRates.silver || 235);
+      setTemp24k(goldRates.gold24k || 15085);
+      setTemp22k(goldRates.gold22k || 13818);
+      setTemp18k(goldRates.gold18k || 11465);
+      setTempSilver(goldRates.silver || 214);
       setTempHide24k(Boolean(goldRates.hide24k));
     } else {
       setErrorMsg('Invalid Passcode');
@@ -1161,13 +1189,17 @@ export default function Home() {
         hide24k: tempHide24k
       });
 
+      const rateKey = `${result.rates.gold24k}-${result.rates.gold22k}-${result.rates.gold18k}-${result.rates.silver}-${Boolean(result.rates.hide24k)}`;
+      lastNotifiedRateRef.current = rateKey;
+      lastNotificationTimeRef.current = Date.now();
       setGoldRates(result.rates);
 
-      if (result.globalSyncActive) {
-        alert(`✅ Live Rates updated & globally synced!\n\n• 24K Gold: ₹${temp24k}/g\n• 22K Gold: ₹${temp22k}/g\n• 18K Gold: ₹${temp18k}/g\n• Silver: ₹${tempSilver}/g\n\n🌐 Synced across GitHub Global Network & Supabase Cloud.\nCustomers visiting from any mobile phone or browser will immediately see these live rates.`);
-      } else {
-        alert(`✅ Rates updated successfully!\n\n• 24K Gold: ₹${temp24k}/g\n• 22K Gold: ₹${temp22k}/g\n• 18K Gold: ₹${temp18k}/g\n• Silver: ₹${tempSilver}/g\n\n📌 Saved locally in browser storage & synced to all open tabs.`);
-      }
+      // Trigger single luxury rate notification toast
+      showLiveRateToast(result.rates, {
+        title: '👑 LIVE MARKET RATE UPDATE',
+        subtitle: 'BIS 916 Hallmarked • Just Updated'
+      });
+
       setIsAdminOpen(false);
     } catch (err) {
       console.error(err);
@@ -2437,8 +2469,8 @@ export default function Home() {
 
           <div className="models-marquee-container">
             <div className="models-marquee-row">
-              {/* Duplicate the best sellers list twice for a seamless infinite loop */}
-              {[...bestSellerImages, ...bestSellerImages].map((item, index) => (
+              {/* Duplicate the best sellers list 3 times for a 100% seamless infinite loop */}
+              {[...bestSellerImages, ...bestSellerImages, ...bestSellerImages].map((item, index) => (
                 <div 
                   key={index} 
                   className="model-marquee-card"
@@ -4360,7 +4392,7 @@ export default function Home() {
                     24K (999 PURE)
                   </div>
                   <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1a1a1a', margin: '2px 0 0' }}>
-                    ₹{Number(pwaNotificationData.rates.gold24k || 15500).toLocaleString('en-IN')}
+                    ₹{Number(pwaNotificationData.rates.gold24k || 15085).toLocaleString('en-IN')}
                     <span style={{ fontSize: '9px', fontWeight: '500', color: '#666', marginLeft: '2px' }}>/g</span>
                   </div>
                 </div>
@@ -4379,7 +4411,7 @@ export default function Home() {
                   👑 22K (916 BIS)
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: '900', color: '#7b1122', margin: '2px 0 0' }}>
-                  ₹{Number(pwaNotificationData.rates.gold22k || 14200).toLocaleString('en-IN')}
+                  ₹{Number(pwaNotificationData.rates.gold22k || 13818).toLocaleString('en-IN')}
                   <span style={{ fontSize: '9.5px', fontWeight: '600', color: '#8c6d1f', marginLeft: '2px' }}>/g</span>
                 </div>
               </div>
@@ -4397,7 +4429,7 @@ export default function Home() {
                   18K (750 HM)
                 </div>
                 <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1a1a1a', margin: '2px 0 0' }}>
-                  ₹{Number(pwaNotificationData.rates.gold18k || 11625).toLocaleString('en-IN')}
+                  ₹{Number(pwaNotificationData.rates.gold18k || 11465).toLocaleString('en-IN')}
                   <span style={{ fontSize: '9px', fontWeight: '500', color: '#666', marginLeft: '2px' }}>/g</span>
                 </div>
               </div>
@@ -4415,7 +4447,7 @@ export default function Home() {
                   SILVER (999)
                 </div>
                 <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1e293b', margin: '2px 0 0' }}>
-                  ₹{Number(pwaNotificationData.rates.silver || 235).toLocaleString('en-IN')}
+                  ₹{Number(pwaNotificationData.rates.silver || 214).toLocaleString('en-IN')}
                   <span style={{ fontSize: '9px', fontWeight: '500', color: '#64748b', marginLeft: '2px' }}>/g</span>
                 </div>
               </div>

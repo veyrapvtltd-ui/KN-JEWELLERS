@@ -1397,8 +1397,12 @@ body {
 
 /* 6. Models Section - Infinite Left-to-Right Scrolling Marquee Layout */
 @keyframes marqueeLeft {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-50%, 0, 0); }
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.333333%, 0, 0);
+  }
 }
 
 .models-marquee-section {
@@ -1441,12 +1445,17 @@ body {
   gap: 0;
   width: max-content;
   will-change: transform;
-  animation: marqueeLeft 38s linear infinite;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  animation: marqueeLeft 36s linear infinite;
   padding: 10px 0;
 }
 
-.models-marquee-row:hover {
-  animation-play-state: paused; /* Pauses scrolling on hover */
+/* Strictly restrict hover pause to devices with a physical mouse pointer; mobile touch will never freeze */
+@media (hover: hover) and (pointer: fine) {
+  .models-marquee-row:hover {
+    animation-play-state: paused;
+  }
 }
 
 .model-marquee-card {
@@ -1465,13 +1474,13 @@ body {
 
 @media (max-width: 768px) {
   .models-marquee-section {
-    padding: 40px 0;
+    padding: 35px 0;
   }
   .models-marquee-container::before, .models-marquee-container::after {
-    width: 30px;
+    width: 25px;
   }
   .models-marquee-row {
-    animation-duration: 26s;
+    animation-duration: 25s;
   }
   .model-marquee-card {
     flex: 0 0 220px;

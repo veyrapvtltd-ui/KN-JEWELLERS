@@ -2,35 +2,42 @@ import { createClient } from '@supabase/supabase-js';
 
 // Get current Supabase credentials (localStorage priority -> import.meta.env fallback -> default project)
 export const getSupabaseConfig = () => {
+  const OFFICIAL_URL = 'https://hiflildcmdmjjpuyzfxe.supabase.co';
+  const OFFICIAL_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxpbGRjbWRtampwdXl6ZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxOTc2NzAsImV4cCI6MjEwNzc3MzY3MH0.WLwylnfNqJwYJyDmibvshD6Oti1wUv3nJqadpW6JiPw';
+
   let url = '';
   let key = '';
 
   if (typeof window !== 'undefined') {
-    url = 
+    // Purge outdated/dead Supabase configurations from earlier sessions
+    const savedUrl = 
       localStorage.getItem('SAJ_supabase_url') || 
       localStorage.getItem('hardik_supabase_url') || 
       localStorage.getItem('supabase_url') || 
       '';
-    key = 
-      localStorage.getItem('SAJ_supabase_anon_key') || 
-      localStorage.getItem('hardik_supabase_anon_key') || 
-      localStorage.getItem('supabase_anon_key') || 
-      '';
+
+    if (savedUrl && (savedUrl.includes('xfkcnmhophacnluofauu') || savedUrl.includes('placeholder'))) {
+      localStorage.removeItem('SAJ_supabase_url');
+      localStorage.removeItem('hardik_supabase_url');
+      localStorage.removeItem('supabase_url');
+      localStorage.removeItem('SAJ_supabase_anon_key');
+      localStorage.removeItem('hardik_supabase_anon_key');
+      localStorage.removeItem('supabase_anon_key');
+    } else {
+      url = savedUrl;
+      key = 
+        localStorage.getItem('SAJ_supabase_anon_key') || 
+        localStorage.getItem('hardik_supabase_anon_key') || 
+        localStorage.getItem('supabase_anon_key') || 
+        '';
+    }
   }
 
   if (!url) {
-    url = import.meta.env.VITE_SUPABASE_URL || '';
+    url = import.meta.env.VITE_SUPABASE_URL || OFFICIAL_URL;
   }
   if (!key) {
-    key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-  }
-
-  // Built-in default Supabase cloud configuration
-  if (!url) {
-    url = 'https://hiflildcmdmjjpuyzfxe.supabase.co';
-  }
-  if (!key) {
-    key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxpbGRjbWRtampwdXl6ZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxOTc2NzAsImV4cCI6MjEwNzc3MzY3MH0.WLwylnfNqJwYJyDmibvshD6Oti1wUv3nJqadpW6JiPw';
+    key = import.meta.env.VITE_SUPABASE_ANON_KEY || OFFICIAL_KEY;
   }
 
   return {
@@ -416,10 +423,10 @@ ON CONFLICT (id) DO UPDATE SET
 -- 2. LIVE GOLD & SILVER RATES
 CREATE TABLE IF NOT EXISTS public.saj_rates (
     id integer PRIMARY KEY DEFAULT 1,
-    gold24k numeric DEFAULT 15500,
-    gold22k numeric DEFAULT 14200,
-    gold18k numeric DEFAULT 11625,
-    silver numeric DEFAULT 235,
+    gold24k numeric DEFAULT 15085,
+    gold22k numeric DEFAULT 13818,
+    gold18k numeric DEFAULT 11465,
+    silver numeric DEFAULT 214,
     hide24k boolean DEFAULT false,
     updated_at timestamp with time zone DEFAULT now()
 );
@@ -428,7 +435,7 @@ CREATE TABLE IF NOT EXISTS public.saj_rates (
 ALTER TABLE public.saj_rates ADD COLUMN IF NOT EXISTS hide24k boolean DEFAULT false;
 
 INSERT INTO public.saj_rates (id, gold24k, gold22k, gold18k, silver, hide24k)
-VALUES (1, 15500, 14200, 11625, 235, false)
+VALUES (1, 15085, 13818, 11465, 214, false)
 ON CONFLICT (id) DO UPDATE SET
     gold24k = EXCLUDED.gold24k,
     gold22k = EXCLUDED.gold22k,

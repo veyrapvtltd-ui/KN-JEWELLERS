@@ -121,10 +121,10 @@ export async function fetchFileFromGitHub(filePath) {
 // =========================================================================
 
 export const DEFAULT_RATES = {
-  gold24k: 15500,
-  gold22k: 14200,
-  gold18k: 11625,
-  silver: 235,
+  gold24k: 15085,
+  gold22k: 13818,
+  gold18k: 11465,
+  silver: 214,
   hide24k: false,
   lastUpdated: 'Today'
 };
@@ -265,7 +265,14 @@ export async function fetchLiveRates() {
     try {
       const saved = localStorage.getItem('SAJ_gold_rates') || localStorage.getItem('SAJ_rates');
       if (saved) {
-        rates = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.gold24k === 15500 && parsed.gold22k === 14200) {
+          // Stale cache from previous hardcoded version, clear it
+          localStorage.removeItem('SAJ_gold_rates');
+          localStorage.removeItem('SAJ_rates');
+        } else if (parsed.gold22k > 0) {
+          rates = parsed;
+        }
       }
     } catch (e) {}
   }
@@ -317,12 +324,21 @@ export async function saveLiveRates(ratesData) {
     localStorage.setItem('SAJ_rates', JSON.stringify(normalized));
   } catch (e) {}
 
-  // 2. Broadcast to all open tabs and windows
+  // 2. Broadcast to all open tabs and windows via dedicated rate channel
+  const senderId = typeof window !== 'undefined'
+    ? (window.__saj_client_id || (window.__saj_client_id = 'saj_' + Math.random().toString(36).substring(2, 9)))
+    : 'server';
+  const ratePayload = {
+    ...normalized,
+    senderId,
+    updateId: `${normalized.gold24k}-${normalized.gold22k}-${normalized.gold18k}-${normalized.silver}-${Date.now()}`
+  };
+
   try {
-    window.dispatchEvent(new CustomEvent('saj_rates_updated', { detail: normalized }));
+    window.dispatchEvent(new CustomEvent('saj_rates_updated', { detail: ratePayload }));
     if ('BroadcastChannel' in window) {
       const bc = new BroadcastChannel('saj_rates_channel');
-      bc.postMessage(normalized);
+      bc.postMessage(ratePayload);
       bc.close();
     }
   } catch (e) {}
@@ -403,30 +419,7 @@ export async function saveLiveRates(ratesData) {
     console.warn('[LiveRates] GitHub commit error:', ghErr.message);
   }
 
-  // 6. Broadcast Live Rate Notification to all devices, tabs & notification trays
-  try {
-    const g24 = Number(normalized.gold24k).toLocaleString('en-IN');
-    const g22 = Number(normalized.gold22k).toLocaleString('en-IN');
-    const g18 = Number(normalized.gold18k).toLocaleString('en-IN');
-    const sil = Number(normalized.silver).toLocaleString('en-IN');
-
-    const rateBody = normalized.hide24k
-      ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`
-      : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`;
-
-    const { broadcastNotificationToAll } = await import('./festivalGreetings');
-    const senderId = typeof window !== 'undefined'
-      ? (window.__saj_client_id || (window.__saj_client_id = 'saj_' + Math.random().toString(36).substring(2, 9)))
-      : 'server';
-
-    await broadcastNotificationToAll('👑 LIVE MARKET RATE UPDATE', rateBody, {
-      rates: normalized,
-      subtitle: 'BIS 916 Hallmarked • Just Updated',
-      senderId
-    });
-  } catch (notifErr) {
-    console.warn('[LiveRates] Notification broadcast error:', notifErr.message);
-  }
+  console.log('[LiveRates] ✅ Live rates updated and synced successfully:', normalized);
 
   return {
     success: true,
