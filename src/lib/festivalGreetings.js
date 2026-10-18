@@ -1200,22 +1200,20 @@ export function sendSystemNotification(title, body, tag = 'saj-alert', extraPayl
     if ('Notification' in window) {
       if (Notification.permission === 'granted') {
         try {
-          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(reg => {
-              reg.showNotification(title, options);
+              if (reg && reg.showNotification) {
+                reg.showNotification(title, options);
+              }
+            }).catch(() => {
+              try { new Notification(title, options); } catch (err) {}
             });
           } else {
-            new Notification(title, options);
+            try { new Notification(title, options); } catch (err) {}
           }
         } catch (e) {
           console.warn('Native notification failed:', e);
         }
-      } else if (Notification.permission === 'default') {
-        Notification.requestPermission().then(perm => {
-          if (perm === 'granted') {
-            new Notification(title, options);
-          }
-        });
       }
     }
   }

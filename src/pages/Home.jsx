@@ -369,17 +369,33 @@ export default function Home() {
   }, []);
 
   const handleSendTestNotification = () => {
+    showLiveRateToast(goldRates, {
+      title: '👑 TEST LIVE RATE NOTIFICATION',
+      subtitle: 'BIS 916 Hallmarked • Test Notification',
+      force: true
+    });
     sendSystemNotification(
       '👑 Shree Aradhna Jewellers',
-      `✨ Notification Test: Today 22K Gold ₹${goldRates.gold22k}/g | Silver ₹${goldRates.silver}/g. Festive offers active in Gandhidham & Adipur showrooms!`
+      `✨ Live Rate Test: 22K Gold ₹${Number(goldRates.gold22k).toLocaleString('en-IN')}/g | Silver ₹${Number(goldRates.silver).toLocaleString('en-IN')}/g. Showrooms at Gandhidham & Adipur!`,
+      'saj-test-alert'
     );
   };
 
   const handleBroadcastToAll = async () => {
     await broadcastNotificationToAll(
-      '👑 Shree Aradhna Jewellers',
-      `📢 Showroom Alert to All: Today 22K Gold ₹${goldRates.gold22k}/g | Silver ₹${goldRates.silver}/g. Special festive offers active at Gandhidham & Adipur!`
+      '👑 LIVE MARKET RATE UPDATE',
+      `• 24K Gold (999): ₹${Number(goldRates.gold24k).toLocaleString('en-IN')}/g\n• 22K Gold (916): ₹${Number(goldRates.gold22k).toLocaleString('en-IN')}/g\n• 18K Gold (750): ₹${Number(goldRates.gold18k).toLocaleString('en-IN')}/g\n• Pure Silver: ₹${Number(goldRates.silver).toLocaleString('en-IN')}/g\n\nShowroom rates live at Gandhidham & Adipur.`,
+      {
+        rates: goldRates,
+        subtitle: 'BIS 916 Hallmarked • Just Updated',
+        force: true
+      }
     );
+    showLiveRateToast(goldRates, {
+      title: '👑 LIVE MARKET RATE UPDATE',
+      subtitle: 'BIS 916 Hallmarked • Just Updated',
+      force: true
+    });
     alert('📢 Broadcast notification dispatched to all open devices, tabs, and notification centers!');
   };
 
@@ -621,13 +637,14 @@ export default function Home() {
     const rateKey = `${rates.gold24k}-${rates.gold22k}-${rates.gold18k}-${rates.silver}-${Boolean(rates.hide24k)}`;
     const now = Date.now();
 
-    // 1. Deduplication: exact same rate notified within the last 60 seconds -> drop duplicate
-    if (lastNotifiedRateRef.current === rateKey && (now - lastNotificationTimeRef.current < 60000)) {
-      return;
-    }
-    // 2. Strict cooldown: drop any rate notification firing within 4 seconds of the previous one
-    if (now - lastNotificationTimeRef.current < 4000) {
-      return;
+    // 1. Deduplication: only if NOT forced
+    if (!options.force) {
+      if (lastNotifiedRateRef.current === rateKey && (now - lastNotificationTimeRef.current < 45000)) {
+        return;
+      }
+      if (now - lastNotificationTimeRef.current < 2000) {
+        return;
+      }
     }
 
     lastNotifiedRateRef.current = rateKey;
@@ -665,10 +682,10 @@ export default function Home() {
     }
     notificationTimeoutRef.current = setTimeout(() => {
       setShowPwaNotification(false);
-    }, 8000);
+    }, 9000);
 
-    // Native Push Notification with fixed tag so browser/OS replaces instead of creating multiple bubbles
-    if (!options.skipNative && 'Notification' in window && Notification.permission === 'granted') {
+    // Native Push Notification with mobile ServiceWorker safety
+    if (!options.skipNative && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         const notifOptions = {
           body: multiLineSummary,
@@ -676,12 +693,16 @@ export default function Home() {
           badge: '/assets/logo.png',
           tag: 'saj-live-rate-update'
         };
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        if ('serviceWorker' in navigator) {
           navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification('👑 LIVE MARKET RATE UPDATE', notifOptions);
+            if (reg && reg.showNotification) {
+              reg.showNotification(options.title || '👑 LIVE MARKET RATE UPDATE', notifOptions);
+            }
+          }).catch(() => {
+            try { new Notification(options.title || '👑 LIVE MARKET RATE UPDATE', notifOptions); } catch (e) {}
           });
         } else {
-          new Notification('👑 LIVE MARKET RATE UPDATE', notifOptions);
+          try { new Notification(options.title || '👑 LIVE MARKET RATE UPDATE', notifOptions); } catch (e) {}
         }
       } catch (e) {}
     }
@@ -696,22 +717,26 @@ export default function Home() {
       return;
     }
 
-    // If payload contains rates, route to showLiveRateToast
+    // If payload contains rates, route to showLiveRateToast with force: true
     if (payload.rates && payload.rates.gold22k) {
+      setGoldRates(prev => ({ ...prev, ...payload.rates }));
       showLiveRateToast(payload.rates, {
         title: payload.title,
-        subtitle: payload.subtitle
+        subtitle: payload.subtitle,
+        force: true
       });
       return;
     }
 
     const now = Date.now();
     const key = `${payload.title || ''}-${payload.body || ''}`;
-    if (lastAnnouncementKeyRef.current === key && (now - lastAnnouncementTimeRef.current < 20000)) {
-      return;
-    }
-    if (now - lastAnnouncementTimeRef.current < 5000) {
-      return;
+    if (!payload.force) {
+      if (lastAnnouncementKeyRef.current === key && (now - lastAnnouncementTimeRef.current < 20000)) {
+        return;
+      }
+      if (now - lastAnnouncementTimeRef.current < 3000) {
+        return;
+      }
     }
 
     lastAnnouncementKeyRef.current = key;
@@ -733,9 +758,9 @@ export default function Home() {
     }
     notificationTimeoutRef.current = setTimeout(() => {
       setShowPwaNotification(false);
-    }, 8000);
+    }, 9000);
 
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         const notifOptions = {
           body,
@@ -743,12 +768,16 @@ export default function Home() {
           badge: '/assets/logo.png',
           tag: 'saj-announcement'
         };
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        if ('serviceWorker' in navigator) {
           navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification(title, notifOptions);
+            if (reg && reg.showNotification) {
+              reg.showNotification(title, notifOptions);
+            }
+          }).catch(() => {
+            try { new Notification(title, notifOptions); } catch (e) {}
           });
         } else {
-          new Notification(title, notifOptions);
+          try { new Notification(title, notifOptions); } catch (e) {}
         }
       } catch (e) {}
     }
@@ -768,11 +797,12 @@ export default function Home() {
           Number(data.rates.silver) !== Number(current.silver) ||
           Boolean(data.rates.hide24k) !== Boolean(current.hide24k)
         );
-        if (isDiff) {
+        if (isDiff || data.force) {
           setGoldRates(prev => ({ ...prev, ...data.rates }));
           showLiveRateToast(data.rates, {
             title: data.title,
             subtitle: data.subtitle,
+            force: true,
             skipNative: true
           });
         }
