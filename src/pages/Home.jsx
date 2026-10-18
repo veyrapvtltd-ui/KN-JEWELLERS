@@ -830,7 +830,9 @@ export default function Home() {
       if (isSupabaseConfigured()) {
         // Realtime Broadcast Channel
         supabaseChannel = supabase
-          .channel('saj_public_broadcast')
+          .channel('saj_public_broadcast', {
+            config: { broadcast: { ack: true, self: true } }
+          })
           .on('broadcast', { event: 'new_notification' }, (payload) => {
             const data = payload?.payload || payload;
             handleAnnouncementPayload({ ...data, force: true });
@@ -934,6 +936,73 @@ export default function Home() {
     return () => {
       window.removeEventListener('saj_rates_updated', handleRatesUpdatedEvent);
       if (ratesBc) ratesBc.close();
+    };
+  }, []);
+
+  // Universal Multi-Device Background Sync (polls every 15s and immediately on tab visibility/focus)
+  useEffect(() => {
+    let isAlive = true;
+
+    const checkLiveUpdates = async () => {
+      try {
+        const fresh = await fetchLiveRates();
+        if (fresh && fresh.gold22k && isAlive) {
+          const current = currentRatesRef.current;
+          const isDiff = (
+            Number(fresh.gold24k) !== Number(current.gold24k) ||
+            Number(fresh.gold22k) !== Number(current.gold22k) ||
+            Number(fresh.gold18k) !== Number(current.gold18k) ||
+            Number(fresh.silver) !== Number(current.silver) ||
+            Boolean(fresh.hide24k) !== Boolean(current.hide24k)
+          );
+          if (isDiff) {
+            setGoldRates(prev => ({ ...prev, ...fresh }));
+            showLiveRateToast(fresh, { force: true });
+          }
+        }
+      } catch (e) {}
+
+      // Check newest broadcast notification
+      try {
+        if (isSupabaseConfigured()) {
+          const { data: bData } = await supabase
+            .from('broadcast_notifications')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (bData && bData.length > 0 && isAlive) {
+            const b = bData[0];
+            const ageMs = Date.now() - new Date(b.created_at).getTime();
+            const seenKey = `saj_seen_bcast_${b.id || b.created_at}`;
+            if (ageMs < 15 * 60 * 1000 && !sessionStorage.getItem(seenKey)) {
+              sessionStorage.setItem(seenKey, 'true');
+              handleAnnouncementPayload({
+                title: b.title,
+                body: b.body,
+                force: true
+              });
+            }
+          }
+        }
+      } catch (e) {}
+    };
+
+    const interval = setInterval(checkLiveUpdates, 15000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkLiveUpdates();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      isAlive = false;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
     };
   }, []);
 

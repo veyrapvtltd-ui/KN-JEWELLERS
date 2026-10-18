@@ -448,7 +448,9 @@ export async function saveLiveRates(ratesData) {
       }]);
 
       // 6b. Realtime WebSocket Broadcast to all active browser windows & mobile devices
-      const pubChan = supabase.channel('saj_public_broadcast');
+      const pubChan = supabase.channel('saj_public_broadcast', {
+        config: { broadcast: { ack: true, self: true } }
+      });
       if (pubChan.state === 'joined') {
         await pubChan.send({
           type: 'broadcast',
@@ -456,14 +458,19 @@ export async function saveLiveRates(ratesData) {
           payload: broadcastPayload
         });
       } else {
-        pubChan.subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await pubChan.send({
-              type: 'broadcast',
-              event: 'new_notification',
-              payload: broadcastPayload
-            });
-          }
+        await new Promise((resolve) => {
+          const timer = setTimeout(() => resolve(false), 3500);
+          pubChan.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              clearTimeout(timer);
+              await pubChan.send({
+                type: 'broadcast',
+                event: 'new_notification',
+                payload: broadcastPayload
+              });
+              resolve(true);
+            }
+          });
         });
       }
 
