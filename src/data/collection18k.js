@@ -6,26 +6,26 @@ export const collection18kProducts = [
   // --- Ladies Rings (6) ---
   {
     id: 'saj-18k-ring-01',
-    title: '18KT Plain Gold Imperial Square Pavé Ladies Ring',
+    title: '18KT Rose Gold Imperial Square Pavé Diamond Ring',
     category: 'LADIES',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_gents_imperial_square_ring.jpg'
   },
   {
     id: 'saj-18k-ring-05',
-    title: '18KT Plain Gold Rose Gold Crossover Infinity Diamond Ring',
+    title: '18KT Rose Gold Crossover Infinity Diamond Ring',
     category: 'LADIES',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_rose_gold_crossover_diamond_ring.jpg'
   },
   {
     id: 'saj-18k-ring-06',
-    title: '18KT Plain Gold Blooming Floral Cluster Diamond Ring',
+    title: '18KT Rose Gold Blooming Floral Cluster Diamond Ring',
     category: 'LADIES',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_blooming_floral_diamond_ring.jpg'
   },
   {
@@ -214,10 +214,10 @@ export const collection18kProducts = [
   },
   {
     id: 'saj-18k-neck-05',
-    title: '18KT Plain Gold Rose Gold Infinity Swirl Pendant & Studs Set',
+    title: '18KT Rose Gold Infinity Swirl Pendant & Studs Set',
     category: 'LADIES',
     subCategory: 'NECKLACES',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_rose_gold_swirl_pendant_set.jpg'
   },
   {

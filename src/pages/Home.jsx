@@ -2312,15 +2312,16 @@ export default function Home() {
                         <span style={{
                           fontSize: '10px',
                           fontWeight: '700',
-                          color: '#b8860b',
-                          background: 'rgba(218, 165, 32, 0.08)',
-                          border: '1px solid rgba(218, 165, 32, 0.3)',
+                          color: (product.purity || '').toLowerCase().includes('rose') ? '#be185d' : '#b8860b',
+                          background: (product.purity || '').toLowerCase().includes('rose') ? 'rgba(244, 63, 94, 0.08)' : 'rgba(218, 165, 32, 0.08)',
+                          border: (product.purity || '').toLowerCase().includes('rose') ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid rgba(218, 165, 32, 0.3)',
                           borderRadius: '12px',
                           padding: '2px 8px',
                           letterSpacing: '0.4px',
                           textTransform: 'uppercase'
                         }}>
-                          ✨ {product.purity}
+                          {(product.purity || '').toLowerCase().includes('rose') ? '🌸 ' : '✨ '}
+                          {product.purity}
                         </span>
                       </div>
                     )}
@@ -4333,8 +4334,18 @@ export default function Home() {
               </p>
               <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
                 {lightboxProduct.purity && (
-                  <span style={{ fontSize: '11px', color: 'var(--peacock-green)', background: 'rgba(123, 17, 34, 0.08)', padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(123, 17, 34, 0.25)', fontWeight: '600', letterSpacing: '0.5px' }}>
-                    ✦ {lightboxProduct.purity}
+                  <span style={{
+                    fontSize: '11px',
+                    color: (lightboxProduct.purity || '').toLowerCase().includes('rose') ? '#be185d' : 'var(--peacock-green)',
+                    background: (lightboxProduct.purity || '').toLowerCase().includes('rose') ? 'rgba(244, 63, 94, 0.08)' : 'rgba(123, 17, 34, 0.08)',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    border: (lightboxProduct.purity || '').toLowerCase().includes('rose') ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid rgba(123, 17, 34, 0.25)',
+                    fontWeight: '600',
+                    letterSpacing: '0.5px'
+                  }}>
+                    {(lightboxProduct.purity || '').toLowerCase().includes('rose') ? '🌸 ' : '✦ '}
+                    {lightboxProduct.purity}
                   </span>
                 )}
               </div>
