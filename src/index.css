@@ -69,7 +69,7 @@ html {
   padding: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: clip !important;
+  overflow-x: hidden;
   position: relative;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -80,22 +80,20 @@ body {
   padding: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: clip !important;
+  overflow-x: hidden;
   position: relative;
   font-family: var(--font-sans);
   background-color: var(--ivory-bg);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  touch-action: pan-y;
-  overscroll-behavior-x: none;
   -webkit-overflow-scrolling: touch;
 }
 
 #root {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip !important;
+  overflow-x: hidden;
   position: relative;
 }
 
@@ -1412,15 +1410,12 @@ body {
   background: #ffffff;
   border-top: 1px solid rgba(123, 17, 34, 0.15);
   overflow: hidden;
-  touch-action: pan-y;
 }
 
 .models-marquee-container {
   overflow: hidden;
   width: 100%;
   position: relative;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* Gradient fade overlays at the edges for an ultra-premium visual look */
@@ -1454,11 +1449,6 @@ body {
   -webkit-backface-visibility: hidden;
   animation: marqueeLeft 32s linear infinite;
   padding: 10px 0;
-  touch-action: pan-y;
-}
-
-.models-marquee-row.paused {
-  animation-play-state: paused !important;
 }
 
 /* Strictly restrict hover pause to devices with a physical mouse pointer; mobile touch will never freeze */
@@ -1480,7 +1470,6 @@ body {
   box-shadow: 0 8px 25px rgba(42, 37, 32, 0.05);
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
-  touch-action: pan-y;
 }
 
 @media (max-width: 768px) {
@@ -1501,10 +1490,12 @@ body {
   }
 }
 
-.model-marquee-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--royal-gold);
-  box-shadow: 0 15px 35px rgba(42, 37, 32, 0.12);
+@media (hover: hover) and (pointer: fine) {
+  .model-marquee-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--royal-gold);
+    box-shadow: 0 15px 35px rgba(42, 37, 32, 0.12);
+  }
 }
 
 .model-marquee-img {
@@ -2544,7 +2535,7 @@ html, body, #root, section, header, footer, main, .section-inner {
 /* Mobile Landscape & Height-Constrained Orientation Fixes */
 @media screen and (orientation: landscape) and (max-height: 600px) {
   html, body, #root {
-    overflow-x: clip !important;
+    overflow-x: hidden !important;
     width: 100% !important;
   }
 
@@ -2594,7 +2585,7 @@ html, body, #root, section, header, footer, main, .section-inner {
 /* Mobile Portrait Orientations (up to 480px) */
 @media screen and (max-width: 480px) {
   html, body, #root {
-    overflow-x: clip !important;
+    overflow-x: hidden !important;
     width: 100% !important;
   }
 

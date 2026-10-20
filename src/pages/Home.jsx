@@ -226,8 +226,7 @@ export default function Home() {
     return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
   });
   const [subscribingPush, setSubscribingPush] = useState(false);
-  const [isMarqueePaused, setIsMarqueePaused] = useState(false);
-
+  
   // Register device for true background Web Push Notifications (delivered even when browser is closed)
   const registerPushSubscription = async (forcePrompt = false) => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -342,17 +341,8 @@ export default function Home() {
       return;
     }
 
-    // Check if dismissed before (stored permanently in localStorage, never push user repeatedly)
-    const isDismissed = localStorage.getItem('SAJ_app_popup_dismissed') === 'true' ||
-                        sessionStorage.getItem('SAJ_app_popup_dismissed') === 'true';
-    if (!isDismissed) {
-      const timer = setTimeout(() => {
-        if (!checkIsAppInstalled()) {
-          setShowAppPopup(true);
-        }
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+    // Auto popup disabled to eliminate mobile screen lock / intrusive full-screen blocking overlay
+    // Users can download or install the app anytime via the navigation menu or download button
   }, []);
 
   // Listen to browser's native 'appinstalled' event & display-mode changes in real time
@@ -2103,12 +2093,7 @@ export default function Home() {
           </div>
 
           <div className="models-marquee-container">
-            <div 
-              className={`models-marquee-row ${isMarqueePaused ? 'paused' : ''}`}
-              onTouchStart={() => setIsMarqueePaused(true)}
-              onTouchEnd={() => setIsMarqueePaused(false)}
-              onTouchCancel={() => setIsMarqueePaused(false)}
-            >
+            <div className="models-marquee-row">
               {/* Duplicate 2 times for mathematically exact 50% seamless loop */}
               {[...bestSellerImages, ...bestSellerImages].map((item, index) => (
                 <div 
