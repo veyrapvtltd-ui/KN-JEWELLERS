@@ -1240,31 +1240,7 @@ export default function Home() {
             </nav>
 
             {/* Call button */}
-            <button
-              type="button"
-              onClick={() => registerPushSubscription(true)}
-              disabled={subscribingPush}
-              style={{
-                background: rateAlertEnabled ? 'rgba(40, 167, 69, 0.15)' : 'rgba(255, 215, 0, 0.15)',
-                border: `1px solid ${rateAlertEnabled ? '#28a745' : '#ffd700'}`,
-                color: rateAlertEnabled ? '#28a745' : '#ffd700',
-                padding: '8px 14px',
-                borderRadius: '20px',
-                fontSize: '11px',
-                fontWeight: '700',
-                letterSpacing: '0.5px',
-                cursor: subscribingPush ? 'not-allowed' : 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title="Get live gold & silver rate alerts on this device even when the website is closed"
-            >
-              <span>{rateAlertEnabled ? '✓' : '🔔'}</span>
-              <span>{rateAlertEnabled ? 'Alerts Active' : 'Rate Alerts'}</span>
-            </button>
-
-            <a href="tel:+919638888170" className="call-btn" title="Call Branch 1 (Gandhidham): 9638888170 | Branch 2 (Adipur): 7202921222">
+                        <a href="tel:+919638888170" className="call-btn" title="Call Branch 1 (Gandhidham): 9638888170 | Branch 2 (Adipur): 7202921222">
               <Phone className="icon-sm" />
               <span>CALL NOW</span>
             </a>
@@ -1446,30 +1422,6 @@ export default function Home() {
               TODAY'S LIVE RATES
             </h2>
 
-            {isAuthed && (
-              <button
-                onClick={() => setIsAdminOpen(true)}
-                title="Quick Update Live Rates & Product Catalog"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(123, 17, 34, 0.08), rgba(212, 175, 55, 0.15))',
-                  border: '1px solid rgba(123, 17, 34, 0.35)',
-                  color: 'var(--royal-gold)',
-                  padding: '5px 12px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  letterSpacing: '1px',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <span>✏️</span> EDIT LIVE RATES
-              </button>
-            )}
           </div>
           
           <div style={{
