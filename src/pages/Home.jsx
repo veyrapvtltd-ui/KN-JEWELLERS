@@ -226,6 +226,7 @@ export default function Home() {
     return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
   });
   const [subscribingPush, setSubscribingPush] = useState(false);
+  const [isMarqueePaused, setIsMarqueePaused] = useState(false);
 
   // Register device for true background Web Push Notifications (delivered even when browser is closed)
   const registerPushSubscription = async (forcePrompt = false) => {
@@ -2102,9 +2103,14 @@ export default function Home() {
           </div>
 
           <div className="models-marquee-container">
-            <div className="models-marquee-row">
-              {/* Duplicate the best sellers list 3 times for a 100% seamless infinite loop */}
-              {[...bestSellerImages, ...bestSellerImages, ...bestSellerImages].map((item, index) => (
+            <div 
+              className={`models-marquee-row ${isMarqueePaused ? 'paused' : ''}`}
+              onTouchStart={() => setIsMarqueePaused(true)}
+              onTouchEnd={() => setIsMarqueePaused(false)}
+              onTouchCancel={() => setIsMarqueePaused(false)}
+            >
+              {/* Duplicate 2 times for mathematically exact 50% seamless loop */}
+              {[...bestSellerImages, ...bestSellerImages].map((item, index) => (
                 <div 
                   key={index} 
                   className="model-marquee-card"
