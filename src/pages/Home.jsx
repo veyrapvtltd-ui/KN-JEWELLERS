@@ -16,7 +16,6 @@ import {
   DEFAULT_RATES 
 } from '../lib/cloudSync';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
-import { getCurrentFestival, INDIAN_FESTIVALS } from '../lib/festivalGreetings';
 import { collection18kProducts, best18kSellers } from '../data/collection18k';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
@@ -210,35 +209,7 @@ export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIosHelpOpen, setIsIosHelpOpen] = useState(false);
   const [showAppPopup, setShowAppPopup] = useState(false);
-  const [activeFestival, setActiveFestival] = useState(null);
-  const [isFestivalDismissed, setIsFestivalDismissed] = useState(false);
 
-  // Automatic Indian Festival Detection & Greeting Broadcast
-  useEffect(() => {
-    const checkFestival = () => {
-      const festivalData = getCurrentFestival();
-      if (festivalData.isActive) {
-        setActiveFestival(festivalData.festival);
-        // Automatically broadcast greeting if auto-broadcast is enabled
-        const autoEnabled = localStorage.getItem('SAJ_auto_festival_broadcast_disabled') !== 'true';
-        if (autoEnabled) {
-          dispatchFestivalBroadcast(festivalData.festival);
-        }
-      }
-    };
-
-    checkFestival();
-
-    const handleFestBroadcastEvent = (e) => {
-      if (e.detail) {
-        setActiveFestival(e.detail);
-        setIsFestivalDismissed(false);
-      }
-    };
-
-    window.addEventListener('saj_festival_broadcast', handleFestBroadcastEvent);
-    return () => window.removeEventListener('saj_festival_broadcast', handleFestBroadcastEvent);
-  }, []);
 
   // App Download Popup Controller - Strictly respects already installed or dismissed users
   useEffect(() => {
@@ -1077,7 +1048,7 @@ export default function Home() {
   return (
     <div className="app-container">
       
-      {/* Unified Sticky Header Stack: Live Rates Ticker -> Brand Navbar -> Festival Ribbon */}
+      {/* Unified Sticky Header Stack: Live Rates Ticker -> Brand Navbar */}
       <div className="site-header-sticky-wrapper">
         {/* Animated Live Gold Rates Ticker Bar */}
         <div className="gold-ticker-bar">
@@ -1233,181 +1204,6 @@ export default function Home() {
             </div>
           )}
         </header>
-
-        {/* Automated Indian & Gujarati Festival Greeting Banner */}
-        {activeFestival && !isFestivalDismissed && (
-          <div 
-            className="festival-greeting-bar"
-            style={{
-              background: 'linear-gradient(90deg, #7b1122 0%, #9c152b 25%, #b8860b 50%, #9c152b 75%, #7b1122 100%)',
-              backgroundSize: '200% auto',
-              color: '#ffffff',
-              padding: isMobile ? '8px 36px 8px 12px' : '10px 48px 10px 20px',
-              textAlign: 'center',
-              fontSize: isMobile ? '11px' : '13px',
-              fontWeight: '600',
-              letterSpacing: '0.4px',
-              position: 'relative',
-              zIndex: 998,
-              boxShadow: '0 4px 15px rgba(123, 17, 34, 0.25)',
-              borderBottom: '1px solid rgba(255, 215, 0, 0.35)',
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              overflow: 'hidden'
-            }}
-          >
-            {isMobile ? (
-              /* Mobile Layout (Clean Vertical Proportion with Gujarati Focus) */
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', maxWidth: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '15px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
-                  <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.5px' }}>
-                    {activeFestival.nameGujarati ? activeFestival.nameGujarati : activeFestival.name}
-                  </span>
-                  <span style={{ 
-                    background: 'rgba(255, 215, 0, 0.2)', 
-                    border: '1px solid rgba(255, 215, 0, 0.4)', 
-                    color: '#ffeaa7', 
-                    fontSize: '9px', 
-                    padding: '1px 6px', 
-                    borderRadius: '10px',
-                    fontWeight: '700'
-                  }}>
-                    શુભ પર્વ
-                  </span>
-                </div>
-                <div style={{ color: '#ffffff', fontSize: '10.5px', lineHeight: '1.35', opacity: 0.95 }}>
-                  {activeFestival.greetingGujarati || activeFestival.greeting}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <span style={{ color: '#ffeaa7', fontSize: '10px', fontStyle: 'italic' }}>
-                    • {activeFestival.offer}
-                  </span>
-                  <a 
-                    href="#showcase" 
-                    onClick={() => handleCategoryClick('WEDDING SET')}
-                    style={{
-                      padding: '3px 10px',
-                      background: '#ffd700',
-                      color: '#7b1122',
-                      borderRadius: '16px',
-                      textDecoration: 'none',
-                      fontSize: '10px',
-                      fontWeight: '800',
-                      letterSpacing: '0.4px',
-                      display: 'inline-block',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    Explore Collection →
-                  </a>
-                  <button
-                    type="button"
-                    onClick={handleBroadcastFestivalNow}
-                    style={{
-                      padding: '3px 8px',
-                      background: 'rgba(255, 215, 0, 0.25)',
-                      border: '1px solid #ffd700',
-                      color: '#ffd700',
-                      borderRadius: '16px',
-                      fontSize: '9.5px',
-                      fontWeight: '800',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    📢 Broadcast
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Desktop Layout */
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <span style={{ fontSize: '18px', filter: 'drop-shadow(0 0 4px rgba(255,215,0,0.6))' }}>{activeFestival.icon}</span>
-                <span style={{ color: '#ffd700', fontWeight: '800', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-                  {activeFestival.nameGujarati ? `${activeFestival.nameGujarati} (${activeFestival.name}):` : `${activeFestival.name}:`}
-                </span>
-                <span style={{ color: '#ffffff' }}>{activeFestival.greetingGujarati || activeFestival.greeting}</span>
-                <span style={{ color: '#ffeaa7', fontSize: '12px', fontStyle: 'italic' }}>
-                  • {activeFestival.offer}
-                </span>
-                <a 
-                  href="#showcase" 
-                  onClick={() => handleCategoryClick('WEDDING SET')}
-                  style={{
-                    marginLeft: '8px',
-                    padding: '4px 12px',
-                    background: '#ffd700',
-                    color: '#7b1122',
-                    borderRadius: '20px',
-                    textDecoration: 'none',
-                    fontSize: '11px',
-                    fontWeight: '800',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    display: 'inline-block',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-                  }}
-                >
-                  Explore Festive Collection →
-                </a>
-                <button
-                  type="button"
-                  onClick={handleBroadcastFestivalNow}
-                  style={{
-                    marginLeft: '6px',
-                    padding: '4px 12px',
-                    background: 'rgba(255, 215, 0, 0.25)',
-                    border: '1px solid #ffd700',
-                    color: '#ffd700',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  title="Broadcast this festive message to all open devices and tabs"
-                >
-                  📢 Broadcast Message
-                </button>
-              </div>
-            )}
-
-            {/* Dismiss button neatly positioned in top-right corner, NEVER overlapping text */}
-            <button 
-              onClick={() => setIsFestivalDismissed(true)}
-              aria-label="Dismiss greeting"
-              style={{
-                background: 'rgba(0, 0, 0, 0.25)',
-                border: '1px solid rgba(255, 215, 0, 0.35)',
-                color: '#ffd700',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: '700',
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'absolute',
-                right: '8px',
-                top: isMobile ? '8px' : '50%',
-                transform: isMobile ? 'none' : 'translateY(-50%)',
-                padding: 0
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
       </div>
 
       {/* 2. Hero Banner Slider Carousel */}
