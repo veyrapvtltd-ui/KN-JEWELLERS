@@ -1447,7 +1447,7 @@ body {
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  animation: marqueeLeft 36s linear infinite;
+  animation: marqueeLeft 60s linear infinite;
   padding: 10px 0;
 }
 
@@ -1480,7 +1480,7 @@ body {
     width: 25px;
   }
   .models-marquee-row {
-    animation-duration: 25s;
+    animation-duration: 45s;
   }
   .model-marquee-card {
     flex: 0 0 220px;
