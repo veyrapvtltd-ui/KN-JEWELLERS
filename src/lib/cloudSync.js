@@ -419,6 +419,37 @@ export async function saveLiveRates(ratesData) {
     console.warn('[LiveRates] GitHub commit error:', ghErr.message);
   }
 
+  // 6. Broadcast Web Push Notification to all customer devices (even when web/app is closed)
+  try {
+    const g24 = Number(normalized.gold24k).toLocaleString('en-IN');
+    const g22 = Number(normalized.gold22k).toLocaleString('en-IN');
+    const g18 = Number(normalized.gold18k).toLocaleString('en-IN');
+    const sil = Number(normalized.silver).toLocaleString('en-IN');
+
+    const formattedSummary = normalized.hide24k
+      ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`
+      : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`;
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '👑 LIVE MARKET RATE UPDATE',
+          body: formattedSummary,
+          rates: normalized,
+          url: '/'
+        })
+      }).then(r => r.json()).then(res => {
+        console.log('[LiveRates] Background push notification result:', res);
+      }).catch(err => {
+        console.warn('[LiveRates] Push dispatch error:', err);
+      });
+    }
+  } catch (pushErr) {
+    console.warn('[LiveRates] Push trigger exception:', pushErr);
+  }
+
   console.log('[LiveRates] ✅ Live rates updated and synced successfully:', normalized);
 
   return {
@@ -755,4 +786,31 @@ export async function deleteCustomProduct(productId) {
     supabaseDeleted,
     githubSaved
   };
+}
+
+/**
+ * Helper to manually dispatch rate push notification to all subscribed devices
+ */
+export async function sendRatePushNotification(rates) {
+  const targetRates = rates || DEFAULT_RATES;
+  const g24 = Number(targetRates.gold24k).toLocaleString('en-IN');
+  const g22 = Number(targetRates.gold22k).toLocaleString('en-IN');
+  const g18 = Number(targetRates.gold18k).toLocaleString('en-IN');
+  const sil = Number(targetRates.silver).toLocaleString('en-IN');
+
+  const formattedSummary = targetRates.hide24k
+    ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`
+    : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`;
+
+  const response = await fetch('/api/send-push', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: '👑 LIVE MARKET RATE UPDATE',
+      body: formattedSummary,
+      rates: targetRates,
+      url: '/'
+    })
+  });
+  return await response.json();
 }

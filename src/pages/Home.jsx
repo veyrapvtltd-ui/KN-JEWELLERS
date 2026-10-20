@@ -1,3 +1,16 @@
+
+const VAPID_PUBLIC_KEY = 'BCibRN0IM4-L0mr28TLXa_5Nu_gbU5v_p3rTzvSxiL4Emkhi3Tr2dfjfcXjSvka39AYKxlu8pRmYyTO0ZZ0qGPY';
+
+function urlB64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import heic2any from 'heic2any';
@@ -209,6 +222,111 @@ export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIosHelpOpen, setIsIosHelpOpen] = useState(false);
   const [showAppPopup, setShowAppPopup] = useState(false);
+  const [rateAlertEnabled, setRateAlertEnabled] = useState(() => {
+    return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+  });
+  const [subscribingPush, setSubscribingPush] = useState(false);
+
+  // Register device for true background Web Push Notifications (delivered even when browser is closed)
+  const registerPushSubscription = async (forcePrompt = false) => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (forcePrompt) alert('Web Push notifications are not supported on this browser.');
+      return false;
+    }
+
+    try {
+      let perm = Notification.permission;
+      if (perm !== 'granted') {
+        if (!forcePrompt) return false;
+        perm = await Notification.requestPermission();
+      }
+
+      if (perm !== 'granted') {
+        if (forcePrompt) alert('Notification permission was not granted. Please enable notifications in your browser settings to receive rate updates.');
+        return false;
+      }
+
+      setSubscribingPush(true);
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+      }
+
+      if (sub) {
+        const subJson = sub.toJSON();
+
+        // 1. Send to serverless push registry
+        await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscription: subJson,
+            userAgent: navigator.userAgent
+          })
+        }).catch(() => {});
+
+        // 2. Multi-tier backup directly to Supabase inquiries table
+        if (isSupabaseConfigured()) {
+          try {
+            const endpoint = subJson.endpoint;
+            const p256dh = subJson.keys?.p256dh || '';
+            const auth = subJson.keys?.auth || '';
+
+            const { data: existing } = await supabase
+              .from('inquiries')
+              .select('id')
+              .eq('inquiry_type', 'push_subscription')
+              .eq('name', endpoint)
+              .limit(1);
+
+            if (existing && existing.length > 0) {
+              await supabase.from('inquiries').update({
+                phone: p256dh,
+                email: auth,
+                product_title: (navigator.userAgent || '').substring(0, 100),
+                notes: JSON.stringify(subJson)
+              }).eq('id', existing[0].id);
+            } else {
+              await supabase.from('inquiries').insert([{
+                name: endpoint,
+                phone: p256dh,
+                email: auth,
+                inquiry_type: 'push_subscription',
+                product_title: (navigator.userAgent || '').substring(0, 100),
+                notes: JSON.stringify(subJson)
+              }]);
+            }
+          } catch (e) {}
+        }
+
+        setRateAlertEnabled(true);
+        if (forcePrompt) {
+          alert('🔔 Live Gold & Silver Rate Alerts are now active on this device!\n\nYou will receive official market rate updates automatically even when this website is closed.');
+        }
+        return true;
+      }
+    } catch (err) {
+      console.warn('Push registration error:', err);
+      if (forcePrompt) alert('Could not enable rate alerts: ' + err.message);
+    } finally {
+      setSubscribingPush(false);
+    }
+    return false;
+  };
+
+  // Auto-register subscription on mount if permission was previously granted
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      setRateAlertEnabled(true);
+      registerPushSubscription(false);
+    }
+  }, []);
+
 
 
   // App Download Popup Controller - Strictly respects already installed or dismissed users
@@ -1122,6 +1240,30 @@ export default function Home() {
             </nav>
 
             {/* Call button */}
+            <button
+              type="button"
+              onClick={() => registerPushSubscription(true)}
+              disabled={subscribingPush}
+              style={{
+                background: rateAlertEnabled ? 'rgba(40, 167, 69, 0.15)' : 'rgba(255, 215, 0, 0.15)',
+                border: `1px solid ${rateAlertEnabled ? '#28a745' : '#ffd700'}`,
+                color: rateAlertEnabled ? '#28a745' : '#ffd700',
+                padding: '8px 14px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: '700',
+                letterSpacing: '0.5px',
+                cursor: subscribingPush ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Get live gold & silver rate alerts on this device even when the website is closed"
+            >
+              <span>{rateAlertEnabled ? '✓' : '🔔'}</span>
+              <span>{rateAlertEnabled ? 'Alerts Active' : 'Rate Alerts'}</span>
+            </button>
+
             <a href="tel:+919638888170" className="call-btn" title="Call Branch 1 (Gandhidham): 9638888170 | Branch 2 (Adipur): 7202921222">
               <Phone className="icon-sm" />
               <span>CALL NOW</span>
@@ -2774,6 +2916,33 @@ export default function Home() {
             )}
 
             
+
+            {/* Enable Rate Notifications Button */}
+            <button
+              type="button"
+              onClick={() => registerPushSubscription(true)}
+              disabled={subscribingPush}
+              style={{
+                background: rateAlertEnabled ? 'rgba(40, 167, 69, 0.15)' : '#7b1122',
+                color: rateAlertEnabled ? '#28a745' : '#ffd700',
+                border: `1.5px solid ${rateAlertEnabled ? '#28a745' : '#ffd700'}`,
+                padding: '14px 24px',
+                borderRadius: '30px',
+                fontWeight: '700',
+                fontSize: '12px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                cursor: subscribingPush ? 'not-allowed' : 'pointer',
+                boxShadow: '0 8px 24px rgba(123, 17, 34, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              className="pwa-alert-btn"
+            >
+              {rateAlertEnabled ? '✓ Rate Alerts Active' : (subscribingPush ? 'Enabling Alerts...' : '🔔 Enable Rate Alerts (Closed App Support)')}
+            </button>
 
             {/* iOS Instructions Trigger */}
             <button

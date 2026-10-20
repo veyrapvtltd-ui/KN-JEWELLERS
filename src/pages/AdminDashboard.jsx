@@ -12,6 +12,7 @@ import {
 import { 
   fetchLiveRates, 
   saveLiveRates, 
+  sendRatePushNotification,
   fetchCustomProducts, 
   saveCustomProduct, 
   updateCustomProduct, 
@@ -56,6 +57,7 @@ export default function AdminDashboard() {
   const [silver, setSilver] = useState('214');
   const [hide24k, setHide24k] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
+  const [pushingRates, setPushingRates] = useState(false);
 
   // Products Catalog Management State
   const [products, setProducts] = useState([]);
@@ -262,6 +264,29 @@ export default function AdminDashboard() {
       alert('Error saving rates: ' + err.message);
     } finally {
       setSavingRates(false);
+    }
+  };
+
+  // Manual Push Notification Dispatcher
+  const handleManualPushNotification = async () => {
+    setPushingRates(true);
+    try {
+      const res = await sendRatePushNotification({
+        gold24k: Number(gold24k),
+        gold22k: Number(gold22k),
+        gold18k: Number(gold18k),
+        silver: Number(silver),
+        hide24k: hide24k
+      });
+      if (res && res.sent !== undefined) {
+        alert(`👑 Live Rate Push Notification Dispatched!\n\nDelivered to ${res.sent} device(s) worldwide (out of ${res.total} registered devices).\n\nDelivered even when customer phones or browsers are completely closed!`);
+      } else {
+        alert('Notification triggered: ' + (res?.message || 'Dispatched successfully'));
+      }
+    } catch (err) {
+      alert('Error dispatching push notification: ' + err.message);
+    } finally {
+      setPushingRates(false);
     }
   };
 
@@ -1052,23 +1077,46 @@ export default function AdminDashboard() {
               </label>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={savingRates}
-              style={{
-                padding: '12px 24px',
-                background: 'var(--royal-gold)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                fontWeight: '700',
-                fontSize: '0.85rem',
-                textTransform: 'uppercase',
-                cursor: savingRates ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {savingRates ? 'Updating Rates...' : 'Update Live Rates'}
-            </button>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button 
+                type="submit" 
+                disabled={savingRates}
+                style={{
+                  padding: '12px 24px',
+                  background: 'var(--royal-gold)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontWeight: '700',
+                  fontSize: '0.85rem',
+                  textTransform: 'uppercase',
+                  cursor: savingRates ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {savingRates ? 'Updating Rates...' : 'Update Live Rates & Auto-Push'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleManualPushNotification}
+                disabled={pushingRates}
+                style={{
+                  padding: '12px 20px',
+                  background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 100%)',
+                  color: '#ffd700',
+                  border: '1.5px solid #ffd700',
+                  borderRadius: '4px',
+                  fontWeight: '700',
+                  fontSize: '0.82rem',
+                  cursor: pushingRates ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {pushingRates ? 'Pushing to Devices...' : '🔔 Push Rate Notification to All Devices (Closed App Support)'}
+              </button>
+            </div>
           </form>
         </div>
 
