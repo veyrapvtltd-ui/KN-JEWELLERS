@@ -38,10 +38,10 @@ export const collection18kProducts = [
   },
   {
     id: 'saj-18k-ring-08',
-    title: '18KT Plain Gold Artisanal Textured Milgrain Band Ring',
+    title: '18KT Gold Artisanal Textured Milgrain Band Ring',
     category: 'LADIES',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_artisanal_textured_gold_band_ring.jpg'
   },
   {
@@ -64,18 +64,18 @@ export const collection18kProducts = [
   },
   {
     id: 'saj-18k-ring-03',
-    title: '18KT Plain Gold Gents Sacred ॐ (Om) Signet Ring',
+    title: '18KT Gold Gents Sacred ॐ (Om) Signet Ring',
     category: 'GENTS',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_gents_om_signet_ring.jpg'
   },
   {
     id: 'saj-18k-ring-04',
-    title: '18KT Plain Gold Gents Royal Lion Crest Signet Ring',
+    title: '18KT Gold Gents Royal Lion Crest Signet Ring',
     category: 'GENTS',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_gents_royal_lion_ring.jpg'
   },
 
@@ -109,11 +109,11 @@ export const collection18kProducts = [
   },
   {
     id: 'saj-18k-ear-05',
-    title: '18KT Plain Gold Textured Faceted Bali Hoop Earrings',
+    title: '18KT Gold Textured Faceted Bali Hoop Earrings',
     category: 'EARRINGS',
     subCategory: 'EARRINGS',
     earringType: 'HOOPS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_textured_gold_bali_hoops.jpg'
   },
 
@@ -186,18 +186,18 @@ export const collection18kProducts = [
   // ==================== CHAINS (2 Designs) ====================
   {
     id: 'saj-18k-chn-02',
-    title: '18KT Plain Gold Sleek Flat Snake Herringbone Chain',
+    title: '18KT Gold Sleek Flat Snake Herringbone Chain',
     category: 'LADIES',
     subCategory: 'CHAINS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_gold_flat_snake_chain.jpg'
   },
   {
     id: 'saj-18k-chn-03',
-    title: '18KT Plain Gold Classic Spiral Rope Chain',
+    title: '18KT Gold Classic Spiral Rope Chain',
     category: 'GENTS',
     subCategory: 'CHAINS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_gold_rope_chain.jpg'
   },
 
