@@ -1,4 +1,4 @@
-// 18KT Plain Gold Master Collection for SHREE ARADHNA JEWELLERS
+// 18KT Master Collection for SHREE ARADHNA JEWELLERS
 // Categorized precisely: rings in rings, earrings in earrings, etc.
 
 export const collection18kProducts = [
@@ -30,10 +30,10 @@ export const collection18kProducts = [
   },
   {
     id: 'saj-18k-ring-07',
-    title: '18KT Plain Gold Classic Solitaire Diamond Engagement Ring',
+    title: '18KT Gold Classic Solitaire Diamond Engagement Ring',
     category: 'LADIES',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_solitaire_diamond_engagement_ring.jpg'
   },
   {
@@ -46,20 +46,20 @@ export const collection18kProducts = [
   },
   {
     id: 'saj-18k-ring-09',
-    title: '18KT Plain Gold Geometric Cut-Out Cage Diamond Ring',
+    title: '18KT Gold Geometric Cut-Out Cage Diamond Ring',
     category: 'LADIES',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_geometric_cage_diamond_ring.jpg'
   },
 
   // --- Gents Rings (3) ---
   {
     id: 'saj-18k-ring-02',
-    title: '18KT Plain Gold Gents Royal Ribbed Signet Ring',
+    title: '18KT Gold Gents Royal Ribbed Signet Ring',
     category: 'GENTS',
     subCategory: 'RINGS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_gents_royal_ribbed_ring.jpg'
   },
   {
@@ -82,29 +82,29 @@ export const collection18kProducts = [
   // ==================== EARRINGS (4 Designs) ====================
   {
     id: 'saj-18k-ear-01',
-    title: '18KT Plain Gold Evil Eye Diamond Stud Earrings',
+    title: '18KT Gold Evil Eye Diamond Stud Earrings',
     category: 'EARRINGS',
     subCategory: 'EARRINGS',
     earringType: 'STUDS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_evil_eye_diamond_studs.jpg'
   },
   {
     id: 'saj-18k-ear-03',
-    title: '18KT Plain Gold Floral Cluster Diamond Stud Earrings',
+    title: '18KT Gold Floral Cluster Diamond Stud Earrings',
     category: 'EARRINGS',
     subCategory: 'EARRINGS',
     earringType: 'STUDS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_floral_cluster_diamond_studs.jpg'
   },
   {
     id: 'saj-18k-ear-04',
-    title: '18KT Plain Gold Two-Tone Diamond Huggie Hoop Earrings',
+    title: '18KT Gold Two-Tone Diamond Huggie Hoop Earrings',
     category: 'EARRINGS',
     subCategory: 'EARRINGS',
     earringType: 'HOOPS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_two_tone_huggie_hoops.jpg'
   },
   {
@@ -120,43 +120,35 @@ export const collection18kProducts = [
   // ==================== BRACELETS & BANGLES (5 Designs) ====================
   {
     id: 'saj-18k-brac-01',
-    title: '18KT Plain Gold Sparkling Diamond Tennis Link Bracelet',
+    title: '18KT Gold Sparkling Diamond Tennis Link Bracelet',
     category: 'LADIES',
     subCategory: 'BRACELETS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_diamond_tennis_bracelet.jpg'
   },
   {
     id: 'saj-18k-brac-02',
-    title: '18KT Plain Gold Interlocking Heart Diamond Charm Bracelet',
+    title: '18KT Gold Interlocking Heart Diamond Charm Bracelet',
     category: 'LADIES',
     subCategory: 'BRACELETS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_heart_diamond_bracelet.jpg'
   },
   {
     id: 'saj-18k-brac-03',
-    title: '18KT Plain Gold Contemporary Bar-Link Diamond Bracelet',
+    title: '18KT Gold Contemporary Bar-Link Diamond Bracelet',
     category: 'LADIES',
     subCategory: 'BRACELETS',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_contemporary_bar_link_bracelet.jpg'
   },
   {
     id: 'saj-18k-bang-01',
-    title: '18KT Plain Gold Turquoise Enamel Evil-Eye Kada Bangle',
+    title: '18KT Gold Turquoise Enamel Evil-Eye Kada Bangle',
     category: 'LADIES',
     subCategory: 'BANGLES',
-    purity: '18KT Plain Gold',
+    purity: '18KT Gold',
     url: '/assets/18K_COLLECTION/18k_turquoise_evil_eye_kada_bangle.jpg'
-  },
-  {
-    id: 'saj-18k-bang-02',
-    title: '18KT Plain Gold Italian Mesh Woven Flexible Kada Bangle',
-    category: 'LADIES',
-    subCategory: 'BANGLES',
-    purity: '18KT Plain Gold',
-    url: '/assets/18K_COLLECTION/18k_mesh_woven_gold_kada_bangle.jpg'
   },
   {
     id: 'saj-bang-03',
@@ -212,36 +204,36 @@ export const collection18kProducts = [
   // ==================== MANGALSUTRA (1 Design) ====================
   {
     id: 'saj-18k-ms-01',
-    title: '18KT Plain Gold Auspicious Floral Diamond Short Mangalsutra',
+    title: '18KT Rose Gold Auspicious Floral Diamond Short Mangalsutra',
     category: 'LADIES',
     subCategory: 'SHORT MANGALSUTRA',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_floral_diamond_short_mangalsutra.jpg'
   },
 
   // ==================== NECKLACES & SETS (5 Designs) ====================
   {
     id: 'saj-18k-neck-02',
-    title: '18KT Plain Gold Teardrop Diamond Pendant & Earrings Set',
+    title: '18KT Rose Gold Teardrop Diamond Pendant & Earrings Set',
     category: 'LADIES',
     subCategory: 'NECKLACES',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_teardrop_diamond_pendant_set.jpg'
   },
   {
     id: 'saj-18k-neck-03',
-    title: '18KT Plain Gold Geometric Cascade Diamond Pendant & Studs Set',
+    title: '18KT Rose Gold Geometric Cascade Diamond Pendant & Studs Set',
     category: 'LADIES',
     subCategory: 'NECKLACES',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_geometric_cascade_pendant_set.jpg'
   },
   {
     id: 'saj-18k-neck-04',
-    title: '18KT Plain Gold Swirling Heart Diamond Necklace & Drop Earrings Set',
+    title: '18KT Rose Gold Swirling Heart Diamond Necklace & Drop Earrings Set',
     category: 'LADIES',
     subCategory: 'NECKLACES',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_heart_swirl_necklace_earrings_set.jpg'
   },
   {
@@ -254,10 +246,10 @@ export const collection18kProducts = [
   },
   {
     id: 'saj-18k-neck-06',
-    title: '18KT Plain Gold Royal Scalloped Diamond Bridal Choker & Earrings Set',
+    title: '18KT Rose Gold Royal Scalloped Diamond Bridal Choker & Earrings Set',
     category: 'LADIES',
     subCategory: 'NECKLACES',
-    purity: '18KT Plain Gold',
+    purity: '18KT Rose Gold',
     url: '/assets/18K_COLLECTION/18k_royal_scalloped_bridal_diamond_set.jpg'
   }
 ];
