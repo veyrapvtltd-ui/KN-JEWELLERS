@@ -158,6 +158,38 @@ export const collection18kProducts = [
     purity: '18KT Plain Gold',
     url: '/assets/18K_COLLECTION/18k_mesh_woven_gold_kada_bangle.jpg'
   },
+  {
+    id: 'saj-bang-03',
+    title: 'Imperial Trillion Ruby & Diamond Radiating Kada Bangle',
+    category: 'LADIES',
+    subCategory: 'BANGLES',
+    purity: 'Gold',
+    url: '/assets/18K_COLLECTION/ruby_trillion_diamond_radiating_kada_bangle.jpg'
+  },
+  {
+    id: 'saj-bang-04',
+    title: 'Geometric Pavé Diamond & Dual Heart Kada Bangle',
+    category: 'LADIES',
+    subCategory: 'BANGLES',
+    purity: 'Gold',
+    url: '/assets/18K_COLLECTION/geometric_diamond_dual_heart_kada_bangle.jpg'
+  },
+  {
+    id: 'saj-bang-05',
+    title: 'Artisanal Marquise Diamond & Sculpted Leaf Kada Bangle',
+    category: 'LADIES',
+    subCategory: 'BANGLES',
+    purity: 'Gold',
+    url: '/assets/18K_COLLECTION/marquise_diamond_sculpted_leaf_kada_bangle.jpg'
+  },
+  {
+    id: 'saj-bang-06',
+    title: 'Royal Triple Diamond Halo & Fluted Leaf Kada Bangle',
+    category: 'LADIES',
+    subCategory: 'BANGLES',
+    purity: 'Gold',
+    url: '/assets/18K_COLLECTION/triple_diamond_halo_fluted_leaf_kada_bangle.jpg'
+  },
 
   // ==================== CHAINS (2 Designs) ====================
   {
@@ -239,5 +271,7 @@ export const best18kSellers = [
   collection18kProducts.find(p => p.id === 'saj-18k-brac-01'), // Tennis Bracelet
   collection18kProducts.find(p => p.id === 'saj-18k-ring-06'), // Blooming Floral Ring
   collection18kProducts.find(p => p.id === 'saj-18k-bang-01'), // Turquoise Kada Bangle
+  collection18kProducts.find(p => p.id === 'saj-bang-03'),     // Imperial Trillion Ruby Kada Bangle
+  collection18kProducts.find(p => p.id === 'saj-bang-06'),     // Royal Triple Diamond Halo Kada Bangle
   collection18kProducts.find(p => p.id === 'saj-18k-brac-02')  // Heart Diamond Bracelet
 ].filter(Boolean);

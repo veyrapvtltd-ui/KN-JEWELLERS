@@ -2124,7 +2124,7 @@ export default function Home() {
                       {item.title}
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--royal-gold)', fontWeight: '600', marginTop: '2px' }}>
-                      {item.purity || '18K Gold'} • {item.subCategory || item.category}
+                      {(item.purity ? item.purity + ' • ' : '') + (item.subCategory || item.category)}
                     </div>
                   </div>
                 </div>
