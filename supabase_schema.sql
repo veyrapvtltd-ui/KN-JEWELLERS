@@ -103,6 +103,16 @@ CREATE TABLE IF NOT EXISTS public.broadcast_notifications (
     created_at timestamp with time zone DEFAULT now()
 );
 
+-- 7. WEB PUSH SUBSCRIPTIONS (BACKGROUND CLOSED-APP ALERTS)
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    endpoint text UNIQUE NOT NULL,
+    p256dh text NOT NULL,
+    auth text NOT NULL,
+    user_agent text,
+    created_at timestamp with time zone DEFAULT now()
+);
+
 -- =========================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- =========================================================================
@@ -133,6 +143,10 @@ BEGIN
 
     DROP POLICY IF EXISTS "Public Full Access broadcast_notifications" ON public.broadcast_notifications;
     CREATE POLICY "Public Full Access broadcast_notifications" ON public.broadcast_notifications FOR ALL TO public USING (true) WITH CHECK (true);
+
+    ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public Full Access push_subscriptions" ON public.push_subscriptions;
+    CREATE POLICY "Public Full Access push_subscriptions" ON public.push_subscriptions FOR ALL TO public USING (true) WITH CHECK (true);
 END $$;
 
 -- =========================================================================

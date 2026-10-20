@@ -323,24 +323,82 @@ export default function Home() {
     return outputArray;
   };
 
-  // Push notification handler
+  const VAPID_PUBLIC_KEY = 'BCibRN0IM4-L0mr28TLXa_5Nu_gbU5v_p3rTzvSxiL4Emkhi3Tr2dfjfcXjSvka39AYKxlu8pRmYyTO0ZZ0qGPY';
+
+  // Push notification handler: stores subscription in backend & Supabase for true closed-tab push delivery
   const saveSubscriptionToStorage = async (subscription) => {
-    // Background push notifications disabled
+    if (!subscription || !subscription.endpoint) return;
+    try {
+      const subJson = subscription.toJSON();
+      
+      // 1. Send to serverless push endpoint
+      fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription: subJson,
+          userAgent: navigator.userAgent
+        })
+      }).catch(() => {});
+
+      // 2. Also directly save to Supabase for multi-tier reliability
+      if (isSupabaseConfigured()) {
+        const p256dh = subJson.keys?.p256dh || '';
+        const auth = subJson.keys?.auth || '';
+        
+        const { error: tblErr } = await supabase.from('push_subscriptions').upsert({
+          endpoint: subJson.endpoint,
+          p256dh,
+          auth,
+          user_agent: navigator.userAgent,
+          created_at: new Date().toISOString()
+        }, { onConflict: 'endpoint' });
+
+        if (tblErr) {
+          const { data: existing } = await supabase
+            .from('inquiries')
+            .select('id')
+            .eq('inquiry_type', 'push_subscription')
+            .eq('name', subJson.endpoint)
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            await supabase.from('inquiries').insert([{
+              name: subJson.endpoint,
+              phone: p256dh,
+              email: auth,
+              inquiry_type: 'push_subscription',
+              product_title: (navigator.userAgent || '').substring(0, 100),
+              notes: JSON.stringify(subJson)
+            }]);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to save push subscription:', e);
+    }
   };
 
   const registerPushSubscription = async () => {
     if ('serviceWorker' in navigator && 'Notification' in window) {
       try {
-        const reg = await navigator.serviceWorker.ready;
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+          reg = await navigator.serviceWorker.register('/sw.js');
+        }
+        await navigator.serviceWorker.ready;
+
         if (reg.pushManager) {
           let subscription = await reg.pushManager.getSubscription();
+          const appServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
+
           if (!subscription) {
-            const applicationServerKey = urlB64ToUint8Array('BEXW6qmnlL19TYxTUbLNgawyJPLEe0dWursfi25_AxGvbBRu--RSdGIFU0OMfdd5mV5yOfSF19V7B0Jdwro497Y');
             subscription = await reg.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: applicationServerKey
+              applicationServerKey: appServerKey
             });
           }
+
           if (subscription) {
             await saveSubscriptionToStorage(subscription);
           }

@@ -1,4 +1,4 @@
-// Clean passive PWA service worker with Push Notification support for Shree Aradhna Jewellers
+// Clean PWA service worker with True Background Web Push Notification support for Shree Aradhna Jewellers
 self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
@@ -11,16 +11,16 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Passive fetch listener to satisfy PWA installability requirements without blocking network requests
+// Passive fetch listener to satisfy PWA installability requirements
 self.addEventListener('fetch', (e) => {
   // Let browser handle network fetch normally
 });
 
-// Listen to background push events when the app is closed or open
+// Listen to background push events EVEN WHEN THE APP AND BROWSER ARE CLOSED
 self.addEventListener('push', (event) => {
   let payload = {
-    title: '👑 Shree Aradhna Jewellers',
-    body: 'Live Gold Rate Update! Check today\'s latest hallmarked rates and showroom offers.'
+    title: '👑 LIVE MARKET RATE UPDATE',
+    body: 'Today\'s latest 22K Gold & Silver rates updated live at Shree Aradhna Jewellers!'
   };
 
   if (event.data) {
@@ -28,7 +28,7 @@ self.addEventListener('push', (event) => {
       payload = event.data.json();
     } catch (e) {
       payload = {
-        title: '👑 Shree Aradhna Jewellers',
+        title: '👑 LIVE MARKET RATE UPDATE',
         body: event.data.text()
       };
     }
@@ -36,12 +36,20 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body,
-    icon: '/assets/logo.png',
+    icon: payload.icon || '/assets/logo.png',
     badge: '/assets/logo.png',
-    vibrate: [200, 100, 200],
+    image: payload.image || undefined,
+    vibrate: [300, 100, 300, 100, 300],
+    tag: payload.tag || 'saj-live-rate-alert',
+    renotify: true,
+    requireInteraction: true,
     data: {
-      url: payload.url || '/'
-    }
+      url: payload.url || '/',
+      timestamp: Date.now()
+    },
+    actions: [
+      { action: 'open_rates', title: '📊 View Live Rates' }
+    ]
   };
 
   event.waitUntil(
@@ -53,6 +61,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {

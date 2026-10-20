@@ -1299,6 +1299,22 @@ export async function broadcastNotificationToAll(title, body, extraData = {}) {
     console.warn('Supabase broadcast failed:', e);
   }
 
+  // 3b. True Background Web Push Notification to ALL devices even when website is closed
+  try {
+    if (typeof window !== 'undefined') {
+      fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: payload.title,
+          body: payload.body,
+          rates: extraData.rates,
+          url: '/'
+        })
+      }).catch(() => {});
+    }
+  } catch (e) {}
+
   // 4. Save to local broadcast history
   try {
     const history = JSON.parse(localStorage.getItem('SAJ_festival_broadcast_history') || '[]');

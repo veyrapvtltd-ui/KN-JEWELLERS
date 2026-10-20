@@ -48,6 +48,54 @@ export default defineConfig({
             })
           }
         })
+
+        server.middlewares.use('/api/subscribe', async (req, res) => {
+          if (req.method === 'POST') {
+            let body = ''
+            req.on('data', chunk => { body += chunk })
+            req.on('end', async () => {
+              try {
+                req.body = JSON.parse(body || '{}')
+                const { default: handler } = await import('./api/subscribe.js')
+                await handler(req, res)
+              } catch (e) {
+                res.writeHead(500, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({ error: e.message }))
+              }
+            })
+          } else if (req.method === 'OPTIONS') {
+            res.writeHead(200, {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type'
+            })
+            res.end()
+          }
+        })
+
+        server.middlewares.use('/api/send-push', async (req, res) => {
+          if (req.method === 'POST') {
+            let body = ''
+            req.on('data', chunk => { body += chunk })
+            req.on('end', async () => {
+              try {
+                req.body = JSON.parse(body || '{}')
+                const { default: handler } = await import('./api/send-push.js')
+                await handler(req, res)
+              } catch (e) {
+                res.writeHead(500, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({ error: e.message }))
+              }
+            })
+          } else if (req.method === 'OPTIONS') {
+            res.writeHead(200, {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type'
+            })
+            res.end()
+          }
+        })
       }
     }
   ],

@@ -482,6 +482,18 @@ export async function saveLiveRates(ratesData) {
           bc.postMessage(broadcastPayload);
           bc.close();
         }
+
+        // 6d. True Background Push Notification (Delivered even when app/browser is CLOSED)
+        fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: broadcastPayload.title,
+            body: broadcastPayload.body,
+            rates: normalized,
+            url: '/'
+          })
+        }).catch(err => console.warn('[LiveRates] Background push dispatch fallback:', err));
       }
     } catch (bErr) {
       console.warn('[LiveRates] Realtime rate broadcast error:', bErr);
