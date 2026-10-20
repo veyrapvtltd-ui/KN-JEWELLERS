@@ -16,7 +16,7 @@ import {
   DEFAULT_RATES 
 } from '../lib/cloudSync';
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
-import { getCurrentFestival, dispatchFestivalBroadcast, sendSystemNotification, broadcastNotificationToAll, INDIAN_FESTIVALS } from '../lib/festivalGreetings';
+import { getCurrentFestival, INDIAN_FESTIVALS } from '../lib/festivalGreetings';
 import { collection18kProducts, best18kSellers } from '../data/collection18k';
 
 // Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
@@ -309,106 +309,6 @@ export default function Home() {
     } catch (e) {}
   };
 
-  // Helper utility to convert VAPID public key string into Uint8Array format
-  const urlB64ToUint8Array = (base64String) => {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/\-/g, '+')
-      .replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
-
-  const VAPID_PUBLIC_KEY = 'BCibRN0IM4-L0mr28TLXa_5Nu_gbU5v_p3rTzvSxiL4Emkhi3Tr2dfjfcXjSvka39AYKxlu8pRmYyTO0ZZ0qGPY';
-
-  // Push notification handler: stores subscription in backend & Supabase for true closed-tab push delivery
-  const saveSubscriptionToStorage = async (subscription) => {
-    if (!subscription || !subscription.endpoint) return;
-    try {
-      const subJson = subscription.toJSON();
-      
-      // 1. Send to serverless push endpoint
-      fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscription: subJson,
-          userAgent: navigator.userAgent
-        })
-      }).catch(() => {});
-
-      // 2. Also directly save to Supabase for multi-tier reliability
-      if (isSupabaseConfigured()) {
-        const p256dh = subJson.keys?.p256dh || '';
-        const auth = subJson.keys?.auth || '';
-        
-        const { error: tblErr } = await supabase.from('push_subscriptions').upsert({
-          endpoint: subJson.endpoint,
-          p256dh,
-          auth,
-          user_agent: navigator.userAgent,
-          created_at: new Date().toISOString()
-        }, { onConflict: 'endpoint' });
-
-        if (tblErr) {
-          const { data: existing } = await supabase
-            .from('inquiries')
-            .select('id')
-            .eq('inquiry_type', 'push_subscription')
-            .eq('name', subJson.endpoint)
-            .limit(1);
-
-          if (!existing || existing.length === 0) {
-            await supabase.from('inquiries').insert([{
-              name: subJson.endpoint,
-              phone: p256dh,
-              email: auth,
-              inquiry_type: 'push_subscription',
-              product_title: (navigator.userAgent || '').substring(0, 100),
-              notes: JSON.stringify(subJson)
-            }]);
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to save push subscription:', e);
-    }
-  };
-
-  const registerPushSubscription = async () => {
-    if ('serviceWorker' in navigator && 'Notification' in window) {
-      try {
-        let reg = await navigator.serviceWorker.getRegistration();
-        if (!reg) {
-          reg = await navigator.serviceWorker.register('/sw.js');
-        }
-        await navigator.serviceWorker.ready;
-
-        if (reg.pushManager) {
-          let subscription = await reg.pushManager.getSubscription();
-          const appServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
-
-          if (!subscription) {
-            subscription = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: appServerKey
-            });
-          }
-
-          if (subscription) {
-            await saveSubscriptionToStorage(subscription);
-          }
-        }
-      } catch (err) {
-        console.warn('Push manager subscription failed:', err.message);
-      }
-    }
-  };
-
   const [instaFeedUrl, setInstaFeedUrl] = useState('');
   const [instaPosts, setInstaPosts] = useState([]);
 
@@ -424,78 +324,6 @@ export default function Home() {
       }
     };
     fetchInstaConfig();
-  }, []);
-
-  const handleSendTestNotification = () => {
-    showLiveRateToast(goldRates, {
-      title: '👑 TEST LIVE RATE NOTIFICATION',
-      subtitle: 'BIS 916 Hallmarked • Test Notification',
-      force: true
-    });
-    sendSystemNotification(
-      '👑 Shree Aradhna Jewellers',
-      `✨ Live Rate Test: 22K Gold ₹${Number(goldRates.gold22k).toLocaleString('en-IN')}/g | Silver ₹${Number(goldRates.silver).toLocaleString('en-IN')}/g. Showrooms at Gandhidham & Adipur!`,
-      'saj-test-alert'
-    );
-  };
-
-  const handleBroadcastToAll = async () => {
-    await broadcastNotificationToAll(
-      '👑 LIVE MARKET RATE UPDATE',
-      `• 24K Gold (999): ₹${Number(goldRates.gold24k).toLocaleString('en-IN')}/g\n• 22K Gold (916): ₹${Number(goldRates.gold22k).toLocaleString('en-IN')}/g\n• 18K Gold (750): ₹${Number(goldRates.gold18k).toLocaleString('en-IN')}/g\n• Pure Silver: ₹${Number(goldRates.silver).toLocaleString('en-IN')}/g\n\nShowroom rates live at Gandhidham & Adipur.`,
-      {
-        rates: goldRates,
-        subtitle: 'BIS 916 Hallmarked • Just Updated',
-        force: true
-      }
-    );
-    showLiveRateToast(goldRates, {
-      title: '👑 LIVE MARKET RATE UPDATE',
-      subtitle: 'BIS 916 Hallmarked • Just Updated',
-      force: true
-    });
-    alert('📢 Broadcast notification dispatched to all open devices, tabs, and notification centers!');
-  };
-
-  const handleBroadcastFestivalNow = async () => {
-    const festData = getCurrentFestival();
-    const fest = festData.isActive ? festData.festival : INDIAN_FESTIVALS.find(f => f.id === 'sharad_navratri');
-    if (fest) {
-      await dispatchFestivalBroadcast(fest, true);
-      alert(`🎉 Festive message for "${fest.name}" broadcasted to all open devices, website tabs & notification trays!`);
-    }
-  };
-
-  const requestNotificationPermission = () => {
-    if ('Notification' in window) {
-      Notification.requestPermission().then((permission) => {
-        if (permission === 'granted') {
-          registerPushSubscription();
-          sendSystemNotification(
-            '👑 Shree Aradhna Jewellers',
-            `🔔 Rate Alerts Enabled! Today 22K Gold: ₹${goldRates.gold22k}/g | Silver: ₹${goldRates.silver}/g. Gandhidham & Adipur showrooms.`
-          );
-        } else {
-          alert('Notifications were blocked. Please enable notification permission in your browser/device settings to receive live rate updates.');
-        }
-      });
-    } else {
-      alert('Notifications are not supported on this browser.');
-    }
-  };
-
-  // Auto-sync push subscription on mount for EVERY device where permission is granted, or auto-ask if default
-  useEffect(() => {
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        registerPushSubscription();
-      } else if (Notification.permission === 'default') {
-        const timer = setTimeout(() => {
-          requestNotificationPermission();
-        }, 2500);
-        return () => clearTimeout(timer);
-      }
-    }
   }, []);
 
   useEffect(() => {
@@ -514,8 +342,6 @@ export default function Home() {
       return;
     }
 
-    // Request notification permission right when they tap install
-    requestNotificationPermission();
 
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -670,276 +496,28 @@ export default function Home() {
     currentRatesRef.current = goldRates;
   }, [goldRates]);
 
-  const [showPwaNotification, setShowPwaNotification] = useState(false);
-  const [pwaNotificationData, setPwaNotificationData] = useState({
-    title: '👑 LIVE MARKET RATE UPDATE',
-    subtitle: 'BIS 916 Hallmarked • Live Market Rate',
-    rates: null,
-    body: 'Gold & silver rates updated! Check today\'s latest hallmarked showroom rates.'
-  });
-
   useEffect(() => {
-    document.title = "Shree Aradhna Jewellers | Premium Gold & Silver Jewellery";
+    document.title = "Shree Aradhna Jewellers | Premium Gold and Silver Jewellery";
   }, []);
 
-  const lastNotifiedRateRef = useRef('');
-  const lastNotificationTimeRef = useRef(0);
-  const notificationTimeoutRef = useRef(null);
-  const lastAnnouncementKeyRef = useRef('');
-  const lastAnnouncementTimeRef = useRef(0);
-
-  // Single unified rate notification controller with strict debouncing & deduplication
-  const showLiveRateToast = (rates, options = {}) => {
-    if (!rates || !rates.gold22k) return;
-
-    const rateKey = `${rates.gold24k}-${rates.gold22k}-${rates.gold18k}-${rates.silver}-${Boolean(rates.hide24k)}`;
-    const now = Date.now();
-
-    // 1. Deduplication: only if NOT forced
-    if (!options.force) {
-      if (lastNotifiedRateRef.current === rateKey && (now - lastNotificationTimeRef.current < 45000)) {
-        return;
-      }
-      if (now - lastNotificationTimeRef.current < 2000) {
-        return;
-      }
-    }
-
-    lastNotifiedRateRef.current = rateKey;
-    lastNotificationTimeRef.current = now;
-
-    const g24 = Number(rates.gold24k || 15085).toLocaleString('en-IN');
-    const g22 = Number(rates.gold22k || 13818).toLocaleString('en-IN');
-    const g18 = Number(rates.gold18k || 11465).toLocaleString('en-IN');
-    const sil = Number(rates.silver || 214).toLocaleString('en-IN');
-
-    const formattedSummary = rates.hide24k
-      ? `22K (916): ₹${g22}/g • 18K (750): ₹${g18}/g • Silver: ₹${sil}/g`
-      : `24K (999): ₹${g24}/g • 22K (916): ₹${g22}/g • 18K (750): ₹${g18}/g • Silver: ₹${sil}/g`;
-
-    const multiLineSummary = rates.hide24k
-      ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`
-      : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g`;
-
-    setPwaNotificationData({
-      title: options.title || '👑 LIVE MARKET RATE UPDATE',
-      subtitle: options.subtitle || 'BIS 916 Hallmarked • Just Updated',
-      rates: {
-        gold24k: rates.gold24k,
-        gold22k: rates.gold22k,
-        gold18k: rates.gold18k,
-        silver: rates.silver,
-        hide24k: Boolean(rates.hide24k)
-      },
-      body: formattedSummary
-    });
-    setShowPwaNotification(true);
-
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-    }
-    notificationTimeoutRef.current = setTimeout(() => {
-      setShowPwaNotification(false);
-    }, 9000);
-
-    // Native Push Notification with mobile ServiceWorker safety
-    if (!options.skipNative && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        const notifOptions = {
-          body: multiLineSummary,
-          icon: '/assets/logo.png',
-          badge: '/assets/logo.png',
-          tag: 'saj-live-rate-update'
-        };
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.ready.then(reg => {
-            if (reg && reg.showNotification) {
-              reg.showNotification(options.title || '👑 LIVE MARKET RATE UPDATE', notifOptions);
-            }
-          }).catch(() => {
-            try { new Notification(options.title || '👑 LIVE MARKET RATE UPDATE', notifOptions); } catch (e) {}
-          });
-        } else {
-          try { new Notification(options.title || '👑 LIVE MARKET RATE UPDATE', notifOptions); } catch (e) {}
-        }
-      } catch (e) {}
-    }
-  };
-
-  // Generic showroom announcement notification handler
-  const handleAnnouncementPayload = (payload) => {
-    if (!payload) return;
-
-    // Filter out messages that originated from this exact window (prevent self-echo) unless forced
-    if (!payload.force && payload.senderId && typeof window !== 'undefined' && payload.senderId === window.__saj_client_id) {
-      return;
-    }
-
-    // If payload contains rates, route to showLiveRateToast with force: true
-    if (payload.rates && payload.rates.gold22k) {
-      setGoldRates(prev => ({ ...prev, ...payload.rates }));
-      showLiveRateToast(payload.rates, {
-        title: payload.title,
-        subtitle: payload.subtitle,
-        force: true
-      });
-      return;
-    }
-
-    const now = Date.now();
-    const key = `${payload.title || ''}-${payload.body || ''}`;
-    if (!payload.force) {
-      if (lastAnnouncementKeyRef.current === key && (now - lastAnnouncementTimeRef.current < 20000)) {
-        return;
-      }
-      if (now - lastAnnouncementTimeRef.current < 3000) {
-        return;
-      }
-    }
-
-    lastAnnouncementKeyRef.current = key;
-    lastAnnouncementTimeRef.current = now;
-
-    const title = payload.title || '👑 LIVE MARKET RATE UPDATE';
-    const body = payload.body || 'Live updates from Shree Aradhna Jewellers';
-
-    setPwaNotificationData({
-      title,
-      subtitle: payload.subtitle || 'Showroom Announcement',
-      rates: null,
-      body
-    });
-    setShowPwaNotification(true);
-
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-    }
-    notificationTimeoutRef.current = setTimeout(() => {
-      setShowPwaNotification(false);
-    }, 9000);
-
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        const notifOptions = {
-          body,
-          icon: '/assets/logo.png',
-          badge: '/assets/logo.png',
-          tag: 'saj-announcement'
-        };
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.ready.then(reg => {
-            if (reg && reg.showNotification) {
-              reg.showNotification(title, notifOptions);
-            }
-          }).catch(() => {
-            try { new Notification(title, notifOptions); } catch (e) {}
-          });
-        } else {
-          try { new Notification(title, notifOptions); } catch (e) {}
-        }
-      } catch (e) {}
-    }
-  };
-
-  // Global Realtime & Notification Listeners
+  // Real-time Database Listener for Live Rates
   useEffect(() => {
-    // 1. Local DOM custom notification (e.g. from local showroom announcements)
-    const handleCustomNotify = (e) => {
-      const data = e.detail;
-      if (data?.rates) {
-        const current = currentRatesRef.current;
-        const isDiff = (
-          Number(data.rates.gold24k) !== Number(current.gold24k) ||
-          Number(data.rates.gold22k) !== Number(current.gold22k) ||
-          Number(data.rates.gold18k) !== Number(current.gold18k) ||
-          Number(data.rates.silver) !== Number(current.silver) ||
-          Boolean(data.rates.hide24k) !== Boolean(current.hide24k)
-        );
-        if (isDiff || data.force) {
-          setGoldRates(prev => ({ ...prev, ...data.rates }));
-          showLiveRateToast(data.rates, {
-            title: data.title,
-            subtitle: data.subtitle,
-            force: true,
-            skipNative: true
-          });
-        }
-      } else {
-        handleAnnouncementPayload(data);
-      }
-    };
-    window.addEventListener('saj_custom_notification', handleCustomNotify);
-
-    // 2. Cross-Tab BroadcastChannel for showroom announcements
-    let bc = null;
-    try {
-      if ('BroadcastChannel' in window) {
-        bc = new BroadcastChannel('saj_notifications');
-        bc.onmessage = (event) => handleAnnouncementPayload(event.data);
-      }
-    } catch (e) {}
-
-    // 3. Supabase Realtime Channels (Worldwide devices & other clients)
-    let supabaseChannel = null;
     let dbRatesChannel = null;
-    let notifDbChannel = null;
 
     try {
       if (isSupabaseConfigured()) {
-        // Realtime Broadcast Channel
-        supabaseChannel = supabase
-          .channel('saj_public_broadcast', {
-            config: { broadcast: { ack: true, self: true } }
-          })
-          .on('broadcast', { event: 'new_notification' }, (payload) => {
-            const data = payload?.payload || payload;
-            handleAnnouncementPayload({ ...data, force: true });
-          })
-          .on('broadcast', { event: '*' }, (payload) => {
-            const data = payload?.payload || payload;
-            handleAnnouncementPayload({ ...data, force: true });
-          })
-          .subscribe();
-
-        // Listen for direct database changes in Supabase saj_rates table
         dbRatesChannel = supabase
           .channel('saj_rates_db_listener')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'saj_rates' }, async () => {
             const fresh = await fetchLiveRates();
             if (fresh && fresh.gold22k) {
-              const current = currentRatesRef.current;
-              const isDiff = (
-                Number(fresh.gold24k) !== Number(current.gold24k) ||
-                Number(fresh.gold22k) !== Number(current.gold22k) ||
-                Number(fresh.gold18k) !== Number(current.gold18k) ||
-                Number(fresh.silver) !== Number(current.silver) ||
-                Boolean(fresh.hide24k) !== Boolean(current.hide24k)
-              );
-              if (isDiff) {
-                setGoldRates(prev => ({ ...prev, ...fresh }));
-                showLiveRateToast(fresh);
-              }
-            }
-          })
-          .subscribe();
-
-        // Listen for newly pushed broadcast rows in broadcast_notifications table
-        notifDbChannel = supabase
-          .channel('saj_broadcast_db_listener')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'broadcast_notifications' }, (payload) => {
-            if (payload?.new) {
-              handleAnnouncementPayload({
-                title: payload.new.title,
-                body: payload.new.body,
-                force: true
-              });
+              setGoldRates(prev => ({ ...prev, ...fresh }));
             }
           })
           .subscribe();
       }
     } catch (e) {}
 
-    // 4. Supabase Config Changed Event (e.g. updated in /admin)
     const handleConfigChanged = async () => {
       const fresh = await fetchLiveRates();
       if (fresh) {
@@ -949,17 +527,12 @@ export default function Home() {
     window.addEventListener('saj_supabase_config_changed', handleConfigChanged);
 
     return () => {
-      window.removeEventListener('saj_custom_notification', handleCustomNotify);
       window.removeEventListener('saj_supabase_config_changed', handleConfigChanged);
-      if (bc) bc.close();
-      if (supabaseChannel) supabase.removeChannel(supabaseChannel);
       if (dbRatesChannel) supabase.removeChannel(dbRatesChannel);
-      if (notifDbChannel) supabase.removeChannel(notifDbChannel);
-      if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current);
     };
   }, []);
 
-  // Dedicated Real-time Rate Sync Across Open Tabs (BroadcastChannel)
+    // Dedicated Real-time Rate Sync Across Open Tabs (BroadcastChannel)
   useEffect(() => {
     const handleRatesUpdatedEvent = (e) => {
       if (e.detail) {
@@ -1015,35 +588,11 @@ export default function Home() {
           );
           if (isDiff) {
             setGoldRates(prev => ({ ...prev, ...fresh }));
-            showLiveRateToast(fresh, { force: true });
+            
           }
         }
       } catch (e) {}
 
-      // Check newest broadcast notification
-      try {
-        if (isSupabaseConfigured()) {
-          const { data: bData } = await supabase
-            .from('broadcast_notifications')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-          if (bData && bData.length > 0 && isAlive) {
-            const b = bData[0];
-            const ageMs = Date.now() - new Date(b.created_at).getTime();
-            const seenKey = `saj_seen_bcast_${b.id || b.created_at}`;
-            if (ageMs < 15 * 60 * 1000 && !sessionStorage.getItem(seenKey)) {
-              sessionStorage.setItem(seenKey, 'true');
-              handleAnnouncementPayload({
-                title: b.title,
-                body: b.body,
-                force: true
-              });
-            }
-          }
-        }
-      } catch (e) {}
     };
 
     const interval = setInterval(checkLiveUpdates, 15000);
@@ -1160,35 +709,6 @@ export default function Home() {
       } catch (err) {
         console.warn("[LiveRates] Startup fetch fallback:", err);
       }
-
-      // Catch up on recent admin broadcasts within the last 30 minutes
-      try {
-        if (isSupabaseConfigured()) {
-          const { data: recentNotifs } = await supabase
-            .from('broadcast_notifications')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-          if (recentNotifs && recentNotifs.length > 0 && isMounted) {
-            const latest = recentNotifs[0];
-            const notifAgeMs = Date.now() - new Date(latest.created_at).getTime();
-            const notifKey = `saj_seen_bcast_${latest.id || latest.created_at}`;
-            if (notifAgeMs < 30 * 60 * 1000 && !sessionStorage.getItem(notifKey)) {
-              sessionStorage.setItem(notifKey, 'true');
-              setTimeout(() => {
-                if (isMounted) {
-                  handleAnnouncementPayload({
-                    title: latest.title,
-                    body: latest.body,
-                    force: true
-                  });
-                }
-              }, 2200);
-            }
-          }
-        }
-      } catch (e) {}
 
       try {
         const customProds = await fetchCustomProducts();
@@ -1419,17 +939,7 @@ export default function Home() {
         hide24k: tempHide24k
       });
 
-      const rateKey = `${result.rates.gold24k}-${result.rates.gold22k}-${result.rates.gold18k}-${result.rates.silver}-${Boolean(result.rates.hide24k)}`;
-      lastNotifiedRateRef.current = rateKey;
-      lastNotificationTimeRef.current = Date.now();
       setGoldRates(result.rates);
-
-      // Trigger single luxury rate notification toast
-      showLiveRateToast(result.rates, {
-        title: '👑 LIVE MARKET RATE UPDATE',
-        subtitle: 'BIS 916 Hallmarked • Just Updated'
-      });
-
       setIsAdminOpen(false);
     } catch (err) {
       console.error(err);
@@ -3467,106 +2977,7 @@ export default function Home() {
               </button>
             )}
 
-            {/* Enable Price Alerts Button (Calls requestNotificationPermission under user gesture) */}
-            <button
-              onClick={requestNotificationPermission}
-              style={{
-                background: 'var(--peacock-green)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '14px 28px',
-                borderRadius: '30px',
-                fontWeight: '700',
-                fontSize: '12px',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(123, 17, 34, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s ease'
-              }}
-              className="pwa-alerts-btn"
-            >
-              🔔 Enable Rate Alerts
-            </button>
-
-            {/* Test Notification Button */}
-            {/* Test Notification Button */}
-            <button
-              onClick={handleSendTestNotification}
-              style={{
-                background: '#7b1122',
-                color: '#ffd700',
-                border: '1.5px solid #ffd700',
-                padding: '14px 24px',
-                borderRadius: '30px',
-                fontWeight: '700',
-                fontSize: '12px',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(123, 17, 34, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s ease'
-              }}
-              className="pwa-test-btn"
-            >
-              🔔 Test Notification
-            </button>
-
-            {/* Broadcast to All Button */}
-            <button
-              onClick={handleBroadcastToAll}
-              style={{
-                background: 'linear-gradient(135deg, #ffd700 0%, #d4af37 100%)',
-                color: '#7b1122',
-                border: '1.5px solid #ffd700',
-                padding: '14px 24px',
-                borderRadius: '30px',
-                fontWeight: '800',
-                fontSize: '12px',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(212, 175, 55, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s ease'
-              }}
-              className="pwa-broadcast-btn"
-            >
-              📢 Broadcast Live Rates
-            </button>
-
-            {/* Broadcast Festive Message Button */}
-            <button
-              onClick={handleBroadcastFestivalNow}
-              style={{
-                background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 100%)',
-                color: '#ffd700',
-                border: '1.5px solid #ffd700',
-                padding: '14px 24px',
-                borderRadius: '30px',
-                fontWeight: '800',
-                fontSize: '12px',
-                letterSpacing: '1px',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(123, 17, 34, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s ease'
-              }}
-              className="pwa-festive-btn"
-            >
-              🪔 Broadcast Festive Message
-            </button>
+            
 
             {/* iOS Instructions Trigger */}
             <button
@@ -4514,258 +3925,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Luxury Live Rate & Announcement Notification Toast ── */}
-      {showPwaNotification && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          style={{
-            position: 'fixed',
-            top: '24px',
-            right: '20px',
-            zIndex: 100000,
-            background: 'linear-gradient(145deg, #ffffff 0%, #fffdf8 100%)',
-            border: '1.5px solid rgba(212, 175, 55, 0.55)',
-            borderRadius: '20px',
-            padding: '16px 18px',
-            boxShadow: '0 20px 48px rgba(123, 17, 34, 0.18), 0 4px 16px rgba(212, 175, 55, 0.15)',
-            maxWidth: '420px',
-            width: 'calc(100% - 32px)',
-            animation: 'slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-            boxSizing: 'border-box',
-            fontFamily: 'var(--font-sans)'
-          }}
-        >
-          {/* Header Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 50%, #b8860b 100%)',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '14px',
-                color: '#fff',
-                boxShadow: '0 3px 8px rgba(123, 17, 34, 0.28)',
-                flexShrink: 0
-              }}>
-                👑
-              </div>
-              <div>
-                <h4 style={{
-                  margin: 0,
-                  fontSize: '12.5px',
-                  fontWeight: '800',
-                  color: '#7b1122',
-                  letterSpacing: '0.6px',
-                  textTransform: 'uppercase'
-                }}>
-                  {pwaNotificationData.title || 'LIVE MARKET RATE UPDATE'}
-                </h4>
-                <div style={{
-                  fontSize: '10.5px',
-                  color: '#8c6d1f',
-                  fontWeight: '600',
-                  letterSpacing: '0.3px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  marginTop: '1px'
-                }}>
-                  <span style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: '#10b981',
-                    display: 'inline-block',
-                    boxShadow: '0 0 6px #10b981'
-                  }}></span>
-                  {pwaNotificationData.subtitle || 'BIS 916 Hallmarked • Just Updated'}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowPwaNotification(false)}
-              aria-label="Close notification"
-              style={{
-                background: 'rgba(123, 17, 34, 0.08)',
-                border: 'none',
-                color: '#7b1122',
-                fontSize: '13px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 0,
-                lineHeight: 1,
-                transition: 'background 0.2s ease'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Structured Rate Cards Grid (When rates data exists) */}
-          {pwaNotificationData.rates ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: pwaNotificationData.rates.hide24k ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
-              gap: '8px',
-              marginTop: '10px',
-              marginBottom: '10px'
-            }}>
-              {/* 24K Gold Card */}
-              {!pwaNotificationData.rates.hide24k && (
-                <div style={{
-                  background: '#ffffff',
-                  border: '1px solid rgba(212, 175, 55, 0.4)',
-                  borderRadius: '10px',
-                  padding: '7px 8px',
-                  textAlign: 'center',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
-                }}>
-                  <div style={{ fontSize: '9px', fontWeight: '700', color: '#8c6d1f', letterSpacing: '0.4px' }}>
-                    24K (999 PURE)
-                  </div>
-                  <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1a1a1a', margin: '2px 0 0' }}>
-                    ₹{Number(pwaNotificationData.rates.gold24k || 15085).toLocaleString('en-IN')}
-                    <span style={{ fontSize: '9px', fontWeight: '500', color: '#666', marginLeft: '2px' }}>/g</span>
-                  </div>
-                </div>
-              )}
-
-              {/* 22K Gold Card - Main Highlight */}
-              <div style={{
-                background: 'linear-gradient(135deg, #fff9e6 0%, #fff2c6 100%)',
-                border: '1.5px solid #d4af37',
-                borderRadius: '10px',
-                padding: '7px 8px',
-                textAlign: 'center',
-                boxShadow: '0 2px 7px rgba(212, 175, 55, 0.2)'
-              }}>
-                <div style={{ fontSize: '9px', fontWeight: '800', color: '#7b1122', letterSpacing: '0.4px' }}>
-                  👑 22K (916 BIS)
-                </div>
-                <div style={{ fontSize: '15px', fontWeight: '900', color: '#7b1122', margin: '2px 0 0' }}>
-                  ₹{Number(pwaNotificationData.rates.gold22k || 13818).toLocaleString('en-IN')}
-                  <span style={{ fontSize: '9.5px', fontWeight: '600', color: '#8c6d1f', marginLeft: '2px' }}>/g</span>
-                </div>
-              </div>
-
-              {/* 18K Gold Card */}
-              <div style={{
-                background: '#ffffff',
-                border: '1px solid rgba(212, 175, 55, 0.4)',
-                borderRadius: '10px',
-                padding: '7px 8px',
-                textAlign: 'center',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
-              }}>
-                <div style={{ fontSize: '9px', fontWeight: '700', color: '#8c6d1f', letterSpacing: '0.4px' }}>
-                  18K (750 HM)
-                </div>
-                <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1a1a1a', margin: '2px 0 0' }}>
-                  ₹{Number(pwaNotificationData.rates.gold18k || 11465).toLocaleString('en-IN')}
-                  <span style={{ fontSize: '9px', fontWeight: '500', color: '#666', marginLeft: '2px' }}>/g</span>
-                </div>
-              </div>
-
-              {/* Silver Card */}
-              <div style={{
-                background: 'linear-gradient(135deg, #f8f9fa 0%, #edf2f7 100%)',
-                border: '1px solid #cbd5e1',
-                borderRadius: '10px',
-                padding: '7px 8px',
-                textAlign: 'center',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.03)'
-              }}>
-                <div style={{ fontSize: '9px', fontWeight: '700', color: '#475569', letterSpacing: '0.4px' }}>
-                  SILVER (999)
-                </div>
-                <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#1e293b', margin: '2px 0 0' }}>
-                  ₹{Number(pwaNotificationData.rates.silver || 214).toLocaleString('en-IN')}
-                  <span style={{ fontSize: '9px', fontWeight: '500', color: '#64748b', marginLeft: '2px' }}>/g</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Plain Announcement Body fallback */
-            <p style={{
-              margin: '8px 0',
-              fontSize: '12px',
-              color: '#444444',
-              lineHeight: '1.5',
-              whiteSpace: 'pre-line'
-            }}>
-              {pwaNotificationData.body}
-            </p>
-          )}
-
-          {/* Footer Note */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: '8px',
-            borderTop: '1px solid rgba(212, 175, 55, 0.25)',
-            fontSize: '10px',
-            color: '#888888',
-            gap: '8px'
-          }}>
-            {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  requestNotificationPermission();
-                }}
-                style={{
-                  background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '3px 8px',
-                  fontSize: '9.5px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  boxShadow: '0 2px 5px rgba(123, 17, 34, 0.25)'
-                }}
-              >
-                🔔 Enable Lock Screen Alerts
-              </button>
-            ) : (
-              <span>Showroom live board synced</span>
-            )}
-            <a
-              href="#showcase"
-              onClick={() => {
-                setShowPwaNotification(false);
-                const el = document.getElementById('showcase');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              style={{
-                color: '#7b1122',
-                fontWeight: '700',
-                textDecoration: 'none',
-                letterSpacing: '0.4px'
-              }}
-            >
-              EXPLORE DESIGNS →
-            </a>
-          </div>
-        </div>
-      )}
-
       {/* Clean Animatic App Download Popup Modal - Only shown if app is NOT already downloaded/installed */}
       {showAppPopup && !isAppInstalledOnDevice && (
         <div style={{
@@ -4871,7 +4030,7 @@ export default function Home() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#333333', fontWeight: '600' }}>
                 <span style={{ color: 'var(--royal-gold)', fontSize: '16px' }}>⚡</span>
-                <span>Live Gold & Silver Rate Notifications</span>
+                <span>Live Gold & Silver Showroom Rates</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#333333', fontWeight: '600' }}>
                 <span style={{ color: 'var(--royal-gold)', fontSize: '16px' }}>💎</span>
