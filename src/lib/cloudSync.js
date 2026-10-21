@@ -435,7 +435,7 @@ export async function saveLiveRates(ratesData) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: '👑 LIVE MARKET RATE UPDATE',
+          title: "👑 TODAY'S RATE UPDATE",
           body: formattedSummary,
           rates: normalized,
           url: '/'

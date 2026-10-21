@@ -776,8 +776,8 @@ export default function Home() {
               setTimeout(() => {
                 if (isMounted) {
                   showLiveRateToast(liveRates, {
-                    title: '👑 LIVE MARKET RATE UPDATE',
-                    subtitle: 'BIS 916 Hallmarked • Today\'s Live Rates',
+                    title: "👑 TODAY'S RATE UPDATE",
+                    subtitle: 'BIS 916 Hallmarked • Today\'s Rates',
                     force: true,
                     skipNative: true
                   });
@@ -1165,7 +1165,7 @@ export default function Home() {
             <div className="ticker-items">
               <span className="ticker-live-dot">
                 <span className="ping-dot"></span>
-                LIVE RATE
+                TODAY'S RATE
               </span>
               <span className="ticker-item" style={{ fontWeight: 700, color: '#ffffff' }}>SHREE ARADHNA JEWELLERS:</span>
 
@@ -1410,7 +1410,7 @@ export default function Home() {
               gap: '8px'
             }}>
               <span className="ping-dot" style={{ position: 'relative', top: '0', transform: 'none' }}></span>
-              TODAY'S LIVE RATES
+              TODAY'S RATE
             </h2>
 
           </div>
