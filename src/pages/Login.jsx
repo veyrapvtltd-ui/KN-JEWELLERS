@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Lock, ArrowLeft } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [preferredBranch, setPreferredBranch] = useState('Gandhidham');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,21 +20,29 @@ export default function Login() {
     setLoading(true);
     setError(null);
 
-    const cleanEmail = email.trim().toLowerCase();
-
     try {
-      if (isSupabaseConfigured()) {
-        try {
-          if (isSignUp) {
-            // Check if user already exists in Supabase
+      if (isSignUp) {
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanPhone = phone.trim();
+        const cleanName = fullName.trim();
+
+        if (!cleanEmail || !cleanPhone || !cleanName || !password) {
+          throw new Error('Please fill in all required fields.');
+        }
+
+        let userRecord = null;
+
+        // 1. Save directly into normal Supabase database table 'custom_users'
+        if (isSupabaseConfigured()) {
+          try {
             const { data: existingUser } = await supabase
               .from('custom_users')
-              .select('id')
-              .eq('email', cleanEmail)
+              .select('id, email, phone_number')
+              .or(`email.eq.${cleanEmail},phone_number.eq.${cleanPhone}`)
               .maybeSingle();
 
             if (existingUser) {
-              throw new Error('Email already registered in system.');
+              throw new Error('An account with this email or phone number is already registered.');
             }
 
             const { data: newUser, error: insertError } = await supabase
@@ -39,87 +50,106 @@ export default function Login() {
               .insert([{
                 email: cleanEmail,
                 password,
-                full_name: fullName.trim(),
-                phone_number: phone.trim()
+                full_name: cleanName,
+                phone_number: cleanPhone,
+                preferred_branch: preferredBranch
               }])
               .select()
               .single();
 
             if (insertError) throw insertError;
+            userRecord = newUser;
+          } catch (dbErr) {
+            console.warn('Supabase database signup fallback:', dbErr.message);
+            if (dbErr.message.includes('already registered')) {
+              throw dbErr;
+            }
+          }
+        }
 
-            // Cache locally
-            const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
-            users.push(newUser);
-            localStorage.setItem('SAJ_users', JSON.stringify(users));
-            localStorage.setItem('userId', newUser.id);
-            alert('Profile created successfully! You are now logged in.');
-            navigate(-1);
-            return;
-          } else {
-            // Sign in with Supabase
+        // LocalStorage fallback if Supabase not configured or failed
+        if (!userRecord) {
+          const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+          if (users.some(u => u.email.toLowerCase() === cleanEmail || u.phone_number === cleanPhone)) {
+            throw new Error('An account with this email or phone number is already registered.');
+          }
+
+          userRecord = {
+            id: 'user_' + Date.now(),
+            email: cleanEmail,
+            password,
+            full_name: cleanName,
+            phone_number: cleanPhone,
+            preferred_branch: preferredBranch,
+            created_at: new Date().toISOString()
+          };
+        }
+
+        // Save login info permanently
+        const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+        const existingIdx = users.findIndex(u => u.id === userRecord.id);
+        if (existingIdx >= 0) users[existingIdx] = userRecord;
+        else users.push(userRecord);
+
+        localStorage.setItem('SAJ_users', JSON.stringify(users));
+        localStorage.setItem('userId', userRecord.id);
+        localStorage.setItem('SAJ_current_user', JSON.stringify(userRecord));
+        localStorage.setItem('SAJ_wishlist_user', userRecord.email);
+
+        alert('Account created successfully! Today\'s rates are now unlocked.');
+        navigate('/');
+        return;
+      } else {
+        // LOGIN
+        const cleanIdent = identifier.trim().toLowerCase();
+        if (!cleanIdent || !password) {
+          throw new Error('Please enter your email or phone number, and password.');
+        }
+
+        let userRecord = null;
+
+        // 1. Authenticate against normal Supabase database table 'custom_users'
+        if (isSupabaseConfigured()) {
+          try {
             const { data: userProfile, error: loginError } = await supabase
               .from('custom_users')
               .select('*')
-              .eq('email', cleanEmail)
+              .or(`email.eq.${cleanIdent},phone_number.eq.${cleanIdent}`)
               .eq('password', password)
               .maybeSingle();
 
             if (loginError) throw loginError;
-
             if (userProfile) {
-              // Cache locally
-              const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
-              const existingIdx = users.findIndex(u => u.id === userProfile.id);
-              if (existingIdx >= 0) users[existingIdx] = userProfile;
-              else users.push(userProfile);
-              localStorage.setItem('SAJ_users', JSON.stringify(users));
-
-              localStorage.setItem('userId', userProfile.id);
-              navigate(-1);
-              return;
-            } else {
-              throw new Error('Invalid email or password');
+              userRecord = userProfile;
             }
-          }
-        } catch (dbErr) {
-          console.warn("Supabase auth failed or table pending, attempting local storage fallback:", dbErr.message);
-          // If the error was explicitly 'Invalid email or password' or 'Email already registered', propagate it
-          if (dbErr.message.includes('Invalid email') || dbErr.message.includes('already registered')) {
-            throw dbErr;
+          } catch (dbErr) {
+            console.warn('Supabase database login fallback:', dbErr.message);
           }
         }
-      }
 
-      // LocalStorage Fallback
-      const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
-      
-      if (isSignUp) {
-        if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
-          throw new Error('Email already registered.');
+        // LocalStorage fallback
+        if (!userRecord) {
+          const users = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+          const found = users.find(u => 
+            (u.email.toLowerCase() === cleanIdent || u.phone_number === cleanIdent) && 
+            u.password === password
+          );
+          if (found) {
+            userRecord = found;
+          }
         }
 
-        const newUser = {
-          id: 'user_' + Date.now(),
-          email: cleanEmail,
-          password,
-          full_name: fullName.trim(),
-          phone_number: phone.trim(),
-          created_at: new Date().toISOString()
-        };
-
-        users.push(newUser);
-        localStorage.setItem('SAJ_users', JSON.stringify(users));
-        localStorage.setItem('userId', newUser.id);
-        alert('Profile created successfully! You are now logged in.');
-        navigate(-1);
-      } else {
-        const found = users.find(u => u.email.toLowerCase() === cleanEmail && u.password === password);
-        if (!found) {
-          throw new Error('Invalid email or password');
+        if (!userRecord) {
+          throw new Error('Invalid email/phone or password. Please try again.');
         }
 
-        localStorage.setItem('userId', found.id);
-        navigate(-1);
+        // Save login info permanently
+        localStorage.setItem('userId', userRecord.id);
+        localStorage.setItem('SAJ_current_user', JSON.stringify(userRecord));
+        localStorage.setItem('SAJ_wishlist_user', userRecord.email);
+
+        navigate('/');
+        return;
       }
     } catch (err) {
       setError(err.message);
@@ -131,11 +161,11 @@ export default function Login() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: '#ffffff',
+      background: 'linear-gradient(135deg, #faf8f5 0%, #ffffff 100%)',
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
-      padding: '20px',
+      padding: '24px 16px',
       fontFamily: 'var(--font-sans)'
     }}>
       <div style={{ 
@@ -143,181 +173,332 @@ export default function Login() {
         zIndex: 1,
         width: '100%',
         maxWidth: '440px', 
-        padding: '40px', 
+        padding: '36px 30px', 
         background: '#ffffff', 
         border: '1px solid rgba(123, 17, 34, 0.15)',
         borderRadius: '16px', 
-        boxShadow: '0 20px 40px rgba(123, 17, 34, 0.08)',
+        boxShadow: '0 20px 50px rgba(123, 17, 34, 0.08)',
         boxSizing: 'border-box'
       }}>
-        {/* Back navigation button to last used screen */}
-        <button 
-          onClick={() => navigate(-1)}
+        {/* Back Button */}
+        <Link 
+          to="/" 
           style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--peacock-green)',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: '700',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '4px',
-            padding: 0,
-            marginBottom: '20px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            gap: '6px',
+            fontSize: '12px',
+            color: 'var(--text-gray)',
+            textDecoration: 'none',
+            fontWeight: '600',
+            marginBottom: '18px'
           }}
         >
-          ← Back
-        </button>
+          <ArrowLeft style={{ width: '14px', height: '14px' }} />
+          Back to Store
+        </Link>
 
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <img src="/assets/logo.png" alt="SHREE ARADHNA JEWELLERS Logo" style={{ height: '64px', borderRadius: '16px', marginBottom: '15px', objectFit: 'contain' }} />
-          <h2 style={{ 
-            color: 'var(--peacock-green)', 
-            fontFamily: 'var(--font-serif)',
-            fontSize: '1.8rem',
-            letterSpacing: '1px',
-            textTransform: 'uppercase',
-            margin: 0
+        {/* Brand Header */}
+        <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'rgba(123, 17, 34, 0.08)',
+            color: 'var(--royal-gold)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '12px'
           }}>
-            {isSignUp ? 'Create Your Account' : 'Welcome Back'}
+            <Lock style={{ width: '22px', height: '22px' }} />
+          </div>
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: '800',
+            color: 'var(--text-dark)',
+            margin: '0 0 6px',
+            letterSpacing: '1px',
+            textTransform: 'uppercase'
+          }}>
+            {isSignUp ? 'Create Free Account' : 'Member Login'}
           </h2>
-          <p style={{ color: '#666666', fontSize: '0.85rem', marginTop: '8px', lineHeight: '1.4' }}>
-            {isSignUp ? 'Join Shree Aradhna Jewellers for exclusive bridal collection updates' : 'Sign in to access your wishlist and profile'}
+          <p style={{ fontSize: '12px', color: 'var(--text-gray)', margin: 0 }}>
+            {isSignUp 
+              ? 'Sign up to unlock today\'s gold & silver rates and special benefits.' 
+              : 'Login with your email or phone to view today\'s live rates.'}
           </p>
         </div>
-        
+
+        {/* Toggle Mode */}
+        <div style={{
+          display: 'flex',
+          background: '#f4f1ea',
+          borderRadius: '8px',
+          padding: '4px',
+          marginBottom: '20px'
+        }}>
+          <button
+            type="button"
+            onClick={() => { setIsSignUp(false); setError(null); }}
+            style={{
+              flex: 1,
+              padding: '9px',
+              border: 'none',
+              borderRadius: '6px',
+              background: !isSignUp ? '#ffffff' : 'transparent',
+              color: !isSignUp ? 'var(--royal-gold)' : 'var(--text-gray)',
+              fontWeight: !isSignUp ? '700' : '500',
+              fontSize: '12px',
+              cursor: 'pointer',
+              boxShadow: !isSignUp ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+            }}
+          >
+            LOGIN
+          </button>
+          <button
+            type="button"
+            onClick={() => { setIsSignUp(true); setError(null); }}
+            style={{
+              flex: 1,
+              padding: '9px',
+              border: 'none',
+              borderRadius: '6px',
+              background: isSignUp ? '#ffffff' : 'transparent',
+              color: isSignUp ? 'var(--royal-gold)' : 'var(--text-gray)',
+              fontWeight: isSignUp ? '700' : '500',
+              fontSize: '12px',
+              cursor: 'pointer',
+              boxShadow: isSignUp ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+            }}
+          >
+            SIGN UP
+          </button>
+        </div>
+
         {error && (
-          <div style={{ 
-            color: '#e53e3e', 
-            background: '#fff5f5', 
-            padding: '12px', 
-            marginBottom: '20px', 
-            textAlign: 'center', 
-            border: '1px solid #fed7d7', 
-            borderRadius: '8px',
+          <div style={{
+            padding: '10px 14px',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            borderRadius: '6px',
             fontSize: '12px',
-            fontWeight: '600'
+            marginBottom: '16px'
           }}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {isSignUp && (
+        <form onSubmit={handleAuth}>
+          {isSignUp ? (
             <>
-              <input 
-                type="text" 
-                placeholder="Full Name" 
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                style={{ 
-                  padding: '14px 16px', 
-                  background: '#ffffff', 
-                  border: '1px solid #e2e8f0', 
-                  color: '#1a1a1a', 
-                  outline: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontFamily: 'var(--font-sans)',
-                  boxSizing: 'border-box',
-                  width: '100%'
-                }}
-              />
-              <input 
-                type="text" 
-                placeholder="Phone Number" 
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                style={{ 
-                  padding: '14px 16px', 
-                  background: '#ffffff', 
-                  border: '1px solid #e2e8f0', 
-                  color: '#1a1a1a', 
-                  outline: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontFamily: 'var(--font-sans)',
-                  boxSizing: 'border-box',
-                  width: '100%'
-                }}
-              />
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Rahul Sharma"
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                  Mobile Number *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="10-digit mobile number"
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create a password"
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                  Preferred Branch
+                </label>
+                <select
+                  value={preferredBranch}
+                  onChange={(e) => setPreferredBranch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    background: '#ffffff'
+                  }}
+                >
+                  <option value="Gandhidham">Gandhidham Showroom (Main Branch)</option>
+                  <option value="Adipur">Adipur Showroom (Branch 2)</option>
+                </select>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                  Email or Mobile Number *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Enter email or mobile number"
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '13px',
+                    boxSizing: 'border-box',
+                    outline: 'none'
+                  }}
+                />
+              </div>
             </>
           )}
-          <input 
-            type="email" 
-            placeholder="Email Address" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ 
-              padding: '14px 16px', 
-              background: '#ffffff', 
-              border: '1px solid #e2e8f0', 
-              color: '#1a1a1a', 
-              outline: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontFamily: 'var(--font-sans)',
-              boxSizing: 'border-box',
-              width: '100%'
-            }}
-          />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ 
-              padding: '14px 16px', 
-              background: '#ffffff', 
-              border: '1px solid #e2e8f0', 
-              color: '#1a1a1a', 
-              outline: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontFamily: 'var(--font-sans)',
-              boxSizing: 'border-box',
-              width: '100%'
-            }}
-          />
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             disabled={loading}
-            style={{ 
-              padding: '14px', 
-              background: 'var(--royal-gold)', 
-              color: '#ffffff', 
-              border: 'none', 
-              fontWeight: '700', 
+            style={{
+              width: '100%',
+              padding: '13px',
+              background: 'var(--royal-gold)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: '700',
+              fontSize: '13px',
               letterSpacing: '1px',
               textTransform: 'uppercase',
-              cursor: 'pointer',
-              marginTop: '8px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              transition: 'background 0.2s ease',
-              boxSizing: 'border-box',
-              width: '100%'
-            }}>
-            {loading ? 'Processing...' : (isSignUp ? 'Create Profile' : 'Sign In')}
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 15px rgba(218, 165, 32, 0.35)',
+              transition: 'all 0.2s'
+            }}
+          >
+            {loading ? 'Processing...' : (isSignUp ? 'Create Account & Unlock Rates' : 'Login & View Rates')}
           </button>
         </form>
 
-        <div style={{ marginTop: '25px', textAlign: 'center' }}>
-          <button 
-            onClick={() => setIsSignUp(!isSignUp)}
-            style={{ background: 'transparent', border: 'none', color: '#666666', cursor: 'pointer', fontSize: '0.85rem' }}>
-            {isSignUp ? 'Already have an account? ' : "Don't have a profile? "}
-            <span style={{ color: 'var(--royal-gold)', textDecoration: 'underline', fontWeight: '600' }}>
-              {isSignUp ? 'Sign In' : 'Join Now'}
+        <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '12px', color: 'var(--text-gray)' }}>
+          {isSignUp ? (
+            <span>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(false); setError(null); }}
+                style={{ background: 'none', border: 'none', color: 'var(--royal-gold)', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+              >
+                Login here
+              </button>
             </span>
-          </button>
+          ) : (
+            <span>
+              New customer?{' '}
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(true); setError(null); }}
+                style={{ background: 'none', border: 'none', color: 'var(--royal-gold)', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+              >
+                Sign Up Free
+              </button>
+            </span>
+          )}
         </div>
       </div>
     </div>

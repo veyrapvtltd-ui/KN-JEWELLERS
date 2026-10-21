@@ -16,7 +16,7 @@ import { Link } from 'react-router-dom';
 import heic2any from 'heic2any';
 import { 
   Menu, X, Phone, MapPin, Clock, 
-  ShieldCheck, Heart, Award, Share2,
+  ShieldCheck, Heart, Award, Share2, Lock, User, LogIn, CheckCircle,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -226,6 +226,194 @@ export default function Home() {
     return typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
   });
   const [subscribingPush, setSubscribingPush] = useState(false);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(() => Boolean(localStorage.getItem('userId')));
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('SAJ_current_user') || 'null');
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
+
+  const handleUserLogout = (e) => {
+    if (e) e.preventDefault();
+    localStorage.removeItem('userId');
+    localStorage.removeItem('SAJ_current_user');
+    localStorage.removeItem('SAJ_wishlist_user');
+    setIsUserLoggedIn(false);
+    setCurrentUser(null);
+  };
+
+  useEffect(() => {
+    const syncAuth = () => {
+      const uid = localStorage.getItem('userId');
+      setIsUserLoggedIn(Boolean(uid));
+      try {
+        setCurrentUser(JSON.parse(localStorage.getItem('SAJ_current_user') || 'null'));
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+    window.addEventListener('storage', syncAuth);
+    window.addEventListener('focus', syncAuth);
+    return () => {
+      window.removeEventListener('storage', syncAuth);
+      window.removeEventListener('focus', syncAuth);
+    };
+  }, []);
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError(null);
+
+    const form = e.target;
+
+    try {
+      if (authMode === 'signup') {
+        const fullName = form.authName.value.trim();
+        const phone = form.authPhone.value.trim();
+        const emailVal = form.authEmail.value.trim().toLowerCase();
+        const passwordVal = form.authPassword.value;
+        const branchVal = form.authBranch ? form.authBranch.value : 'Gandhidham';
+
+        if (!fullName || !phone || !emailVal || !passwordVal) {
+          throw new Error('Please fill in all required fields.');
+        }
+
+        let userRecord = null;
+
+        // 1. Direct Supabase Normal Database Table 'custom_users'
+        if (isSupabaseConfigured()) {
+          try {
+            const { data: existingUser } = await supabase
+              .from('custom_users')
+              .select('id, email, phone_number')
+              .or(`email.eq.${emailVal},phone_number.eq.${phone}`)
+              .maybeSingle();
+
+            if (existingUser) {
+              throw new Error('An account with this email or phone number already exists.');
+            }
+
+            const { data: newUser, error: insertError } = await supabase
+              .from('custom_users')
+              .insert([{
+                full_name: fullName,
+                phone_number: phone,
+                email: emailVal,
+                password: passwordVal,
+                preferred_branch: branchVal
+              }])
+              .select()
+              .single();
+
+            if (insertError) throw insertError;
+            userRecord = newUser;
+          } catch (dbErr) {
+            console.warn('Supabase signup fallback:', dbErr.message);
+            if (dbErr.message.includes('already exists')) {
+              throw dbErr;
+            }
+          }
+        }
+
+        // LocalStorage fallback if offline or table pending
+        if (!userRecord) {
+          const localUsers = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+          if (localUsers.some(u => u.email.toLowerCase() === emailVal || u.phone_number === phone)) {
+            throw new Error('An account with this email or phone number already exists.');
+          }
+          userRecord = {
+            id: 'user_' + Date.now(),
+            full_name: fullName,
+            phone_number: phone,
+            email: emailVal,
+            password: passwordVal,
+            preferred_branch: branchVal,
+            created_at: new Date().toISOString()
+          };
+        }
+
+        const localUsers = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+        const existingIdx = localUsers.findIndex(u => u.id === userRecord.id);
+        if (existingIdx >= 0) localUsers[existingIdx] = userRecord;
+        else localUsers.push(userRecord);
+
+        // Save login info permanently in localStorage
+        localStorage.setItem('SAJ_users', JSON.stringify(localUsers));
+        localStorage.setItem('userId', userRecord.id);
+        localStorage.setItem('SAJ_current_user', JSON.stringify(userRecord));
+        localStorage.setItem('SAJ_wishlist_user', userRecord.email);
+
+        setIsUserLoggedIn(true);
+        setCurrentUser(userRecord);
+        setIsAuthModalOpen(false);
+      } else {
+        // LOGIN
+        const identifier = form.authIdentifier.value.trim().toLowerCase();
+        const passwordVal = form.authPassword.value;
+
+        if (!identifier || !passwordVal) {
+          throw new Error('Please enter your email or phone number, and password.');
+        }
+
+        let userRecord = null;
+
+        // 1. Normal Supabase Database Table 'custom_users'
+        if (isSupabaseConfigured()) {
+          try {
+            const { data: userProfile, error: loginError } = await supabase
+              .from('custom_users')
+              .select('*')
+              .or(`email.eq.${identifier},phone_number.eq.${identifier}`)
+              .eq('password', passwordVal)
+              .maybeSingle();
+
+            if (loginError) throw loginError;
+            if (userProfile) {
+              userRecord = userProfile;
+            }
+          } catch (dbErr) {
+            console.warn('Supabase login fallback:', dbErr.message);
+          }
+        }
+
+        // LocalStorage fallback
+        if (!userRecord) {
+          const localUsers = JSON.parse(localStorage.getItem('SAJ_users') || '[]');
+          const found = localUsers.find(u => 
+            (u.email.toLowerCase() === identifier || u.phone_number === identifier) && 
+            u.password === passwordVal
+          );
+          if (found) {
+            userRecord = found;
+          }
+        }
+
+        if (!userRecord) {
+          throw new Error('Invalid email/phone or password. Please try again.');
+        }
+
+        // Save login info permanently in localStorage
+        localStorage.setItem('userId', userRecord.id);
+        localStorage.setItem('SAJ_current_user', JSON.stringify(userRecord));
+        localStorage.setItem('SAJ_wishlist_user', userRecord.email);
+
+        setIsUserLoggedIn(true);
+        setCurrentUser(userRecord);
+        setIsAuthModalOpen(false);
+      }
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
   
   // Register device for true background Web Push Notifications (delivered even when browser is closed)
   const registerPushSubscription = async (forcePrompt = false) => {
@@ -1162,44 +1350,73 @@ export default function Home() {
         {/* Animated Live Gold Rates Ticker Bar */}
         <div className="gold-ticker-bar">
           <div className="ticker-content-wrapper">
-            <div className="ticker-items">
-              <span className="ticker-live-dot">
-                <span className="ping-dot"></span>
-                TODAY'S RATE
-              </span>
-              <span className="ticker-item" style={{ fontWeight: 700, color: '#ffffff' }}>SHREE ARADHNA JEWELLERS:</span>
+            {isUserLoggedIn ? (
+              <div className="ticker-items">
+                <span className="ticker-live-dot">
+                  <span className="ping-dot"></span>
+                  TODAY'S RATE
+                </span>
+                <span className="ticker-item" style={{ fontWeight: 700, color: '#ffffff' }}>SHREE ARADHNA JEWELLERS:</span>
 
-              {!goldRates.hide24k && goldRates.gold24k > 0 && (
-                <>
-                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/10g</strong></span>
-                  <span className="ticker-item-separator"> | </span>
-                </>
-              )}
-              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/10g</strong></span>
-              <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/10g</strong></span>
-              <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/10g</strong></span>
-              <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
-              
-              {/* Duplicated loop for infinite scrolling marquee */}
-              <span className="ticker-item-separator" style={{ margin: '0 20px' }}> | </span>
+                {!goldRates.hide24k && goldRates.gold24k > 0 && (
+                  <>
+                    <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/10g</strong></span>
+                    <span className="ticker-item-separator"> | </span>
+                  </>
+                )}
+                <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/10g</strong></span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/10g</strong></span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/10g</strong></span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
+                
+                {/* Duplicated loop for infinite scrolling marquee */}
+                <span className="ticker-item-separator" style={{ margin: '0 20px' }}> | </span>
 
-              {!goldRates.hide24k && goldRates.gold24k > 0 && (
-                <>
-                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/10g</strong></span>
-                  <span className="ticker-item-separator"> | </span>
-                </>
-              )}
-              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/10g</strong></span>
-              <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/10g</strong></span>
-              <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/10g</strong></span>
-              <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
-            </div>
+                {!goldRates.hide24k && goldRates.gold24k > 0 && (
+                  <>
+                    <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/10g</strong></span>
+                    <span className="ticker-item-separator"> | </span>
+                  </>
+                )}
+                <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/10g</strong></span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/10g</strong></span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/10g</strong></span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
+              </div>
+            ) : (
+              <div 
+                className="ticker-items" 
+                onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }}
+                style={{ cursor: 'pointer' }}
+                title="Click to sign up or login and view today's rates"
+              >
+                <span className="ticker-live-dot" style={{ background: '#7b1122', borderColor: '#ffd700' }}>
+                  <Lock style={{ width: '11px', height: '11px', marginRight: '4px', display: 'inline-block', verticalAlign: 'middle' }} />
+                  TODAY'S RATE: LOCKED
+                </span>
+                <span className="ticker-item" style={{ fontWeight: 700, color: '#ffd700' }}>
+                  🔒 SIGN UP OR LOGIN TO VIEW TODAY'S GOLD & SILVER RATES
+                </span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item" style={{ color: '#ffffff', textDecoration: 'underline', fontWeight: 600 }}>
+                  CLICK TO UNLOCK RATES
+                </span>
+                <span className="ticker-item-separator" style={{ margin: '0 20px' }}> | </span>
+                <span className="ticker-item" style={{ fontWeight: 700, color: '#ffd700' }}>
+                  🔒 SIGN UP OR LOGIN TO VIEW TODAY'S GOLD & SILVER RATES
+                </span>
+                <span className="ticker-item-separator"> | </span>
+                <span className="ticker-item" style={{ color: '#ffffff', textDecoration: 'underline', fontWeight: 600 }}>
+                  CLICK TO UNLOCK RATES
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1223,10 +1440,18 @@ export default function Home() {
               <a href="#bestsellers" className="nav-link">BEST SELLERS</a>
               <a href="#contact" className="nav-link">CONTACT</a>
               
-              {localStorage.getItem('userId') ? (
-                <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="nav-link">LOGOUT</a>
+              {isUserLoggedIn ? (
+                <a href="/" onClick={handleUserLogout} className="nav-link" title="Click to Logout">
+                  LOGOUT {currentUser?.full_name ? `(${currentUser.full_name.split(' ')[0]})` : ''}
+                </a>
               ) : (
-                <a href="/login" className="nav-link" style={{ color: 'var(--royal-gold)', fontWeight: 'bold' }}>LOGIN / REGISTER</a>
+                <button 
+                  onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }} 
+                  className="nav-link" 
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--royal-gold)', fontWeight: 'bold', padding: 0 }}
+                >
+                  LOGIN / REGISTER
+                </button>
               )}
             </nav>
 
@@ -1294,10 +1519,18 @@ export default function Home() {
               <a href="#bestsellers" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">BEST SELLERS</a>
               <a href="#contact" onClick={() => setIsMenuOpen(false)} className="mobile-nav-link">CONTACT</a>
               
-              {localStorage.getItem('userId') ? (
-                <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem('userId'); window.location.href = '/'; }} className="mobile-nav-link">LOGOUT</a>
+              {isUserLoggedIn ? (
+                <a href="/" onClick={handleUserLogout} className="mobile-nav-link">
+                  LOGOUT {currentUser?.full_name ? `(${currentUser.full_name.split(' ')[0]})` : ''}
+                </a>
               ) : (
-                <a href="/login" className="mobile-nav-link">LOGIN / REGISTER</a>
+                <button 
+                  onClick={() => { setIsMenuOpen(false); setAuthMode('login'); setIsAuthModalOpen(true); }} 
+                  className="mobile-nav-link"
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', color: 'var(--royal-gold)', fontWeight: 'bold', padding: '12px 0' }}
+                >
+                  LOGIN / REGISTER
+                </button>
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
@@ -1428,48 +1661,168 @@ export default function Home() {
 
           </div>
           
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: '24px'
-          }}>
-            {/* 24K Gold */}
-            {!goldRates.hide24k && goldRates.gold24k > 0 && (
+{isUserLoggedIn ? (
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '24px'
+            }}>
+              {/* 24K Gold */}
+              {!goldRates.hide24k && goldRates.gold24k > 0 && (
+                <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>24K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(99.9%)</span></div>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    ₹{Number(goldRates.gold24k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* 22K Gold */}
               <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>24K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(99.9%)</span></div>
+                <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>22K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(91.6%)</span></div>
                 <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{Number(goldRates.gold24k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+                  ₹{Number(goldRates.gold22k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                 </div>
               </div>
-            )}
-            
-            {/* 22K Gold */}
-            <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>22K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(91.6%)</span></div>
-              <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                ₹{Number(goldRates.gold22k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
-              </div>
-            </div>
 
-            {/* 18K Gold */}
-            {goldRates.gold18k > 0 && (
+              {/* 18K Gold */}
+              {goldRates.gold18k > 0 && (
+                <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>18K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(75.0%)</span></div>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    ₹{Number(goldRates.gold18k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Silver */}
               <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>18K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(75.0%)</span></div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{Number(goldRates.gold18k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+                <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>SILVER</div>
+                <div style={{ fontSize: '22px', fontWeight: '800', color: '#6b7280', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  ₹{Number(goldRates.silver || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                 </div>
               </div>
-            )}
-            
-            {/* Silver */}
-            <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>SILVER</div>
-              <div style={{ fontSize: '22px', fontWeight: '800', color: '#6b7280', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                ₹{Number(goldRates.silver || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+            </div>
+          ) : (
+            /* Locked Rate Preview with Centered Luxury Gold Padlock Card */
+            <div style={{ position: 'relative', maxWidth: '1000px', margin: '0 auto', overflow: 'hidden', borderRadius: '16px' }}>
+              {/* Blurred background cards */}
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: '24px',
+                filter: 'blur(8px)',
+                opacity: 0.25,
+                pointerEvents: 'none',
+                userSelect: 'none',
+                transform: 'scale(0.98)'
+              }}>
+                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>24K GOLD</div>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
+                </div>
+                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>22K GOLD</div>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
+                </div>
+                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>18K GOLD</div>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
+                </div>
+                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>SILVER</div>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#6b7280' }}>₹••• / 10 gm</div>
+                </div>
+              </div>
+
+              {/* Luxury Gold Lock Card Overlay */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.96) 20%, rgba(250,248,245,0.92) 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '28px 20px',
+                textAlign: 'center',
+                zIndex: 5
+              }}>
+                <div style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #7b1122 0%, #9c152b 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffd700',
+                  marginBottom: '12px',
+                  boxShadow: '0 8px 24px rgba(123, 17, 34, 0.22)'
+                }}>
+                  <Lock style={{ width: '22px', height: '22px' }} />
+                </div>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '800',
+                  letterSpacing: '1px',
+                  color: 'var(--text-dark)',
+                  margin: '0 0 6px',
+                  textTransform: 'uppercase'
+                }}>
+                  TODAY'S RATES ARE LOCKED
+                </h3>
+                <p style={{
+                  fontSize: '13px',
+                  color: 'var(--text-gray)',
+                  margin: '0 0 16px',
+                  maxWidth: '420px',
+                  lineHeight: '1.5'
+                }}>
+                  Sign Up or Login to unlock today's certified 24K, 22K, 18K Gold & Silver rates.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => { setAuthMode('signup'); setIsAuthModalOpen(true); }}
+                    style={{
+                      padding: '11px 24px',
+                      background: 'var(--royal-gold)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '12px',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 15px rgba(218, 165, 32, 0.35)'
+                    }}
+                  >
+                    ✨ SIGN UP TO VIEW RATES
+                  </button>
+                  <button
+                    onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }}
+                    style={{
+                      padding: '11px 22px',
+                      background: '#ffffff',
+                      color: 'var(--royal-gold)',
+                      border: '1.5px solid var(--royal-gold)',
+                      borderRadius: '6px',
+                      fontWeight: '700',
+                      fontSize: '12px',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    LOGIN
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           <div style={{ marginTop: '24px', fontSize: '10px', color: 'var(--text-gray)', fontWeight: '500' }}>
             LAST UPDATED: {goldRates.lastUpdated}
           </div>
@@ -4008,6 +4361,365 @@ export default function Home() {
               >
                 Continue to Website
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Rate Unlock Auth Modal (Normal Supabase Database Table 'custom_users') */}
+      {isAuthModalOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAuthModalOpen(false);
+          }}
+        >
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '440px',
+            width: '100%',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            padding: '32px 28px',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(123, 17, 34, 0.2)',
+            position: 'relative',
+            animation: 'animaticScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            boxSizing: 'border-box'
+          }}>
+            {/* Close Button */}
+            <button
+              onClick={() => setIsAuthModalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: 'rgba(123, 17, 34, 0.08)',
+                border: 'none',
+                color: '#555',
+                fontSize: '16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+              <div style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                background: 'rgba(123, 17, 34, 0.1)',
+                color: 'var(--royal-gold)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '10px'
+              }}>
+                <Lock style={{ width: '22px', height: '22px' }} />
+              </div>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: '800',
+                color: 'var(--text-dark)',
+                margin: '0 0 6px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase'
+              }}>
+                {authMode === 'signup' ? 'Create Free Account' : 'Welcome Back'}
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-gray)', margin: 0 }}>
+                {authMode === 'signup' 
+                  ? "Sign up to unlock today's gold & silver rates and special member benefits."
+                  : "Login with your email or mobile number to view today's certified rates."}
+              </p>
+            </div>
+
+            {/* Mode Tabs */}
+            <div style={{
+              display: 'flex',
+              background: '#f4f1ea',
+              borderRadius: '8px',
+              padding: '4px',
+              marginBottom: '20px'
+            }}>
+              <button
+                type="button"
+                onClick={() => { setAuthMode('login'); setAuthError(null); }}
+                style={{
+                  flex: 1,
+                  padding: '9px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  background: authMode === 'login' ? '#ffffff' : 'transparent',
+                  color: authMode === 'login' ? 'var(--royal-gold)' : 'var(--text-gray)',
+                  fontWeight: authMode === 'login' ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  boxShadow: authMode === 'login' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+                }}
+              >
+                LOGIN
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthMode('signup'); setAuthError(null); }}
+                style={{
+                  flex: 1,
+                  padding: '9px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  background: authMode === 'signup' ? '#ffffff' : 'transparent',
+                  color: authMode === 'signup' ? 'var(--royal-gold)' : 'var(--text-gray)',
+                  fontWeight: authMode === 'signup' ? '700' : '500',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  boxShadow: authMode === 'signup' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+                }}
+              >
+                SIGN UP
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {authError && (
+              <div style={{
+                padding: '10px 14px',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#b91c1c',
+                borderRadius: '6px',
+                fontSize: '12px',
+                marginBottom: '16px'
+              }}>
+                {authError}
+              </div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleAuthSubmit}>
+              {authMode === 'signup' ? (
+                <>
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Full Name *
+                    </label>
+                    <input
+                      name="authName"
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul Sharma"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Mobile Number *
+                    </label>
+                    <input
+                      name="authPhone"
+                      type="tel"
+                      required
+                      placeholder="10-digit mobile number"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Email Address *
+                    </label>
+                    <input
+                      name="authEmail"
+                      type="email"
+                      required
+                      placeholder="name@example.com"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Password *
+                    </label>
+                    <input
+                      name="authPassword"
+                      type="password"
+                      required
+                      placeholder="Create a secure password"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '18px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Preferred Showroom Branch
+                    </label>
+                    <select
+                      name="authBranch"
+                      defaultValue="Gandhidham"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        outline: 'none',
+                        background: '#ffffff'
+                      }}
+                    >
+                      <option value="Gandhidham">Gandhidham Showroom (Main Branch)</option>
+                      <option value="Adipur">Adipur Showroom (Branch 2)</option>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Email Address or Mobile Number *
+                    </label>
+                    <input
+                      name="authIdentifier"
+                      type="text"
+                      required
+                      placeholder="Enter email or mobile number"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '18px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-dark)', marginBottom: '6px' }}>
+                      Password *
+                    </label>
+                    <input
+                      name="authPassword"
+                      type="password"
+                      required
+                      placeholder="Enter your password"
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        borderRadius: '6px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px',
+                        boxSizing: 'border-box',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  background: 'var(--royal-gold)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  cursor: authLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 15px rgba(218, 165, 32, 0.35)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {authLoading ? 'Processing...' : (authMode === 'signup' ? 'Create Account & Unlock Rates' : 'Login & View Rates')}
+              </button>
+            </form>
+
+            <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '12px', color: 'var(--text-gray)' }}>
+              {authMode === 'signup' ? (
+                <span>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('login'); setAuthError(null); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--royal-gold)', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                  >
+                    Login here
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  New customer?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('signup'); setAuthError(null); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--royal-gold)', fontWeight: '700', cursor: 'pointer', padding: 0 }}
+                  >
+                    Sign Up Free
+                  </button>
+                </span>
+              )}
             </div>
           </div>
         </div>
