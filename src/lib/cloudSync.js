@@ -427,8 +427,8 @@ export async function saveLiveRates(ratesData) {
     const sil = Number(normalized.silver).toLocaleString('en-IN');
 
     const formattedSummary = normalized.hide24k
-      ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`
-      : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`;
+      ? `• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`
+      : `• 24K Gold (999): ₹${g24}/10g\n• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`;
 
     if (typeof window !== 'undefined') {
       fetch('/api/send-push', {
@@ -799,8 +799,8 @@ export async function sendRatePushNotification(rates) {
   const sil = Number(targetRates.silver).toLocaleString('en-IN');
 
   const formattedSummary = targetRates.hide24k
-    ? `• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`
-    : `• 24K Gold (999): ₹${g24}/g\n• 22K Gold (916): ₹${g22}/g\n• 18K Gold (750): ₹${g18}/g\n• Pure Silver: ₹${sil}/g\nShowrooms at Gandhidham & Adipur.`;
+    ? `• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`
+    : `• 24K Gold (999): ₹${g24}/10g\n• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`;
 
   const response = await fetch('/api/send-push', {
     method: 'POST',

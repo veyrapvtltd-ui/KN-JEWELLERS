@@ -1171,15 +1171,15 @@ export default function Home() {
 
               {!goldRates.hide24k && goldRates.gold24k > 0 && (
                 <>
-                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/g</strong></span>
+                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/10g</strong></span>
                   <span className="ticker-item-separator"> | </span>
                 </>
               )}
-              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/g</strong></span>
+              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/10g</strong></span>
               <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/g</strong></span>
+              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/10g</strong></span>
               <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/g</strong></span>
+              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/10g</strong></span>
               <span className="ticker-item-separator"> | </span>
               <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
               
@@ -1188,15 +1188,15 @@ export default function Home() {
 
               {!goldRates.hide24k && goldRates.gold24k > 0 && (
                 <>
-                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/g</strong></span>
+                  <span className="ticker-item">24K GOLD: <strong>₹{goldRates.gold24k}/10g</strong></span>
                   <span className="ticker-item-separator"> | </span>
                 </>
               )}
-              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/g</strong></span>
+              <span className="ticker-item">22K GOLD: <strong>₹{goldRates.gold22k}/10g</strong></span>
               <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/g</strong></span>
+              <span className="ticker-item">18K GOLD: <strong>₹{goldRates.gold18k}/10g</strong></span>
               <span className="ticker-item-separator"> | </span>
-              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/g</strong></span>
+              <span className="ticker-item">SILVER: <strong>₹{goldRates.silver}/10g</strong></span>
               <span className="ticker-item-separator"> | </span>
               <span className="ticker-item" style={{ color: '#ffffff', fontWeight: 500, fontSize: '9px' }}>[UPDATED: {goldRates.lastUpdated}]</span>
             </div>
@@ -1399,7 +1399,7 @@ export default function Home() {
             flexWrap: 'wrap'
           }}>
             <h2 style={{
-              fontSize: '14px',
+              fontSize: '15px',
               fontWeight: '700',
               letterSpacing: '2px',
               color: 'var(--text-dark)',
@@ -1412,6 +1412,19 @@ export default function Home() {
               <span className="ping-dot" style={{ position: 'relative', top: '0', transform: 'none' }}></span>
               TODAY'S RATE
             </h2>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: '800',
+              letterSpacing: '1px',
+              color: 'var(--royal-gold)',
+              background: 'rgba(123, 17, 34, 0.08)',
+              border: '1px solid rgba(123, 17, 34, 0.25)',
+              padding: '3px 12px',
+              borderRadius: '20px',
+              textTransform: 'uppercase'
+            }}>
+              RATE PER 10 GM
+            </span>
 
           </div>
           
@@ -1426,7 +1439,7 @@ export default function Home() {
               <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>24K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(99.9%)</span></div>
                 <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{Number(goldRates.gold24k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                  ₹{Number(goldRates.gold24k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                 </div>
               </div>
             )}
@@ -1435,7 +1448,7 @@ export default function Home() {
             <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>22K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(91.6%)</span></div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                ₹{Number(goldRates.gold22k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                ₹{Number(goldRates.gold22k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
               </div>
             </div>
 
@@ -1444,7 +1457,7 @@ export default function Home() {
               <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>18K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(75.0%)</span></div>
                 <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{Number(goldRates.gold18k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                  ₹{Number(goldRates.gold18k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                 </div>
               </div>
             )}
@@ -1453,7 +1466,7 @@ export default function Home() {
             <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>SILVER</div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: '#6b7280', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                ₹{Number(goldRates.silver || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ gm</span>
+                ₹{Number(goldRates.silver || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
               </div>
             </div>
           </div>
@@ -3476,7 +3489,7 @@ export default function Home() {
 
 
                 <div className="admin-form-group">
-                  <label className="admin-form-label">24K Gold Rate (₹ per gram)</label>
+                  <label className="admin-form-label">24K Gold Rate (₹ per 10 gm)</label>
                   <input 
                     type="number" 
                     required 
@@ -3487,7 +3500,7 @@ export default function Home() {
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-form-label">22K Gold Rate (₹ per gram)</label>
+                  <label className="admin-form-label">22K Gold Rate (₹ per 10 gm)</label>
                   <input 
                     type="number" 
                     required 
@@ -3498,7 +3511,7 @@ export default function Home() {
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-form-label">18K Gold Rate (₹ per gram)</label>
+                  <label className="admin-form-label">18K Gold Rate (₹ per 10 gm)</label>
                   <input 
                     type="number" 
                     required 
@@ -3509,7 +3522,7 @@ export default function Home() {
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-form-label">Silver Rate (₹ per gram)</label>
+                  <label className="admin-form-label">Silver Rate (₹ per 10 gm)</label>
                   <input 
                     type="number" 
                     required 

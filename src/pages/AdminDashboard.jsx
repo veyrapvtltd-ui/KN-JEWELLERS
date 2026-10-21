@@ -1013,7 +1013,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '16px' }}>
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  24K Gold Rate (₹ / gm)
+                  24K Gold Rate (₹ / 10 gm)
                 </label>
                 <input 
                   type="number" 
@@ -1026,7 +1026,7 @@ export default function AdminDashboard() {
 
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  22K Gold Rate (₹ / gm)
+                  22K Gold Rate (₹ / 10 gm)
                 </label>
                 <input 
                   type="number" 
@@ -1039,7 +1039,7 @@ export default function AdminDashboard() {
 
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  18K Gold Rate (₹ / gm)
+                  18K Gold Rate (₹ / 10 gm)
                 </label>
                 <input 
                   type="number" 
@@ -1052,7 +1052,7 @@ export default function AdminDashboard() {
 
               <div>
                 <label style={{ display: 'block', color: '#aaa', fontSize: '0.82rem', marginBottom: '6px' }}>
-                  Silver Rate (₹ / gm)
+                  Silver Rate (₹ / 10 gm)
                 </label>
                 <input 
                   type="number" 
