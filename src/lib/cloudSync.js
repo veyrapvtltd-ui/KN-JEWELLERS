@@ -433,8 +433,8 @@ export async function saveLiveRates(ratesData) {
     const sil = Number(normalized.silver).toLocaleString('en-IN');
 
     const formattedSummary = normalized.hide24k
-      ? `• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`
-      : `• 24K Gold (999): ₹${g24}/10g\n• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`;
+      ? `• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nKN Jewellers • Sadar Bazar, Ambala Cantt (094662 19194)`
+      : `• 24K Gold (999): ₹${g24}/10g\n• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nKN Jewellers • Sadar Bazar, Ambala Cantt (094662 19194)`;
 
     if (typeof window !== 'undefined') {
       fetch('/api/send-push', {
@@ -502,7 +502,7 @@ export async function fetchCustomProducts() {
               title: p.title,
               category: p.category,
               subCategory: p.subcategory || 'ALL',
-              purity: p.description?.split('-')[0]?.trim() || '22K Hallmarked Gold',
+              purity: p.description?.split('-')[0]?.trim() || 'BIS Hallmarked Gold',
               weight: p.weight || '',
               url: p.image || '/assets/logo.png',
               price: p.price,
@@ -621,7 +621,7 @@ export async function saveCustomProduct(product) {
         weight: newProduct.weight || '',
         price: newProduct.price ? Number(newProduct.price) : null,
         image: newProduct.url,
-        description: `${newProduct.purity || '22K Gold'} - ${newProduct.earringType || ''}`
+        description: `${newProduct.purity || 'BIS Hallmarked Gold'} - ${newProduct.earringType || ''}`
       }]);
       if (!error) supabaseSaved = true;
     } catch (e) {
@@ -805,8 +805,8 @@ export async function sendRatePushNotification(rates) {
   const sil = Number(targetRates.silver).toLocaleString('en-IN');
 
   const formattedSummary = targetRates.hide24k
-    ? `• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`
-    : `• 24K Gold (999): ₹${g24}/10g\n• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nShowrooms at Gandhidham & Adipur.`;
+    ? `• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nKN Jewellers • Sadar Bazar, Ambala Cantt (094662 19194)`
+    : `• 24K Gold (999): ₹${g24}/10g\n• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nKN Jewellers • Sadar Bazar, Ambala Cantt (094662 19194)`;
 
   const response = await fetch('/api/send-push', {
     method: 'POST',

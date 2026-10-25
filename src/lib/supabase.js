@@ -395,8 +395,9 @@ export const runVigorousStorageTests = async () => {
 };
 
 // SQL Schema for 1-click copy
-export const SUPABASE_SCHEMA_SQL = `-- SHREE ARADHNA JEWELLERS - COMPLETE SUPABASE SETUP
--- Branches: Gandhidham & Adipur, Gujarat
+export const SUPABASE_SCHEMA_SQL = `-- KN JEWELLERS - COMPLETE SUPABASE SETUP
+-- Kasera Bazaar Rd, Sadar Bazar, Ambala Cantt, Haryana
+-- Phone: 094662 19194 | UPI: 9466219194@okbizaxis
 -- Run in: Supabase Dashboard -> SQL Editor -> New Query -> Run
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -406,19 +407,21 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
     id integer PRIMARY KEY DEFAULT 1,
     upi_id text DEFAULT '9466219194@okbizaxis',
     qr_code_url text DEFAULT '/assets/logo.png',
-    phone_branch1 text DEFAULT '9638888170',
-    phone_branch2 text DEFAULT '7202921222',
+    phone_branch1 text DEFAULT '094662 19194',
+    phone_branch2 text DEFAULT '',
     instagram_branch1 text DEFAULT 'https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr',
     instagram_branch2 text DEFAULT '',
+    address text DEFAULT 'Kasera Bazaar Rd, Sadar Bazar, Ambala Cantt, Haryana',
     updated_at timestamp with time zone DEFAULT now()
 );
 
-INSERT INTO public.store_settings (id, upi_id, qr_code_url, phone_branch1, phone_branch2)
-VALUES (1, '9638888170@okbizaxis', '/assets/logo.png', '9638888170', '7202921222')
+INSERT INTO public.store_settings (id, upi_id, qr_code_url, phone_branch1, phone_branch2, instagram_branch1, address)
+VALUES (1, '9466219194@okbizaxis', '/assets/logo.png', '094662 19194', '', 'https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr', 'Kasera Bazaar Rd, Sadar Bazar, Ambala Cantt, Haryana')
 ON CONFLICT (id) DO UPDATE SET
     upi_id = EXCLUDED.upi_id,
     phone_branch1 = EXCLUDED.phone_branch1,
-    phone_branch2 = EXCLUDED.phone_branch2;
+    instagram_branch1 = EXCLUDED.instagram_branch1,
+    address = EXCLUDED.address;
 
 -- 2. LIVE GOLD & SILVER RATES
 CREATE TABLE IF NOT EXISTS public.saj_rates (
@@ -445,6 +448,7 @@ ON CONFLICT (id) DO UPDATE SET
     updated_at = now();
 
 -- Compatibility views for alternative table names
+CREATE OR REPLACE VIEW public.kn_rates AS SELECT * FROM public.saj_rates;
 CREATE OR REPLACE VIEW public.hardik_rates AS SELECT * FROM public.saj_rates;
 CREATE OR REPLACE VIEW public.rates AS SELECT * FROM public.saj_rates;
 
@@ -455,7 +459,7 @@ CREATE TABLE IF NOT EXISTS public.custom_users (
     password text NOT NULL,
     full_name text,
     phone_number text,
-    preferred_branch text DEFAULT 'Gandhidham',
+    preferred_branch text DEFAULT 'Ambala Cantt',
     created_at timestamp with time zone DEFAULT now()
 );
 
@@ -465,7 +469,7 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
     name text,
     phone text,
     email text,
-    branch text,
+    branch text DEFAULT 'Ambala Cantt',
     appointment_date text,
     appointment_time text,
     inquiry_type text DEFAULT 'Appointment',
@@ -486,6 +490,9 @@ CREATE TABLE IF NOT EXISTS public.saj_products (
     description text,
     created_at timestamp with time zone DEFAULT now()
 );
+
+CREATE OR REPLACE VIEW public.kn_products AS SELECT * FROM public.saj_products;
+CREATE OR REPLACE VIEW public.products AS SELECT * FROM public.saj_products;
 
 -- 6. BROADCAST NOTIFICATIONS HISTORY
 CREATE TABLE IF NOT EXISTS public.broadcast_notifications (
