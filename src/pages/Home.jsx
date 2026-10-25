@@ -3110,13 +3110,13 @@ export default function Home() {
       }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <img 
-            src="/assets/logo.png" 
-            alt="App Logo" 
+            src="/pwa-512x512.png" 
+            alt="Kn Jewellers App Icon" 
             style={{ 
-              height: '72px', 
-              width: '72px', 
-              borderRadius: '16px', 
-              boxShadow: '0 8px 24px rgba(123, 17, 34, 0.2)', 
+              height: '80px', 
+              width: '80px', 
+              borderRadius: '20px', 
+              boxShadow: '0 10px 25px rgba(123, 17, 34, 0.25)', 
               marginBottom: '20px',
               objectFit: 'cover'
             }} 
