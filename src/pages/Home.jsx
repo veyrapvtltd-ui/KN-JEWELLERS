@@ -2509,8 +2509,11 @@ export default function Home() {
                     src={item.url} 
                     alt={item.title} 
                     className="model-marquee-img"
-                    loading="lazy"
+                    loading="eager"
+                    fetchpriority={index < 8 ? "high" : "auto"}
                     decoding="async"
+                    width="260"
+                    height="390"
                   />
                   <div style={{
                     position: 'absolute',
@@ -2534,6 +2537,13 @@ export default function Home() {
               ))}
             </div>
           </div>
+
+          {/* Interactive Bestseller Hint on Mobile */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '14px', padding: '0 16px' }}>
+            <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '1px', color: 'var(--royal-gold)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>✨</span> Tap Any Piece To Inspect & Inquire
+            </span>
+          </div>
         </div>
       </section>
       )}
@@ -2553,16 +2563,8 @@ export default function Home() {
 
               <div className="info-cards-stack" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
-                {/* Ambala Cant Showroom */}
-                <div style={{
-                  background: '#ffffff',
-                  border: '1.5px solid rgba(123, 17, 34, 0.18)',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  boxShadow: '0 4px 16px rgba(123, 17, 34, 0.05)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
+                {/* Ambala Cant Showroom Card */}
+                <div className="showroom-card">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                     <span style={{
                       background: 'var(--royal-gold)',
@@ -2606,44 +2608,46 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', paddingTop: '12px', borderTop: '1px solid rgba(123, 17, 34, 0.08)' }}>
+                  <div className="showroom-card-actions">
                     <a 
                       href="tel:+919466219194" 
+                      className="showroom-btn call-action"
                       style={{
-                        flex: '1 1 auto',
                         background: 'var(--royal-gold)',
                         color: '#ffffff',
                         textDecoration: 'none',
-                        padding: '10px 16px',
+                        padding: '11px 14px',
                         borderRadius: '6px',
                         fontSize: '12px',
                         fontWeight: '700',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        textAlign: 'center'
                       }}
                     >
-                      <Phone size={14} /> CALL: 094662 19194
+                      <Phone size={14} /> CALL SHOWROOM
                     </a>
                     <a 
                       href="https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20have%20an%20inquiry." 
                       target="_blank" 
                       rel="noreferrer"
+                      className="showroom-btn wa-action"
                       style={{
-                        flex: '1 1 auto',
                         background: '#ffffff',
                         border: '1.5px solid var(--peacock-green)',
                         color: 'var(--peacock-green)',
                         textDecoration: 'none',
-                        padding: '10px 16px',
+                        padding: '11px 14px',
                         borderRadius: '6px',
                         fontSize: '12px',
                         fontWeight: '700',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        textAlign: 'center'
                       }}
                     >
                       💬 WHATSAPP
@@ -2652,25 +2656,25 @@ export default function Home() {
                       href="https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr" 
                       target="_blank" 
                       rel="noreferrer"
+                      className="showroom-btn insta-action"
                       style={{
-                        width: '100%',
                         background: 'rgba(123, 17, 34, 0.05)',
                         border: '1px solid rgba(123, 17, 34, 0.15)',
                         color: 'var(--peacock-green)',
                         textDecoration: 'none',
-                        padding: '10px 14px',
+                        padding: '11px 14px',
                         borderRadius: '6px',
                         fontSize: '12px',
                         fontWeight: '700',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        textAlign: 'center'
                       }}
                     >
                       📸 @jewellerskn on Instagram
                     </a>
-
                   </div>
                 </div>
 
@@ -2799,8 +2803,40 @@ export default function Home() {
                   type="submit" 
                   className="form-submit-btn"
                 >
-                  SUBMIT INQUIRY
+                  CONFIRM APPOINTMENT REQUEST
                 </button>
+
+                <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '12px 0 10px' }}>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(123, 17, 34, 0.15)' }} />
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase' }}>OR FAST APPOINTMENT</span>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(123, 17, 34, 0.15)' }} />
+                  </div>
+                  <a 
+                    href="https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20would%20like%20to%20book%20a%20showroom%20appointment."
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: '#25D366',
+                      color: '#ffffff',
+                      borderRadius: '8px',
+                      fontWeight: '700',
+                      fontSize: '12px',
+                      letterSpacing: '0.8px',
+                      textDecoration: 'none',
+                      boxShadow: '0 4px 12px rgba(37, 211, 102, 0.25)',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    💬 BOOK INSTANTLY VIA WHATSAPP
+                  </a>
+                </div>
               </form>
             </div>
 
