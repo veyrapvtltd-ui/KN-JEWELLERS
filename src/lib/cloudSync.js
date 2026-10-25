@@ -436,6 +436,15 @@ export async function saveLiveRates(ratesData) {
       ? `• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nKN Jewellers • Sadar Bazar, Ambala Cantt (094662 19194)`
       : `• 24K Gold (999): ₹${g24}/10g\n• 22K Gold (916): ₹${g22}/10g\n• 18K Gold (750): ₹${g18}/10g\n• Pure Silver: ₹${sil}/10g\nKN Jewellers • Sadar Bazar, Ambala Cantt (094662 19194)`;
 
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('broadcast_notifications').insert([{
+          title: "👑 TODAY'S RATE UPDATE",
+          body: formattedSummary
+        }]);
+      } catch (errSup) {}
+    }
+
     if (typeof window !== 'undefined') {
       fetch('/api/send-push', {
         method: 'POST',

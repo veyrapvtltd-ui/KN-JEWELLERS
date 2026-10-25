@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const VAPID_PUBLIC_KEY = process.env.VITE_VAPID_PUBLIC_KEY || 'BCibRN0IM4-L0mr28TLXa_5Nu_gbU5v_p3rTzvSxiL4Emkhi3Tr2dfjfcXjSvka39AYKxlu8pRmYyTO0ZZ0qGPY';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'tha1Bx2yTPgY2R3S5XeuAhWclJrfg5ydHRYhodOKVzE';
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://hiflildcmdmjjpuyzfxe.supabase.co';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxpbGRjbWRtampwdXl6ZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxOTc2NzAsImV4cCI6MjEwNzc3MzY3MH0.WLwylnfNqJwYJyDmibvshD6Oti1wUv3nJqadpW6JiPw';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://waequzdpezwszugitylg.supabase.co';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhZXF1emRwZXp3c3p1Z2l0eWxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5MTAxMjIsImV4cCI6MjEwODQ4NjEyMn0.dnOC-1aWbGe-_EgCgF8b4VvTEuVvcNLiKmLjnyzf0UY';
 
 webpush.setVapidDetails(
   'mailto:contact@knjewellers.com',
