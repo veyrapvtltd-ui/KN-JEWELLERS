@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // Get current Supabase credentials (localStorage priority -> import.meta.env fallback -> default project)
 export const getSupabaseConfig = () => {
-  const OFFICIAL_URL = 'https://hiflildcmdmjjpuyzfxe.supabase.co';
-  const OFFICIAL_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxpbGRjbWRtampwdXl6ZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxOTc2NzAsImV4cCI6MjEwNzc3MzY3MH0.WLwylnfNqJwYJyDmibvshD6Oti1wUv3nJqadpW6JiPw';
+  const OFFICIAL_URL = 'https://waequzdpezwszugitylg.supabase.co';
+  const OFFICIAL_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhZXF1emRwZXp3c3p1Z2l0eWxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5MTAxMjIsImV4cCI6MjEwODQ4NjEyMn0.dnOC-1aWbGe-_EgCgF8b4VvTEuVvcNLiKmLjnyzf0UY';
 
   let url = '';
   let key = '';
@@ -16,7 +16,7 @@ export const getSupabaseConfig = () => {
       localStorage.getItem('supabase_url') || 
       '';
 
-    if (savedUrl && (savedUrl.includes('xfkcnmhophacnluofauu') || savedUrl.includes('placeholder'))) {
+    if (savedUrl && (savedUrl.includes('xfkcnmhophacnluofauu') || savedUrl.includes('hiflildcmdmjjpuyzfxe') || savedUrl.includes('placeholder'))) {
       localStorage.removeItem('SAJ_supabase_url');
       localStorage.removeItem('hardik_supabase_url');
       localStorage.removeItem('supabase_url');

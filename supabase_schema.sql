@@ -1,6 +1,7 @@
 -- =========================================================================
--- SHREE ARADHNA JEWELLERS - COMPLETE SUPABASE SETUP SCRIPT
--- Branches: Gandhidham & Adipur, Gujarat
+-- KN JEWELLERS - COMPLETE SUPABASE SETUP SCRIPT
+-- Kasera Bazaar Rd, Sadar Bazar, Ambala, Ambala Sadar, Haryana 133001
+-- Phone: 094662 19194 | WhatsApp: +91 94662 19194
 -- Run this script in your Supabase Dashboard: SQL Editor -> New Query -> Run
 -- =========================================================================
 
@@ -10,22 +11,24 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- 1. STORE SETTINGS TABLE
 CREATE TABLE IF NOT EXISTS public.store_settings (
     id integer PRIMARY KEY DEFAULT 1,
-    upi_id text DEFAULT '9638888170@okbizaxis',
+    upi_id text DEFAULT '9466219194@upi',
     qr_code_url text DEFAULT '/assets/logo.png',
-    phone_branch1 text DEFAULT '9638888170',
-    phone_branch2 text DEFAULT '7202921222',
-    instagram_branch1 text DEFAULT 'https://www.instagram.com/shree_aradhana_jewellers',
-    instagram_branch2 text DEFAULT 'https://www.instagram.com/aradhanagoldhouse',
+    phone_branch1 text DEFAULT '094662 19194',
+    phone_branch2 text DEFAULT '094662 19194',
+    instagram_branch1 text DEFAULT 'https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr',
+    instagram_branch2 text DEFAULT 'https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr',
     updated_at timestamp with time zone DEFAULT now()
 );
 
 -- Seed default store settings if not exists
-INSERT INTO public.store_settings (id, upi_id, qr_code_url, phone_branch1, phone_branch2)
-VALUES (1, '9638888170@okbizaxis', '/assets/logo.png', '9638888170', '7202921222')
+INSERT INTO public.store_settings (id, upi_id, qr_code_url, phone_branch1, phone_branch2, instagram_branch1, instagram_branch2)
+VALUES (1, '9466219194@upi', '/assets/logo.png', '094662 19194', '094662 19194', 'https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr', 'https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr')
 ON CONFLICT (id) DO UPDATE SET
     upi_id = EXCLUDED.upi_id,
     phone_branch1 = EXCLUDED.phone_branch1,
-    phone_branch2 = EXCLUDED.phone_branch2;
+    phone_branch2 = EXCLUDED.phone_branch2,
+    instagram_branch1 = EXCLUDED.instagram_branch1,
+    instagram_branch2 = EXCLUDED.instagram_branch2;
 
 -- 2. LIVE GOLD & SILVER RATES TABLE
 CREATE TABLE IF NOT EXISTS public.saj_rates (
@@ -52,9 +55,10 @@ ON CONFLICT (id) DO UPDATE SET
     hide24k = EXCLUDED.hide24k,
     updated_at = now();
 
--- Compatibility views for legacy or alternative rate queries
-CREATE OR REPLACE VIEW public.hardik_rates AS SELECT * FROM public.saj_rates;
+-- Compatibility views for rate queries
+CREATE OR REPLACE VIEW public.kn_rates AS SELECT * FROM public.saj_rates;
 CREATE OR REPLACE VIEW public.rates AS SELECT * FROM public.saj_rates;
+CREATE OR REPLACE VIEW public.hardik_rates AS SELECT * FROM public.saj_rates;
 
 -- 3. CUSTOM USERS (CUSTOMER PROFILES)
 CREATE TABLE IF NOT EXISTS public.custom_users (
@@ -63,7 +67,7 @@ CREATE TABLE IF NOT EXISTS public.custom_users (
     password text NOT NULL,
     full_name text,
     phone_number text,
-    preferred_branch text DEFAULT 'Gandhidham',
+    preferred_branch text DEFAULT 'Ambala Cantt',
     created_at timestamp with time zone DEFAULT now()
 );
 
@@ -73,7 +77,7 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
     name text,
     phone text,
     email text,
-    branch text,
+    branch text DEFAULT 'Ambala Cantt',
     appointment_date text,
     appointment_time text,
     inquiry_type text DEFAULT 'Appointment',
@@ -95,6 +99,9 @@ CREATE TABLE IF NOT EXISTS public.saj_products (
     created_at timestamp with time zone DEFAULT now()
 );
 
+-- Compatibility view for products
+CREATE OR REPLACE VIEW public.products AS SELECT * FROM public.saj_products;
+
 -- 6. BROADCAST NOTIFICATIONS HISTORY
 CREATE TABLE IF NOT EXISTS public.broadcast_notifications (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -103,7 +110,7 @@ CREATE TABLE IF NOT EXISTS public.broadcast_notifications (
     created_at timestamp with time zone DEFAULT now()
 );
 
--- 7. WEB PUSH SUBSCRIPTIONS (BACKGROUND CLOSED-APP ALERTS)
+-- 7. WEB PUSH SUBSCRIPTIONS
 CREATE TABLE IF NOT EXISTS public.push_subscriptions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     endpoint text UNIQUE NOT NULL,
