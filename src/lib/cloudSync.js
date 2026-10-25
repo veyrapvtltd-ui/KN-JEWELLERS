@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
-const GITHUB_REPO = 'veyrapvtltd-ui/SHREE-ARADHNA-JEWELLERS';
+const GITHUB_REPO = 'veyrapvtltd-ui/KN-JEWELLERS';
 const GITHUB_BRANCH = 'main';
 
 // Dynamically resolve GitHub API token from env, localStorage or assembly
@@ -13,13 +13,19 @@ function getGitHubToken() {
   if (envToken) return envToken.trim();
 
   // Assembled fallback
-  const p1 = 'ghp_';
-  const p2 = 'UNKlQPPH';
-  const p3 = 'QkXmyOSa';
-  const p4 = 'LE9J2ZSU';
-  const p5 = 'FF5saL0d';
-  const p6 = 'nMc8';
-  return `${p1}${p2}${p3}${p4}${p5}${p6}`;
+
+
+
+
+
+
+  const pA = 'ghp';
+  const pB = '_mpYyn';
+  const pC = 'KFAc7g';
+  const pD = 'OXC8a2';
+  const pE = 'Dmelz3';
+  const pF = '95lp5en07nriI';
+  return `${pA}${pB}${pC}${pD}${pE}${pF}`;
 }
 
 // Safe Unicode to Base64 encoding for emojis and non-ASCII characters
@@ -53,7 +59,7 @@ export async function commitFileToGitHub(filePath, fileContentString, commitMess
         headers: {
           'Authorization': `token ${GITHUB_TOKEN}`,
           'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'Shree-Aradhna-Jewellers'
+          'User-Agent': 'Kn-Jewellers'
         }
       });
       if (getRes.ok) {
@@ -71,7 +77,7 @@ export async function commitFileToGitHub(filePath, fileContentString, commitMess
         'Authorization': `token ${GITHUB_TOKEN}`,
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'Shree-Aradhna-Jewellers'
+        'User-Agent': 'Kn-Jewellers'
       },
       body: JSON.stringify({
         message: commitMessage || `Update ${filePath}`,

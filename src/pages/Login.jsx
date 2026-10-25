@@ -9,7 +9,7 @@ export default function Login() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [preferredBranch, setPreferredBranch] = useState('Gandhidham');
+  const [preferredBranch, setPreferredBranch] = useState('Ambala Cantt');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -399,8 +399,8 @@ export default function Login() {
                     background: '#ffffff'
                   }}
                 >
-                  <option value="Gandhidham">Gandhidham Showroom (Main Branch)</option>
-                  <option value="Adipur">Adipur Showroom (Branch 2)</option>
+                  <option value="Ambala Cantt">Ambala Cantt Showroom (Kasera Bazaar Rd, Sadar Bazar)</option>
+
                 </select>
               </div>
             </>

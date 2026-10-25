@@ -243,7 +243,7 @@ export const runVigorousStorageTests = async () => {
     const tStart = performance.now();
     const testKey = '__saj_storage_integrity_test__';
     const testPayload = JSON.stringify({
-      app: 'Shree Aradhna Jewellers',
+      app: 'Kn Jewellers',
       timestamp: Date.now(),
       sample: 'A'.repeat(1024 * 10) // 10KB payload
     });
@@ -404,12 +404,12 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- 1. STORE SETTINGS
 CREATE TABLE IF NOT EXISTS public.store_settings (
     id integer PRIMARY KEY DEFAULT 1,
-    upi_id text DEFAULT '9638888170@okbizaxis',
+    upi_id text DEFAULT '9466219194@okbizaxis',
     qr_code_url text DEFAULT '/assets/logo.png',
     phone_branch1 text DEFAULT '9638888170',
     phone_branch2 text DEFAULT '7202921222',
-    instagram_branch1 text DEFAULT 'https://www.instagram.com/shree_aradhana_jewellers',
-    instagram_branch2 text DEFAULT 'https://www.instagram.com/aradhanagoldhouse',
+    instagram_branch1 text DEFAULT 'https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr',
+    instagram_branch2 text DEFAULT '',
     updated_at timestamp with time zone DEFAULT now()
 );
 

@@ -31,7 +31,7 @@ import {
 import { optimizeImageForStorage, fileToDataUrl } from '../lib/imageOptimizer';
 import { collection18kProducts, best18kSellers } from '../data/collection18k';
 
-// Banners customized for SHREE ARADHNA JEWELLERS exact layout using Model Images
+// Banners customized for KN JEWELLERS exact layout using Model Images
 const bannerImages = [
   {
     desktopUrl: '/assets/hero_banner.jpg',
@@ -40,7 +40,7 @@ const bannerImages = [
   }
 ];
 
-// Product collections - Loaded from 18KT Plain Gold Master Collection
+// Product collections - Loaded from Master Gold Collection
 const bestSellerImages = best18kSellers;
 const bangleImages = collection18kProducts.filter(p => p.subCategory === 'BANGLES');
 const gentsBraceletImages = [];
@@ -53,7 +53,7 @@ const longMangalsutraImages = [];
 const shortMangalsutraImages = collection18kProducts.filter(p => p.subCategory === 'SHORT MANGALSUTRA');
 const necklaceImages = collection18kProducts.filter(p => p.subCategory === 'NECKLACES');
 const earringImages = collection18kProducts.filter(p => p.category === 'EARRINGS');
-const weddingSetImages = [];
+const weddingSetImages = collection18kProducts.filter(p => p.category === 'WEDDING SET');
 const silverImages = [];
 const dailyWearTopsImages = collection18kProducts.filter(p => p.category === 'EARRINGS' && p.earringType === 'STUDS');
 const jumkaImages = [];
@@ -66,14 +66,15 @@ const mangalsutraImages = collection18kProducts.filter(p => p.subCategory === 'S
 
 const allProducts = collection18kProducts;
 
-const categories = ['ALL', 'RINGS', 'EARRINGS', 'LADIES', 'GENTS', 'WEDDING SET'];
+const categories = ['ALL', 'NECKLACES', 'RINGS', 'EARRINGS', 'WEDDING SET', 'LADIES'];
 
 // Sub-categories per main collection
 const subCategories = {
   'ALL': ['ALL'],
-  'RINGS': ['ALL', 'LADIES RINGS', 'GENTS RINGS'],
-  'EARRINGS': ['ALL', 'DAILY WEAR TOPS', 'STUDS', 'HOOPS', 'FANCY'],
-  'LADIES': ['ALL', 'RINGS', 'BANGLES', 'BRACELETS', 'SHORT MANGALSUTRA', 'NECKLACES', 'CHAINS'],
+  'NECKLACES': ['ALL', 'TEMPLE HARAM', 'BRIDAL SETS', 'PENDANTS'],
+  'RINGS': ['ALL', 'COCKTAIL RINGS'],
+  'EARRINGS': ['ALL', 'JHUMKAS', 'STUDS', 'HOOPS', 'FANCY'],
+  'LADIES': ['ALL', 'NECKLACES', 'RINGS', 'EARRINGS', 'BRACELETS'],
   'GENTS': ['ALL', 'RINGS', 'CHAINS'],
   'WEDDING SET': ['ALL']
 };
@@ -82,9 +83,27 @@ const subCategories = {
 const earringSubTypes = ['ALL', 'DAILY WEAR TOPS', 'STUDS', 'HOOPS', 'FANCY'];
 
 const marqueeCategories = [
-  { name: 'WEDDING SET', label: 'WEDDING COLLECTION', img: '/assets/wedding_collection_banner.jpg' },
-  { name: 'EARRINGS', label: 'EARRING COLLECTION', img: '/assets/earrings_collection_img.jpg' },
-  { name: 'LADIES', label: 'LADIES COLLECTION', img: '/assets/ladies_collection_img.jpg' }
+  { 
+    name: 'NECKLACES', 
+    label: 'NECKLACE COLLECTION', 
+    img: '/assets/products/kn_gold_01.jpg',
+    subLabel: 'New Collection In Stock',
+    badge: 'Available'
+  },
+  { 
+    name: 'RINGS', 
+    label: 'RING COLLECTION', 
+    img: '/assets/products/kn_gold_11.jpg',
+    subLabel: 'Pure Handcrafted Gold',
+    badge: 'Trending'
+  },
+  { 
+    name: 'EARRINGS', 
+    label: 'EARRING COLLECTION', 
+    img: '/assets/products/kn_gold_08.jpg',
+    subLabel: 'Royal Heritage Jhumkas',
+    badge: 'Popular'
+  }
 ];
 
 // Circular Category Definitions (Only 3 Collections: Wedding, Earrings, Ladies)
@@ -279,7 +298,7 @@ export default function Home() {
         const phone = form.authPhone.value.trim();
         const emailVal = form.authEmail.value.trim().toLowerCase();
         const passwordVal = form.authPassword.value;
-        const branchVal = form.authBranch ? form.authBranch.value : 'Gandhidham';
+        const branchVal = form.authBranch ? form.authBranch.value : 'Ambala Cantt';
 
         if (!fullName || !phone || !emailVal || !passwordVal) {
           throw new Error('Please fill in all required fields.');
@@ -536,7 +555,7 @@ export default function Home() {
   // Listen to browser's native 'appinstalled' event & display-mode changes in real time
   useEffect(() => {
     const handleAppInstalled = () => {
-      console.log('SHREE ARADHNA JEWELLERS App downloaded & installed!');
+      console.log('KN JEWELLERS App downloaded & installed!');
       try {
         localStorage.setItem('SAJ_pwa_installed', 'true');
       } catch (e) {}
@@ -577,7 +596,7 @@ export default function Home() {
     } catch (e) {}
   };
 
-  const [instaFeedUrl, setInstaFeedUrl] = useState('');
+  const [instaFeedUrl, setInstaFeedUrl] = useState('https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr');
   const [instaPosts, setInstaPosts] = useState([]);
 
   useEffect(() => {
@@ -606,7 +625,7 @@ export default function Home() {
   const handleInstallClick = async () => {
     // If the app is already detected as installed, inform the user cleanly
     if (isAppInstalledOnDevice || checkIsAppInstalled()) {
-      alert("✅ SHREE ARADHNA JEWELLERS App is already downloaded and installed on this device!");
+      alert("✅ KN JEWELLERS App is already downloaded and installed on this device!");
       return;
     }
 
@@ -765,7 +784,7 @@ export default function Home() {
   }, [goldRates]);
 
   useEffect(() => {
-    document.title = "Shree Aradhna Jewellers | Premium Gold and Silver Jewellery";
+    document.title = "Kn Jewellers | Premium Gold and Silver Jewellery - Ambala Cant";
   }, []);
 
   // Real-time Database Listener for Live Rates
@@ -825,7 +844,6 @@ export default function Home() {
             );
             if (isDiff) {
               setGoldRates(prev => ({ ...prev, ...event.data }));
-              showLiveRateToast(event.data);
             }
           }
         };
@@ -956,23 +974,7 @@ export default function Home() {
         if (isMounted && liveRates) {
           setGoldRates(prev => ({ ...prev, ...liveRates }));
           
-          // Show live market rate welcome toast once per browsing session
-          try {
-            const sessionKey = 'saj_session_live_rate_notified';
-            if (!sessionStorage.getItem(sessionKey) && liveRates.gold22k) {
-              sessionStorage.setItem(sessionKey, 'true');
-              setTimeout(() => {
-                if (isMounted) {
-                  showLiveRateToast(liveRates, {
-                    title: "👑 TODAY'S RATE UPDATE",
-                    subtitle: 'BIS 916 Hallmarked • Today\'s Rates',
-                    force: true,
-                    skipNative: true
-                  });
-                }
-              }, 1200);
-            }
-          } catch (e) {}
+
         }
       } catch (err) {
         console.warn("[LiveRates] Startup fetch fallback:", err);
@@ -1185,7 +1187,7 @@ export default function Home() {
       const blob = await zip.generateAsync({ type: 'blob' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'Shree_Aradhna_Jewellers_Products.zip';
+      link.download = 'Kn_Jewellers_Products.zip';
       link.click();
       alert('Products ZIP Export Complete!');
     } catch (err) {
@@ -1235,10 +1237,39 @@ export default function Home() {
           if (sub === activeSubCategory) return true;
           if (activeSubCategory === 'RINGS' && (cat === 'RINGS' || sub === 'LADIES RINGS' || sub === 'GENTS RINGS')) return true;
           if (activeSubCategory === 'EARRINGS' && cat === 'EARRINGS') return true;
+          if (activeSubCategory === 'NECKLACES' && (sub === 'NECKLACES' || cat === 'NECKLACES' || cat === 'WEDDING SET')) return true;
           return false;
         });
       }
       return combinedProducts;
+    }
+
+    // Direct NECKLACES collection tab
+    if (activeCategory === 'NECKLACES') {
+      let necklaces = combinedProducts.filter(p => {
+        const cat = (p.category || '').trim().toUpperCase();
+        const sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
+        const titleUpper = (p.title || '').toUpperCase();
+        return (
+          cat === 'NECKLACES' ||
+          sub === 'NECKLACES' ||
+          cat === 'WEDDING SET' ||
+          titleUpper.includes('NECKLACE') ||
+          titleUpper.includes('HARAM') ||
+          titleUpper.includes('CHOKER') ||
+          titleUpper.includes('PENDANT')
+        );
+      });
+      if (activeSubCategory !== 'ALL') {
+        necklaces = necklaces.filter(p => {
+          const titleUpper = (p.title || '').toUpperCase();
+          if (activeSubCategory === 'TEMPLE HARAM') return titleUpper.includes('TEMPLE') || titleUpper.includes('HARAM');
+          if (activeSubCategory === 'BRIDAL SETS') return titleUpper.includes('BRIDAL') || titleUpper.includes('SET');
+          if (activeSubCategory === 'PENDANTS') return titleUpper.includes('PENDANT');
+          return true;
+        });
+      }
+      return necklaces;
     }
 
     // Direct RINGS collection tab
@@ -1303,7 +1334,7 @@ export default function Home() {
       const cat = (p.category || '').trim().toUpperCase();
       const sub = (p.subCategory || p.sub_category || '').trim().toUpperCase();
       if (activeCategory === 'LADIES') {
-        return cat === 'LADIES' || (cat === 'RINGS' && (sub === 'LADIES RINGS' || sub === 'RINGS')) || (cat === 'EARRINGS');
+        return cat === 'LADIES' || (cat === 'RINGS' && (sub === 'LADIES RINGS' || sub === 'RINGS')) || (cat === 'EARRINGS') || (cat === 'WEDDING SET');
       }
       if (activeCategory === 'GENTS') {
         return cat === 'GENTS' || (cat === 'RINGS' && (sub === 'GENTS RINGS' || sub === 'RINGS'));
@@ -1356,7 +1387,7 @@ export default function Home() {
                   <span className="ping-dot"></span>
                   TODAY'S RATE
                 </span>
-                <span className="ticker-item" style={{ fontWeight: 700, color: '#ffffff' }}>SHREE ARADHNA JEWELLERS:</span>
+                <span className="ticker-item" style={{ fontWeight: 700, color: '#ffffff' }}>KN JEWELLERS:</span>
 
                 {!goldRates.hide24k && goldRates.gold24k > 0 && (
                   <>
@@ -1425,10 +1456,10 @@ export default function Home() {
           <div className="nav-container">
             
             <a href="#" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <img src="/assets/logo.png" alt="SHREE ARADHNA JEWELLERS Logo" className="brand-logo-img" style={{ height: '42px', width: '42px', borderRadius: '8px', objectFit: 'contain' }} />
+              <img src="/assets/logo.png" alt="KN JEWELLERS Logo" className="brand-logo-img" style={{ height: '42px', width: '42px', borderRadius: '8px', objectFit: 'contain' }} />
               <div className="brand-text-container">
-                <h1 className="brand-name" style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', color: 'inherit', display: 'inline' }}>SHREE ARADHNA JEWELLERS</h1>
-                <span className="brand-subtitle">GANDHIDHAM & ADIPUR</span>
+                <h1 className="brand-name" style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', color: 'inherit', display: 'inline' }}>KN JEWELLERS</h1>
+                <span className="brand-subtitle">AMBALA CANTT</span>
               </div>
             </a>
 
@@ -1456,7 +1487,7 @@ export default function Home() {
             </nav>
 
             {/* Call button */}
-                        <a href="tel:+919638888170" className="call-btn" title="Call Branch 1 (Gandhidham): 9638888170 | Branch 2 (Adipur): 7202921222">
+            <a href="tel:+919466219194" className="call-btn" title="Call KN Jewellers (Ambala Cant): 094662 19194">
               <Phone className="icon-sm" />
               <span>CALL NOW</span>
             </a>
@@ -1534,13 +1565,9 @@ export default function Home() {
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                <a href="tel:+919638888170" className="mobile-call-btn" style={{ justifyContent: 'center' }}>
+                <a href="tel:+919466219194" className="mobile-call-btn" style={{ justifyContent: 'center' }}>
                   <Phone className="icon-sm" />
-                  <span>GANDHIDHAM: 9638888170</span>
-                </a>
-                <a href="tel:+917202921222" className="mobile-call-btn" style={{ justifyContent: 'center', background: '#ffffff', color: 'var(--peacock-green)', border: '1.5px solid var(--peacock-green)' }}>
-                  <Phone className="icon-sm" />
-                  <span>ADIPUR: 7202921222</span>
+                  <span>CALL NOW: 094662 19194</span>
                 </a>
               </div>
             </div>
@@ -1555,7 +1582,7 @@ export default function Home() {
             key={index}
             className={`carousel-slide ${index === activeSlide ? 'active' : ''}`}
           >
-            <a href="#contact" style={{ display: 'block', width: '100%', height: 'auto', textDecoration: 'none' }} title="Visit Showroom - Shree Aradhna Jewellers">
+            <a href="#contact" style={{ display: 'block', width: '100%', height: 'auto', textDecoration: 'none' }} title="Visit Showroom - Kn Jewellers">
               <img 
                 src={banner.desktopUrl} 
                 alt={banner.line2}
@@ -1787,8 +1814,8 @@ export default function Home() {
                   <button
                     onClick={() => { setAuthMode('signup'); setIsAuthModalOpen(true); }}
                     style={{
-                      padding: '11px 24px',
-                      background: 'var(--royal-gold)',
+                      padding: '11px 22px',
+                      background: 'linear-gradient(135deg, var(--royal-gold), #b8860b)',
                       color: '#ffffff',
                       border: 'none',
                       borderRadius: '6px',
@@ -1800,7 +1827,7 @@ export default function Home() {
                       boxShadow: '0 4px 15px rgba(218, 165, 32, 0.35)'
                     }}
                   >
-                    ✨ SIGN UP TO VIEW RATES
+                    SIGN UP TO VIEW RATES
                   </button>
                   <button
                     onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }}
@@ -1904,7 +1931,7 @@ export default function Home() {
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
                         className="cat-slide-img"
                       />
-                      {mCat.name === 'WEDDING SET' && (
+                      {mCat.badge && (
                         <div style={{
                           position: 'absolute',
                           top: '10px',
@@ -1921,7 +1948,7 @@ export default function Home() {
                           fontFamily: 'var(--font-sans)',
                           animation: 'pulse-badge 2s ease-in-out infinite'
                         }}>
-                          ✨ Available
+                          {mCat.badge}
                         </div>
                       )}
                     </div>
@@ -1936,7 +1963,7 @@ export default function Home() {
                     }}>
                       {mCat.label}
                     </h4>
-                    {mCat.name === 'WEDDING SET' && (
+                    {mCat.subLabel && (
                       <p style={{
                         margin: '4px 0 0',
                         fontSize: '9px',
@@ -1945,7 +1972,7 @@ export default function Home() {
                         fontFamily: 'var(--font-sans)',
                         letterSpacing: '0.5px'
                       }}>
-                        New Collection In Stock
+                        {mCat.subLabel}
                       </p>
                     )}
                   </div>
@@ -2016,7 +2043,7 @@ export default function Home() {
           <div className="section-header">
             <h2 className="section-pretitle">SHOP BY COLLECTION</h2>
             <h3 className="section-title">Explore our diverse selections</h3>
-            <p className="section-header-sub">BIS Hallmarked â€¢ Custom Handcrafted Designs</p>
+            <p className="section-header-sub">BIS Hallmarked • Custom Handcrafted Designs</p>
             <div className="title-divider" />
           </div>
 
@@ -2215,7 +2242,7 @@ export default function Home() {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          navigator.clipboard.writeText(`https://www.shreearadhnajewellers.com/?product=${product.id}`);
+                          navigator.clipboard.writeText(`${window.location.origin}/?product=${product.id}`);
                           alert("Product link copied to clipboard!");
                         }}
                         style={{
@@ -2228,7 +2255,7 @@ export default function Home() {
                         <Share2 size={16} />
                       </button>
                       <a
-                        href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${product.id}`}
+                        href={`https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.%0A%0AProduct%20Link:%20${typeof window !== 'undefined' ? window.location.origin : 'https://www.knjewellers.com'}/?product=${product.id}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -2289,8 +2316,8 @@ export default function Home() {
                 boxShadow: '0 8px 24px rgba(74, 11, 20, 0.22)'
               }}>
                 <img 
-                  src="/assets/wedding_collection_banner.jpg" 
-                  alt="Royal Wedding Collection - Shree Aradhna Jewellers" 
+                  src="/assets/products/kn_gold_01.jpg" 
+                  alt="Royal Wedding Collection - Kn Jewellers" 
                   style={{
                     width: '100%',
                     height: '100%',
@@ -2378,7 +2405,7 @@ export default function Home() {
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                   <a 
-                    href="https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20the%20Royal%20Wedding%20Collection%20sets." 
+                    href="https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20am%20interested%20in%20the%20Royal%20Wedding%20Collection%20sets." 
                     target="_blank" 
                     rel="noreferrer"
                     style={{
@@ -2430,10 +2457,10 @@ export default function Home() {
                 BESPOKE HANDCRAFTED DESIGNS
               </span>
               <p className="custom-order-desc">
-                We craft bespoke handcrafted pieces matching your exact specifications for {activeSubCategory !== 'ALL' ? activeSubCategory : activeCategory}. Please contact our Gandhidham or Adipur showrooms on WhatsApp to design your dream piece.
+                We craft bespoke handcrafted pieces matching your exact specifications for {activeSubCategory !== 'ALL' ? activeSubCategory : activeCategory}. Please contact our Ambala Cantt showroom on WhatsApp to design your dream piece.
               </p>
               <a 
-                href="https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20want%20to%20place%20a%20custom%20order." 
+                href="https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20want%20to%20place%20a%20custom%20order." 
                 target="_blank"
                 rel="noreferrer"
                 className="custom-order-link"
@@ -2508,15 +2535,15 @@ export default function Home() {
             
             {/* Showroom info & Details */}
             <div className="contact-info-block">
-              <h2 className="section-pretitle">VISIT OUR SHOWROOMS</h2>
-              <h3 className="showroom-title">SHREE ARADHNA JEWELLERS</h3>
+              <h2 className="section-pretitle">VISIT OUR SHOWROOM</h2>
+              <h3 className="showroom-title">KN JEWELLERS</h3>
               <p className="showroom-desc">
-                Step into a world of pure heritage gold, hallmarked jewellery, and timeless artistry. Visit either of our 2 prestigious showrooms located in Gandhidham and Adipur, Gujarat.
+                Step into a world of pure heritage gold, hallmarked jewellery, and timeless artistry. Visit our prestigious showroom located in Ambala Cantt, Haryana.
               </p>
 
               <div className="info-cards-stack" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
-                {/* Branch 1: Gandhidham */}
+                {/* Ambala Cant Showroom */}
                 <div style={{
                   background: '#ffffff',
                   border: '1.5px solid rgba(123, 17, 34, 0.18)',
@@ -2536,22 +2563,22 @@ export default function Home() {
                       padding: '4px 12px',
                       borderRadius: '20px',
                       textTransform: 'uppercase'
-                    }}>BRANCH 1 · GANDHIDHAM</span>
-                    <span style={{ fontSize: '11px', color: '#7b1122', fontWeight: '700' }}>⭐ GOLD SOUK</span>
+                    }}>AMBALA CANTT SHOWROOM</span>
+                    <span style={{ fontSize: '11px', color: '#7b1122', fontWeight: '700' }}>★ SADAR BAZAR</span>
                   </div>
 
                   <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--peacock-green)', margin: '0 0 10px', fontWeight: '700' }}>
-                    Gandhidham Showroom
+                    Kn Jewellers Showroom
                   </h4>
 
                   <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                     <MapPin className="icon-sm" style={{ color: 'var(--royal-gold)', flexShrink: 0, marginTop: '2px' }} />
                     <div>
                       <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.5', color: 'var(--text-dark)' }}>
-                        PLOT NO = 244, SHOP NO. 2 , GOLD SOUK SECTOR 1 A, 246, MAIN BAZAR, near SWAGAT RESTAURANT, Ward 12B, Gandhidham, Gujarat 370201
+                        Kasera Bazaar Rd, Sadar Bazar, Ambala, Ambala Sadar, Haryana 133001
                       </p>
                       <a 
-                        href="https://www.google.com/maps/search/?api=1&query=Gold+Souk+Sector+1A+Gandhidham+Gujarat+370201" 
+                        href="https://www.google.com/maps/search/?api=1&query=Kn+Jewellers+Kasera+Bazaar+Rd+Sadar+Bazar+Ambala+Ambala+Sadar+Haryana+133001" 
                         target="_blank" 
                         rel="noreferrer" 
                         className="whatsapp-link" 
@@ -2571,7 +2598,7 @@ export default function Home() {
 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', paddingTop: '12px', borderTop: '1px solid rgba(123, 17, 34, 0.08)' }}>
                     <a 
-                      href="tel:+919638888170" 
+                      href="tel:+919466219194" 
                       style={{
                         flex: '1 1 auto',
                         background: 'var(--royal-gold)',
@@ -2587,10 +2614,10 @@ export default function Home() {
                         gap: '6px'
                       }}
                     >
-                      <Phone size={14} /> CALL: 9638888170
+                      <Phone size={14} /> CALL: 094662 19194
                     </a>
                     <a 
-                      href="https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers%20(Gandhidham%20Branch),%20I%20have%20an%20inquiry." 
+                      href="https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20have%20an%20inquiry." 
                       target="_blank" 
                       rel="noreferrer"
                       style={{
@@ -2612,7 +2639,7 @@ export default function Home() {
                       💬 WHATSAPP
                     </a>
                     <a 
-                      href="https://www.instagram.com/shree_aradhana_jewellers?utm_source=ig_web_button_share_sheet&mdxt=ZDNlZDc0MzIxNw==" 
+                      href="https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr" 
                       target="_blank" 
                       rel="noreferrer"
                       style={{
@@ -2621,83 +2648,7 @@ export default function Home() {
                         border: '1px solid rgba(123, 17, 34, 0.15)',
                         color: 'var(--peacock-green)',
                         textDecoration: 'none',
-                        padding: '8px 14px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      📸 @shree_aradhana_jewellers
-                    </a>
-                  </div>
-                </div>
-
-                {/* Branch 2: Adipur */}
-                <div style={{
-                  background: '#ffffff',
-                  border: '1.5px solid rgba(123, 17, 34, 0.18)',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  boxShadow: '0 4px 16px rgba(123, 17, 34, 0.05)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{
-                      background: 'var(--royal-gold)',
-                      color: '#ffffff',
-                      fontSize: '10px',
-                      fontWeight: '800',
-                      letterSpacing: '1px',
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      textTransform: 'uppercase'
-                    }}>BRANCH 2 · ADIPUR</span>
-                    <span style={{ fontSize: '11px', color: '#7b1122', fontWeight: '700' }}>⭐ MADANSHI CHOWK</span>
-                  </div>
-
-                  <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '18px', color: 'var(--peacock-green)', margin: '0 0 10px', fontWeight: '700' }}>
-                    Adipur Showroom
-                  </h4>
-
-                  <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                    <MapPin className="icon-sm" style={{ color: 'var(--royal-gold)', flexShrink: 0, marginTop: '2px' }} />
-                    <div>
-                      <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.5', color: 'var(--text-dark)' }}>
-                        SEZ-23/24, Madanshi Chowk, Adipur, Kutch, Gujarat
-                      </p>
-                      <a 
-                        href="https://www.google.com/maps/search/?api=1&query=Madanshi+Chowk+Adipur+Kutch+Gujarat" 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="whatsapp-link" 
-                        style={{ marginTop: '6px', fontSize: '11px', display: 'inline-block' }}
-                      >
-                        VIEW ON GOOGLE MAPS &rarr;
-                      </a>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                    <Clock className="icon-sm" style={{ color: 'var(--royal-gold)', flexShrink: 0, marginTop: '2px' }} />
-                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-                      Open Daily: 10:30 AM to 08:30 PM
-                    </p>
-                  </div>
-
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', paddingTop: '12px', borderTop: '1px solid rgba(123, 17, 34, 0.08)' }}>
-                    <a 
-                      href="tel:+917202921222" 
-                      style={{
-                        flex: '1 1 auto',
-                        background: 'var(--royal-gold)',
-                        color: '#ffffff',
-                        textDecoration: 'none',
-                        padding: '10px 16px',
+                        padding: '10px 14px',
                         borderRadius: '6px',
                         fontSize: '12px',
                         fontWeight: '700',
@@ -2707,52 +2658,9 @@ export default function Home() {
                         gap: '6px'
                       }}
                     >
-                      <Phone size={14} /> CALL: 7202921222
+                      📸 @jewellerskn on Instagram
                     </a>
-                    <a 
-                      href="https://wa.me/917202921222?text=Hello%20SHREE%20ARADHNA%20Jewellers%20(Adipur%20Branch),%20I%20have%20an%20inquiry." 
-                      target="_blank" 
-                      rel="noreferrer"
-                      style={{
-                        flex: '1 1 auto',
-                        background: '#ffffff',
-                        border: '1.5px solid var(--peacock-green)',
-                        color: 'var(--peacock-green)',
-                        textDecoration: 'none',
-                        padding: '10px 16px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      💬 WHATSAPP
-                    </a>
-                    <a 
-                      href="https://www.instagram.com/aradhanagoldhouse?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw==" 
-                      target="_blank" 
-                      rel="noreferrer"
-                      style={{
-                        width: '100%',
-                        background: 'rgba(123, 17, 34, 0.05)',
-                        border: '1px solid rgba(123, 17, 34, 0.15)',
-                        color: 'var(--peacock-green)',
-                        textDecoration: 'none',
-                        padding: '8px 14px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      📸 @aradhanagoldhouse
-                    </a>
+
                   </div>
                 </div>
 
@@ -2769,7 +2677,7 @@ export default function Home() {
               <form onSubmit={async (e) => { 
                 e.preventDefault(); 
                 const formData = new FormData(e.target);
-                const branchVal = formData.get('branch') || 'Gandhidham Branch';
+                const branchVal = formData.get('branch') || 'Ambala Cantt Showroom';
                 const inquiry = {
                   id: Date.now(),
                   name: formData.get('name'),
@@ -2800,10 +2708,9 @@ export default function Home() {
                 e.target.reset();
               }} className="contact-form">
                 <div className="form-group">
-                  <label className="input-label">Select Preferred Showroom</label>
+                  <label className="input-label">Preferred Showroom</label>
                   <select name="branch" className="form-select" required>
-                    <option value="Gandhidham Branch (Gold Souk)">Branch 1: Gandhidham (Gold Souk)</option>
-                    <option value="Adipur Branch (Madanshi Chowk)">Branch 2: Adipur (Madanshi Chowk)</option>
+                    <option value="Ambala Cantt Showroom">Ambala Cantt Showroom (Kasera Bazaar Rd, Sadar Bazar)</option>
                   </select>
                 </div>
 
@@ -2929,7 +2836,7 @@ export default function Home() {
             margin: '0 auto 40px',
             lineHeight: '1.6'
           }}>
-            Stay connected with our Gandhidham and Adipur branches for daily gold rate updates, latest BIS 916 hallmarked bridal arrivals, and behind-the-scenes artisan videos.
+            Stay connected with Kn Jewellers, Ambala Cantt for daily gold rate updates, latest BIS 916 hallmarked bridal arrivals, and behind-the-scenes artisan videos.
           </p>
 
           {/* Real-time Widget or API Fetch Layout */}
@@ -2947,14 +2854,12 @@ export default function Home() {
             </div>
           )}
 
-          {/* Dual Branch Instagram Cards */}
+          {/* Kn Jewellers Ambala Cant Social Card */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '24px',
+            display: 'flex',
+            justifyContent: 'center',
             marginBottom: '20px'
           }}>
-            {/* Card Branch 1 */}
             <div style={{
               background: 'linear-gradient(145deg, #ffffff, #faf6f6)',
               border: '1.5px solid rgba(123, 17, 34, 0.18)',
@@ -2966,7 +2871,8 @@ export default function Home() {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'space-between',
-              transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+              maxWidth: '480px',
+              width: '100%'
             }}>
               <div>
                 <div style={{
@@ -2998,7 +2904,7 @@ export default function Home() {
                   borderRadius: '12px',
                   textTransform: 'uppercase'
                 }}>
-                  BRANCH 1 · GANDHIDHAM
+                  AMBALA CANTT · SADAR BAZAR
                 </span>
 
                 <h3 style={{
@@ -3008,131 +2914,97 @@ export default function Home() {
                   margin: '12px 0 6px',
                   fontWeight: '700'
                 }}>
-                  @shree_aradhana_jewellers
+                  @jewellerskn
                 </h3>
                 
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 24px', maxWidth: '320px' }}>
-                  Gold Souk Gandhidham showroom. Follow for exquisite wedding sets, temple jewellery, and festive drops.
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 24px', maxWidth: '340px' }}>
+                  Kasera Bazaar Rd, Sadar Bazar showroom. Follow for real-time gold rates, daily wear jewellery, and exclusive offers.
                 </p>
               </div>
 
-              <a 
-                href="https://www.instagram.com/shree_aradhana_jewellers?utm_source=ig_web_button_share_sheet&mdxt=ZDNlZDc0MzIxNw==" 
-                target="_blank" 
-                rel="noreferrer"
-                style={{
-                  background: 'var(--royal-gold)',
-                  color: '#ffffff',
-                  padding: '12px 28px',
-                  borderRadius: '30px',
-                  fontWeight: '700',
-                  fontSize: '11px',
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 6px 18px rgba(123, 17, 34, 0.25)',
-                  width: '100%',
-                  justifyContent: 'center'
-                }}
-              >
-                <span>FOLLOW ON INSTAGRAM</span> &rarr;
-              </a>
-            </div>
-
-            {/* Card Branch 2 */}
-            <div style={{
-              background: 'linear-gradient(145deg, #ffffff, #faf6f6)',
-              border: '1.5px solid rgba(123, 17, 34, 0.18)',
-              borderRadius: '16px',
-              padding: '32px 24px',
-              textAlign: 'center',
-              boxShadow: '0 6px 20px rgba(123, 17, 34, 0.06)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-            }}>
-              <div>
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  margin: '0 auto 16px',
-                  boxShadow: '0 4px 14px rgba(220, 39, 67, 0.3)'
-                }}>
-                  <svg style={{ width: '32px', height: '32px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+                <a 
+                  href="https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  style={{
+                    background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                    color: '#ffffff',
+                    padding: '14px 28px',
+                    borderRadius: '30px',
+                    fontWeight: '700',
+                    fontSize: '12px',
+                    letterSpacing: '1px',
+                    textTransform: 'uppercase',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 6px 18px rgba(220, 39, 67, 0.25)',
+                    width: '100%',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <svg style={{ width: '18px', height: '18px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                     <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
                   </svg>
+                  <span>FOLLOW @jewellerskn ON INSTAGRAM</span> &rarr;
+                </a>
+
+                <div style={{ display: 'flex', gap: '10px', width: '100%', flexWrap: 'wrap' }}>
+                  <a 
+                    href="tel:+919466219194"
+                    style={{
+                      flex: '1 1 auto',
+                      background: 'var(--royal-gold)',
+                      color: '#ffffff',
+                      padding: '10px 18px',
+                      borderRadius: '30px',
+                      fontWeight: '700',
+                      fontSize: '11px',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Phone size={14} /> CALL: 094662 19194
+                  </a>
+                  <a 
+                    href="https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20have%20an%20inquiry."
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      flex: '1 1 auto',
+                      background: '#ffffff',
+                      border: '1.5px solid var(--peacock-green)',
+                      color: 'var(--peacock-green)',
+                      padding: '10px 18px',
+                      borderRadius: '30px',
+                      fontWeight: '700',
+                      fontSize: '11px',
+                      letterSpacing: '1px',
+                      textTransform: 'uppercase',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    💬 WHATSAPP
+                  </a>
                 </div>
-
-                <span style={{
-                  background: 'rgba(123, 17, 34, 0.08)',
-                  color: 'var(--peacock-green)',
-                  fontSize: '10px',
-                  fontWeight: '800',
-                  letterSpacing: '1px',
-                  padding: '4px 12px',
-                  borderRadius: '12px',
-                  textTransform: 'uppercase'
-                }}>
-                  BRANCH 2 · ADIPUR
-                </span>
-
-                <h3 style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: '20px',
-                  color: 'var(--peacock-green)',
-                  margin: '12px 0 6px',
-                  fontWeight: '700'
-                }}>
-                  @aradhanagoldhouse
-                </h3>
-                
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: '0 0 24px', maxWidth: '320px' }}>
-                  Madanshi Chowk Adipur showroom. Follow for real-time gold rates, daily wear jewellery, and exclusive offers.
-                </p>
               </div>
-
-              <a 
-                href="https://www.instagram.com/aradhanagoldhouse?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw==" 
-                target="_blank" 
-                rel="noreferrer"
-                style={{
-                  background: 'var(--royal-gold)',
-                  color: '#ffffff',
-                  padding: '12px 28px',
-                  borderRadius: '30px',
-                  fontWeight: '700',
-                  fontSize: '11px',
-                  letterSpacing: '1px',
-                  textTransform: 'uppercase',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 6px 18px rgba(123, 17, 34, 0.25)',
-                  width: '100%',
-                  justifyContent: 'center'
-                }}
-              >
-                <span>FOLLOW ON INSTAGRAM</span> &rarr;
-              </a>
             </div>
           </div>
         </div>
       </section>
-
       {/* 7.5. Download App Section */}
       <section className="app-download-section" style={{
         background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 100%)',
@@ -3161,7 +3033,7 @@ export default function Home() {
             textTransform: 'uppercase',
             letterSpacing: '1px'
           }}>
-            Experience Shree Aradhna Jewellers on Mobile
+            Experience Kn Jewellers on Mobile
           </h2>
           <p style={{
             fontFamily: 'var(--font-sans)',
@@ -3173,7 +3045,7 @@ export default function Home() {
             marginLeft: 'auto',
             marginRight: 'auto'
           }}>
-            Install our official Web App on your iOS or Android device. Track live gold rates, browse handcrafted bridal collections, and inquire seamlessly with our Gandhidham & Adipur showrooms.
+            Install our official Web App on your iOS or Android device. Track live gold rates, browse handcrafted bridal collections, and inquire seamlessly with our Ambala Cantt showroom.
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
@@ -3332,7 +3204,7 @@ export default function Home() {
                 fontFamily: 'var(--font-sans)', color: '#4a4a4a',
                 fontSize: '13px', lineHeight: '1.8'
               }}>
-                <li style={{ marginBottom: '10px' }}>Open <strong>Safari</strong> and go to <strong>www.shreearadhnajewellers.com</strong>.</li>
+                <li style={{ marginBottom: '10px' }}>Open <strong>Safari</strong> and visit our website.</li>
                 <li style={{ marginBottom: '10px' }}>Tap the <strong>Share</strong> button (square icon with an arrow pointing up) at the bottom toolbar.</li>
                 <li style={{ marginBottom: '10px' }}>Scroll down and select <strong>"Add to Home Screen"</strong> from the list of options.</li>
                 <li>Tap <strong>"Add"</strong> at the top right to complete the installation.</li>
@@ -3346,47 +3218,34 @@ export default function Home() {
       <footer className="footer-main">
         <div className="footer-inner">
           <div className="footer-brand">
-            <span className="footer-brand-title">SHREE ARADHNA JEWELLERS</span>
-            <span className="footer-brand-sub">GANDHIDHAM & ADIPUR, GUJARAT</span>
+            <span className="footer-brand-title">KN JEWELLERS</span>
+            <span className="footer-brand-sub">AMBALA CANTT, HARYANA</span>
           </div>
 
           <div className="footer-branches" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '24px',
+            display: 'flex',
+            justifyContent: 'center',
             width: '100%',
             padding: '24px 0',
             borderTop: '1px solid rgba(123, 17, 34, 0.15)',
             borderBottom: '1px solid rgba(123, 17, 34, 0.15)',
             margin: '20px 0',
-            textAlign: 'left'
+            textAlign: 'center'
           }}>
-            <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--text-dark)' }}>
-              <strong style={{ color: 'var(--peacock-green)', display: 'block', marginBottom: '4px', fontSize: '13px' }}>
-                📍 BRANCH 1 (GANDHIDHAM)
+            <div style={{ fontSize: '13px', lineHeight: '1.7', color: 'var(--text-dark)', maxWidth: '600px' }}>
+              <strong style={{ color: 'var(--peacock-green)', display: 'block', marginBottom: '6px', fontSize: '14px', letterSpacing: '0.5px' }}>
+                📍 KN JEWELLERS (AMBALA CANTT)
               </strong>
-              PLOT NO = 244, SHOP NO. 2 , GOLD SOUK SECTOR 1 A, 246, MAIN BAZAR, near SWAGAT RESTAURANT, Ward 12B, Gandhidham, Gujarat 370201<br />
-              <div style={{ marginTop: '8px', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-                <a href="tel:+919638888170" style={{ color: 'var(--peacock-green)', fontWeight: '700', textDecoration: 'none' }}>
-                  📞 +91 96388 88170
+              Kasera Bazaar Rd, Sadar Bazar, Ambala, Ambala Sadar, Haryana 133001<br />
+              <div style={{ marginTop: '10px', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <a href="tel:+919466219194" style={{ color: 'var(--peacock-green)', fontWeight: '700', textDecoration: 'none' }}>
+                  📞 094662 19194
                 </a>
-                <a href="https://www.instagram.com/shree_aradhana_jewellers?utm_source=ig_web_button_share_sheet&mdxt=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" style={{ color: 'var(--royal-gold)', fontWeight: '700', textDecoration: 'none' }}>
-                  📸 @shree_aradhana_jewellers
+                <a href="https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20have%20an%20inquiry." target="_blank" rel="noreferrer" style={{ color: 'var(--royal-gold)', fontWeight: '700', textDecoration: 'none' }}>
+                  💬 WhatsApp Inquiries
                 </a>
-              </div>
-            </div>
-
-            <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--text-dark)' }}>
-              <strong style={{ color: 'var(--peacock-green)', display: 'block', marginBottom: '4px', fontSize: '13px' }}>
-                📍 BRANCH 2 (ADIPUR)
-              </strong>
-              SEZ-23/24, Madanshi Chowk, Adipur, Kutch, Gujarat<br />
-              <div style={{ marginTop: '8px', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-                <a href="tel:+917202921222" style={{ color: 'var(--peacock-green)', fontWeight: '700', textDecoration: 'none' }}>
-                  📞 +91 72029 21222
-                </a>
-                <a href="https://www.instagram.com/aradhanagoldhouse?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" style={{ color: 'var(--royal-gold)', fontWeight: '700', textDecoration: 'none' }}>
-                  📸 @aradhanagoldhouse
+                <a href="https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr" target="_blank" rel="noreferrer" style={{ color: 'var(--peacock-green)', fontWeight: '700', textDecoration: 'none' }}>
+                  📸 @jewellerskn
                 </a>
               </div>
             </div>
@@ -3401,28 +3260,10 @@ export default function Home() {
             <span className="footer-separator"> | </span>
             <button onClick={() => { setIsAdminOpen(true); handleAdminLogout(); }} className="footer-link-item" style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', padding: 0, color: 'var(--royal-gold)', fontWeight: 'bold' }}>ADMIN PANEL</button>
           </div>
-
-          <div className="footer-socials" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span className="social-label">INSTAGRAM:</span>
-            <a href="https://www.instagram.com/shree_aradhana_jewellers?utm_source=ig_web_button_share_sheet&mdxt=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" className="instagram-circle-btn" aria-label="Branch 1 Instagram" title="Branch 1: @shree_aradhana_jewellers">
-              <svg className="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-              </svg>
-            </a>
-            <a href="https://www.instagram.com/aradhanagoldhouse?utm_source=ig_web_button_share_sheet&psln=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" className="instagram-circle-btn" aria-label="Branch 2 Instagram" title="Branch 2: @aradhanagoldhouse">
-              <svg className="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-              </svg>
-            </a>
-          </div>
         </div>
         
         <div className="footer-copyright">
-          &copy; {new Date().getFullYear()} SHREE ARADHNA JEWELLERS · GANDHIDHAM & ADIPUR. All Rights Reserved. Pure BIS Hallmarked Gold & Certified Diamonds.
+          &copy; {new Date().getFullYear()} KN JEWELLERS · AMBALA CANTT. All Rights Reserved. Pure BIS Hallmarked Gold & Certified Diamonds.
         </div>
       </footer>
 
@@ -3751,7 +3592,7 @@ export default function Home() {
                     {/* Action buttons (WhatsApp inquiry and Trash remove) */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <a
-                        href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${product.id}%20from%20my%20wishlist.`}
+                        href={`https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(product.title)}.%0A%0AProduct%20Link:%20${typeof window !== 'undefined' ? window.location.origin : 'https://www.knjewellers.com'}/?product=${product.id}%20from%20my%20wishlist.`}
                         target="_blank"
                         rel="noreferrer"
                         style={{
@@ -4078,7 +3919,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* â”€â”€ Lightbox Modal (White & Pink Premium Brand Colors) â”€â”€ */}
+      {/* ──── Lightbox Modal (White & Pink Premium Brand Colors) ──── */}
       {lightboxProduct && (
         <div
           onClick={() => setLightboxProduct(null)}
@@ -4164,7 +4005,7 @@ export default function Home() {
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`https://www.shreearadhnajewellers.com/?product=${lightboxProduct.id}`);
+                    navigator.clipboard.writeText(`${window.location.origin}/?product=${lightboxProduct.id}`);
                     alert("Product link copied to clipboard!");
                   }}
                   style={{
@@ -4177,7 +4018,7 @@ export default function Home() {
                   <Share2 size={18} />
                 </button>
                 <a
-                  href={`https://wa.me/919638888170?text=Hello%20SHREE%20ARADHNA%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(lightboxProduct.title)}.%0A%0AProduct%20Link:%20https://www.shreearadhnajewellers.com/?product=${lightboxProduct.id}`}
+                  href={`https://wa.me/919466219194?text=Hello%20KN%20Jewellers,%20I%20am%20interested%20in%20buying%20your%20${encodeURIComponent(lightboxProduct.title)}.%0A%0AProduct%20Link:%20${typeof window !== 'undefined' ? window.location.origin : 'https://www.knjewellers.com'}/?product=${lightboxProduct.id}`}
                   target="_blank"
                   rel="noreferrer"
                   style={{
@@ -4278,7 +4119,7 @@ export default function Home() {
               color: 'var(--peacock-green)',
               lineHeight: '1.2'
             }}>
-              Install SHREE ARADHNA JEWELLERS
+              Install KN JEWELLERS
             </h3>
 
             <p style={{
@@ -4610,7 +4451,7 @@ export default function Home() {
                     </label>
                     <select
                       name="authBranch"
-                      defaultValue="Gandhidham"
+                      defaultValue="Ambala Cantt"
                       style={{
                         width: '100%',
                         padding: '11px 14px',
@@ -4622,8 +4463,7 @@ export default function Home() {
                         background: '#ffffff'
                       }}
                     >
-                      <option value="Gandhidham">Gandhidham Showroom (Main Branch)</option>
-                      <option value="Adipur">Adipur Showroom (Branch 2)</option>
+                      <option value="Ambala Cantt">Ambala Cantt Showroom (Kasera Bazaar Rd, Sadar Bazar)</option>
                     </select>
                   </div>
                 </>

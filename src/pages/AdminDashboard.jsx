@@ -85,10 +85,10 @@ export default function AdminDashboard() {
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Store Settings State
-  const [storeUpi, setStoreUpi] = useState('9638888170@okbizaxis');
+  const [storeUpi, setStoreUpi] = useState('9466219194@okbizaxis');
   const [updatingUpi, setUpdatingUpi] = useState(false);
   const [qrUploading, setQrUploading] = useState(false);
-  const [instaUrl, setInstaUrl] = useState('');
+  const [instaUrl, setInstaUrl] = useState('https://www.instagram.com/jewellerskn?srtk=MTNheXhhbXdxY2Vv&utm_source=qr');
 
   // Alerts & Inquiries State
   const [sendingAlert, setSendingAlert] = useState(false);
@@ -610,7 +610,7 @@ export default function AdminDashboard() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', padding: '20px' }}>
         <div style={{ width: '100%', maxWidth: '400px', padding: '40px', background: '#1a1a1a', border: '1px solid var(--royal-gold)', borderRadius: '2px', textAlign: 'center' }}>
-          <img src="/assets/logo.png" alt="SHREE ARADHNA JEWELLERS Logo" style={{ height: '64px', borderRadius: '12px', marginBottom: '20px' }} />
+          <img src="/assets/logo.png" alt="KN JEWELLERS Logo" style={{ height: '64px', borderRadius: '12px', marginBottom: '20px' }} />
           <h2 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.8rem', marginBottom: '25px', letterSpacing: '2px' }}>
             ADMIN ACCESS
           </h2>
@@ -658,13 +658,13 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px', flexWrap: 'wrap', gap: '20px', borderBottom: '1px solid #222', paddingBottom: '25px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <img src="/assets/logo.png" alt="SAJ Logo" style={{ width: '48px', height: '48px', borderRadius: '8px' }} />
+              <img src="/assets/logo.png" alt="KN Jewellers Logo" style={{ width: '48px', height: '48px', borderRadius: '8px' }} />
               <div>
                 <h1 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '2rem', letterSpacing: '2px', textTransform: 'uppercase', margin: 0 }}>
-                  Shree Aradhna Jewellers
+                  Kn Jewellers
                 </h1>
                 <p style={{ color: '#888', margin: '4px 0 0', letterSpacing: '0.5px', fontSize: '0.88rem' }}>
-                  Showroom Management Dashboard • Gandhidham & Adipur
+                  Showroom Management Dashboard • Ambala Cantt
                 </p>
               </div>
             </div>
@@ -1002,7 +1002,7 @@ export default function AdminDashboard() {
         <div style={{ background: '#161616', padding: '28px', borderRadius: '8px', border: '1px solid #2a2a2a', marginBottom: '30px' }}>
           <div style={{ marginBottom: '20px' }}>
             <h2 style={{ color: 'var(--royal-gold)', fontFamily: '"Playfair Display", serif', fontSize: '1.4rem', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>💰</span> Live Gold & Silver Rates (Gandhidham & Adipur)
+              <span>💰</span> Live Gold & Silver Rates (Ambala Cantt)
             </h2>
             <p style={{ color: '#aaa', margin: 0, fontSize: '0.85rem' }}>
               Rates update live in real-time on the homepage banner and in the customer pricing calculations.
@@ -1707,7 +1707,7 @@ export default function AdminDashboard() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', paddingTop: '14px', borderTop: '1px solid #222' }}>
                     <a 
-                      href={`https://wa.me/91${String(inq.phone || '').replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(inq.name || 'Customer')},%20greetings%20from%20SHREE%20ARADHNA%20JEWELLERS!`}
+                      href={`https://wa.me/91${String(inq.phone || '').replace(/\D/g, '')}?text=Hello%20${encodeURIComponent(inq.name || 'Customer')},%20greetings%20from%20KN%20JEWELLERS!`}
                       target="_blank"
                       rel="noreferrer"
                       style={{ padding: '6px 12px', background: '#25D366', color: '#fff', textDecoration: 'none', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}

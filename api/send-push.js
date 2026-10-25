@@ -7,7 +7,7 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://hiflildcmdmjjpuyz
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxpbGRjbWRtampwdXl6ZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIxOTc2NzAsImV4cCI6MjEwNzc3MzY3MH0.WLwylnfNqJwYJyDmibvshD6Oti1wUv3nJqadpW6JiPw';
 
 webpush.setVapidDetails(
-  'mailto:contact@shreearadhnajewellers.com',
+  'mailto:contact@knjewellers.com',
   VAPID_PUBLIC_KEY,
   VAPID_PRIVATE_KEY
 );
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
     const notificationPayload = JSON.stringify({
       title: title || '👑 LIVE MARKET RATE UPDATE',
-      body: body || 'Today\'s latest gold & silver rates live at Shree Aradhna Jewellers!',
+      body: body || 'Today\'s latest gold & silver rates live at Kn Jewellers!',
       icon: icon || '/assets/logo.png',
       badge: '/assets/logo.png',
       url: url || '/',

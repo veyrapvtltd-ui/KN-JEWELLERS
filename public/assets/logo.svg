@@ -29,15 +29,15 @@
   <circle cx="185" cy="110" r="5" fill="url(#goldGrad)" />
   <circle cx="315" cy="110" r="5" fill="url(#goldGrad)" />
 
-  <!-- Monogram SAJ -->
-  <text x="250" y="270" font-family="'Cinzel', 'Playfair Display', 'Georgia', serif" font-size="100" font-weight="bold" fill="url(#wineGrad)" text-anchor="middle" letter-spacing="4">SAJ</text>
+  <!-- Monogram KN -->
+  <text x="250" y="270" font-family="'Cinzel', 'Playfair Display', 'Georgia', serif" font-size="100" font-weight="bold" fill="url(#wineGrad)" text-anchor="middle" letter-spacing="4">KN</text>
 
   <!-- Divider Line -->
   <line x1="120" y1="300" x2="380" y2="300" stroke="url(#goldGrad)" stroke-width="3"/>
   <polygon points="250,295 258,300 250,305 242,300" fill="url(#goldGrad)"/>
 
   <!-- Subtitle Text -->
-  <text x="250" y="340" font-family="'Cinzel', 'Montserrat', 'Arial', sans-serif" font-size="22" font-weight="bold" fill="#7b1122" text-anchor="middle" letter-spacing="4">SHREE ARADHNA</text>
+  <text x="250" y="340" font-family="'Cinzel', 'Montserrat', 'Arial', sans-serif" font-size="28" font-weight="bold" fill="#7b1122" text-anchor="middle" letter-spacing="6">KN</text>
   <text x="250" y="372" font-family="'Cinzel', 'Montserrat', 'Arial', sans-serif" font-size="18" font-weight="bold" fill="#d4af37" text-anchor="middle" letter-spacing="6">JEWELLERS</text>
-  <text x="250" y="405" font-family="'Montserrat', 'Arial', sans-serif" font-size="11" font-weight="700" fill="#7b1122" text-anchor="middle" letter-spacing="4">GANDHIDHAM • ADIPUR</text>
+  <text x="250" y="405" font-family="'Montserrat', 'Arial', sans-serif" font-size="11" font-weight="700" fill="#7b1122" text-anchor="middle" letter-spacing="4">AMBALA CANTT</text>
 </svg>
