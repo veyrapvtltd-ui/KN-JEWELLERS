@@ -2839,20 +2839,6 @@ export default function Home() {
             Stay connected with Kn Jewellers, Ambala Cantt for daily gold rate updates, latest BIS 916 hallmarked bridal arrivals, and behind-the-scenes artisan videos.
           </p>
 
-          {/* Real-time Widget or API Fetch Layout */}
-          {instaFeedUrl && !instaFeedUrl.includes('behold.so') && !instaFeedUrl.endsWith('.json') && (
-            <div style={{ width: '100%', overflow: 'hidden', borderRadius: '16px', border: '1px solid rgba(123, 17, 34, 0.15)', marginBottom: '36px', boxShadow: '0 8px 32px rgba(123, 17, 34, 0.05)' }}>
-              <iframe 
-                src={instaFeedUrl} 
-                className="snapwidget-widget" 
-                allowtransparency="true" 
-                frameBorder="0" 
-                scrolling="no" 
-                style={{ border: 'none', overflow: 'hidden', width: '100%', height: '420px', display: 'block' }}
-                title="Instagram Realtime Feed Widget"
-              ></iframe>
-            </div>
-          )}
 
           {/* Kn Jewellers Ambala Cant Social Card */}
           <div style={{
