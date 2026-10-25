@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import AdminDashboard from './pages/AdminDashboard';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfUse from './pages/TermsOfUse';
-import BisPolicy from './pages/BisPolicy';
+const Login = lazy(() => import('./pages/Login'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfUse = lazy(() => import('./pages/TermsOfUse'));
+const BisPolicy = lazy(() => import('./pages/BisPolicy'));
 
 // Simple Navigation Bar using localStorage for session
 function Navbar() {
@@ -49,6 +49,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Navbar />
+      <Suspense fallback={<div style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7b1122', fontWeight: 600 }}>Loading KN Jewellers...</div>}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="/bis-policy" element={<BisPolicy />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

@@ -13,7 +13,6 @@ function urlB64ToUint8Array(base64String) {
 }
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import heic2any from 'heic2any';
 import { 
   Menu, X, Phone, MapPin, Clock, 
   ShieldCheck, Heart, Award, Share2, Lock, User, LogIn, CheckCircle,
@@ -945,7 +944,8 @@ export default function Home() {
     if (isHeicOrHeif) {
       setIsConvertingHeic(true);
       try {
-        const convertedBlob = await heic2any({
+        const heic2anyModule = (await import('heic2any')).default;
+        const convertedBlob = await heic2anyModule({
           blob: file,
           toType: 'image/jpeg',
           quality: 0.85
@@ -1641,14 +1641,14 @@ export default function Home() {
       </section>
 
       {/* Live Jewel Rates Card */}
-      <section className="live-rates-card-section" style={{ background: '#fcfaf8', padding: '40px 20px 40px', display: 'flex', justifyContent: 'center' }}>
+      <section className="live-rates-card-section" style={{ background: '#fcfaf8', padding: '28px 16px', display: 'flex', justifyContent: 'center' }}>
         <div style={{
           background: '#fff',
           borderRadius: '16px',
           boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
           border: '1px solid rgba(123, 17, 34, 0.2)',
-          padding: '32px',
-          maxWidth: '800px',
+          padding: '24px 20px',
+          maxWidth: '820px',
           width: '100%',
           textAlign: 'center'
         }}>
@@ -1695,41 +1695,41 @@ export default function Home() {
               display: 'flex',
               flexWrap: 'wrap',
               justifyContent: 'center',
-              gap: '24px'
+              gap: '16px'
             }}>
               {/* 24K Gold */}
               {!goldRates.hide24k && goldRates.gold24k > 0 && (
-                <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>24K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(99.9%)</span></div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    ₹{Number(goldRates.gold24k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+                <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '8px' }}>24K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(99.9%)</span></div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    ₹{Number(goldRates.gold24k || 0).toLocaleString('en-IN')} <span style={{fontSize: '12px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                   </div>
                 </div>
               )}
               
               {/* 22K Gold */}
-              <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>22K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(91.6%)</span></div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{Number(goldRates.gold22k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+              <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '8px' }}>22K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(91.6%)</span></div>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  ₹{Number(goldRates.gold22k || 0).toLocaleString('en-IN')} <span style={{fontSize: '12px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                 </div>
               </div>
 
               {/* 18K Gold */}
               {goldRates.gold18k > 0 && (
-                <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>18K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(75.0%)</span></div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    ₹{Number(goldRates.gold18k || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+                <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '8px' }}>18K GOLD <span style={{fontSize: '10px', fontWeight: '500', opacity: 0.8}}>(75.0%)</span></div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--royal-gold)', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    ₹{Number(goldRates.gold18k || 0).toLocaleString('en-IN')} <span style={{fontSize: '12px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                   </div>
                 </div>
               )}
               
               {/* Silver */}
-              <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '12px' }}>SILVER</div>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: '#6b7280', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  ₹{Number(goldRates.silver || 0).toLocaleString('en-IN')} <span style={{fontSize: '13px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
+              <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', letterSpacing: '1px', textAlign: 'center', marginBottom: '8px' }}>SILVER</div>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: '#6b7280', textAlign: 'center', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  ₹{Number(goldRates.silver || 0).toLocaleString('en-IN')} <span style={{fontSize: '12px', fontWeight: '500', color: 'var(--text-gray)'}}>/ 10 gm</span>
                 </div>
               </div>
             </div>
@@ -1741,28 +1741,28 @@ export default function Home() {
                 display: 'flex',
                 flexWrap: 'wrap',
                 justifyContent: 'center',
-                gap: '24px',
+                gap: '16px',
                 filter: 'blur(8px)',
                 opacity: 0.25,
                 pointerEvents: 'none',
                 userSelect: 'none',
                 transform: 'scale(0.98)'
               }}>
-                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>24K GOLD</div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
+                <div style={{ flex: '1 1 180px', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '8px' }}>24K GOLD</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
                 </div>
-                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>22K GOLD</div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
+                <div style={{ flex: '1 1 180px', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '8px' }}>22K GOLD</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
                 </div>
-                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>18K GOLD</div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
+                <div style={{ flex: '1 1 180px', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '8px' }}>18K GOLD</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--royal-gold)' }}>₹••,••• / 10 gm</div>
                 </div>
-                <div style={{ flex: '1 1 200px', padding: '24px 16px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '12px' }}>SILVER</div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#6b7280' }}>₹••• / 10 gm</div>
+                <div style={{ flex: '1 1 180px', padding: '16px 12px', background: '#fff', borderRadius: '12px', border: '1px solid rgba(123, 17, 34, 0.25)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-gray)', fontWeight: '700', marginBottom: '8px' }}>SILVER</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#6b7280' }}>₹••• / 10 gm</div>
                 </div>
               </div>
 
@@ -1859,8 +1859,8 @@ export default function Home() {
       </section>
 
       {/* 4. Shop By Category (Sliding Carousel Style) */}
-      <section id="categories" className="categories-section" style={{ background: '#fff', padding: '60px 0 40px', overflow: 'hidden' }}>
-        <div className="section-inner" style={{ position: 'relative', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+      <section id="categories" className="categories-section" style={{ background: '#fff', padding: '36px 0 28px', overflow: 'hidden' }}>
+        <div className="section-inner" style={{ position: 'relative', maxWidth: '1080px', margin: '0 auto', padding: '0 20px' }}>
           
           <div className="section-header" style={{ textAlign: 'center', marginBottom: '35px' }}>
             <h2 className="section-pretitle">SHOP BY CATEGORY</h2>
@@ -2209,7 +2209,7 @@ export default function Home() {
                   </div>
 
                   {/* Info Area */}
-                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flexGrow: 1, alignItems: 'center', textAlign: 'center' }}>
+                  <div className="product-card-info" style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, alignItems: 'center', textAlign: 'center' }}>
                     <p style={{ 
                       margin: '0 0 8px', 
                       fontSize: '13px', 
@@ -2246,7 +2246,7 @@ export default function Home() {
                     )}
 
                     {/* Actions Row */}
-                    <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: 'auto' }}>
+                    <div className="product-actions-row" style={{ display: 'flex', gap: '6px', width: '100%', marginTop: 'auto' }}>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -2811,7 +2811,7 @@ export default function Home() {
       {/* 7.6. Instagram Feed Section */}
       <section className="instagram-feed-section" style={{
         background: '#ffffff',
-        padding: '70px 24px',
+        padding: '44px 20px',
         textAlign: 'center',
         borderTop: '1px solid rgba(123, 17, 34, 0.12)'
       }}>
@@ -3004,7 +3004,7 @@ export default function Home() {
       {/* 7.5. Download App Section */}
       <section className="app-download-section" style={{
         background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 100%)',
-        padding: '80px 24px',
+        padding: '48px 20px',
         textAlign: 'center',
         borderTop: '1px solid rgba(123, 17, 34, 0.12)'
       }}>

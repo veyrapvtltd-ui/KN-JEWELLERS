@@ -102,5 +102,20 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173
+  },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/lucide-react')) {
+            return 'icons';
+          }
+          if (id.includes('node_modules/@supabase')) {
+            return 'supabase';
+          }
+        }
+      }
+    }
   }
 })
