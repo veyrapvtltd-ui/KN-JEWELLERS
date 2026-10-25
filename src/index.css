@@ -1453,9 +1453,19 @@ body {
 }
 
 .models-marquee-container {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   width: 100%;
   position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding: 4px 16px;
+}
+
+.models-marquee-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* Gradient fade overlays at the edges for an ultra-premium visual look */
@@ -1463,7 +1473,7 @@ body {
   content: '';
   position: absolute;
   top: 0;
-  width: 80px;
+  width: 60px;
   height: 100%;
   z-index: 5;
   pointer-events: none;
@@ -1484,16 +1494,26 @@ body {
   flex-wrap: nowrap;
   gap: 0;
   width: max-content;
+  padding: 10px 0;
+}
+
+/* When web opens: image stick in place without moving */
+.models-marquee-row.sticky-static {
+  animation: none !important;
+  transform: none !important;
+}
+
+/* After 1 minute: starts gentle, slow drift */
+.models-marquee-row.animate-marquee {
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  animation: marqueeLeft 26s linear infinite;
-  padding: 10px 0;
+  animation: marqueeLeft 65s linear infinite;
 }
 
 .models-marquee-row:hover,
 .models-marquee-row:active {
-  animation-play-state: paused;
+  animation-play-state: paused !important;
 }
 
 .model-marquee-card {
@@ -1515,11 +1535,14 @@ body {
   .models-marquee-section {
     padding: 30px 0;
   }
+  .models-marquee-container {
+    padding: 4px 12px;
+  }
   .models-marquee-container::before, .models-marquee-container::after {
     width: 20px;
   }
-  .models-marquee-row {
-    animation-duration: 20s;
+  .models-marquee-row.animate-marquee {
+    animation-duration: 55s;
   }
   .model-marquee-card {
     flex: 0 0 160px;

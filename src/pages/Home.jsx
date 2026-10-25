@@ -227,6 +227,27 @@ export default function Home() {
   const prevCatSlide = () => {
     setCatSlideIndex((prev) => (prev - 1 + marqueeCategories.length) % marqueeCategories.length);
   };
+
+  // Best Sellers auto-marquee starts after 1 minute (60s) — stays stick/still when web opens
+  const [isBestSellerAnimated, setIsBestSellerAnimated] = useState(false);
+  const bestSellersContainerRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsBestSellerAnimated(true);
+    }, 60000); // 1 minute delay
+    return () => clearTimeout(timer);
+  }, []);
+
+  const scrollBestSellers = (direction) => {
+    if (bestSellersContainerRef.current) {
+      const scrollAmount = isMobile ? 180 : 280;
+      bestSellersContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [activeSubCategory, setActiveSubCategory] = useState('ALL');
   const [activeEarringType, setActiveEarringType] = useState('ALL');
@@ -2495,8 +2516,11 @@ export default function Home() {
             <div className="title-divider" />
           </div>
 
-          <div className="models-marquee-container">
-            <div className="models-marquee-row">
+          <div 
+            ref={bestSellersContainerRef}
+            className={`models-marquee-container ${isBestSellerAnimated ? 'marquee-running' : 'marquee-static'}`}
+          >
+            <div className={`models-marquee-row ${isBestSellerAnimated ? 'animate-marquee' : 'sticky-static'}`}>
               {/* Duplicate 2 times for mathematically exact 50% seamless loop */}
               {[...bestSellerImages, ...bestSellerImages].map((item, index) => (
                 <div 
@@ -2538,11 +2562,51 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Interactive Bestseller Hint on Mobile */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '14px', padding: '0 16px' }}>
+          {/* Interactive Bestseller Controls: Prev/Next & Status Hint */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '14px', padding: '0 16px' }}>
+            <button
+              onClick={() => scrollBestSellers('left')}
+              aria-label="Previous Best Seller"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#ffffff',
+                border: '1.5px solid rgba(123, 17, 34, 0.25)',
+                color: 'var(--peacock-green)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+
             <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '1px', color: 'var(--royal-gold)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>✨</span> Tap Any Piece To Inspect & Inquire
+              <span>✨</span> {isBestSellerAnimated ? 'Gently Drifting • Tap Any Piece' : 'Swipe Or Tap To Explore'}
             </span>
+
+            <button
+              onClick={() => scrollBestSellers('right')}
+              aria-label="Next Best Seller"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#ffffff',
+                border: '1.5px solid rgba(123, 17, 34, 0.25)',
+                color: 'var(--peacock-green)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+              }}
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
       </section>
