@@ -1456,7 +1456,7 @@ export default function Home() {
           <div className="nav-container">
             
             <a href="#" className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <img src="/assets/logo.png" alt="KN JEWELLERS Logo" className="brand-logo-img" style={{ height: '42px', width: '42px', borderRadius: '8px', objectFit: 'contain' }} />
+              <img src="/assets/logo.png" alt="KN JEWELLERS Logo" className="brand-logo-img" width="42" height="42" loading="eager" fetchpriority="high" decoding="async" style={{ height: '42px', width: '42px', borderRadius: '8px', objectFit: 'contain' }} />
               <div className="brand-text-container">
                 <h1 className="brand-name" style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', fontFamily: 'inherit', color: 'inherit', display: 'inline' }}>KN JEWELLERS</h1>
                 <span className="brand-subtitle">AMBALA CANTT</span>
@@ -1588,6 +1588,8 @@ export default function Home() {
                 alt={banner.line2}
                 className="hero-banner-full"
                 loading="eager"
+                fetchpriority="high"
+                decoding="async"
               />
             </a>
           </div>
@@ -1925,9 +1927,12 @@ export default function Home() {
                     }}
                     className="category-card-slide"
                   >
-                    <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative', background: '#f8f4f2' }}>
                       <img 
                         src={mCat.img} alt={mCat.label} 
+                        loading="eager"
+                        decoding="async"
+                        fetchpriority="high"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
                         className="cat-slide-img"
                       />
@@ -2139,7 +2144,7 @@ export default function Home() {
 
           {/* Product Grid Showcase */}
           <div className="product-grid">
-            {filteredProducts.map((product) => {
+            {filteredProducts.map((product, index) => {
               const pricing = getProductPricing(product);
               const genderLabel = 
                 product.category === 'LADIES' ? 'Women' : 
@@ -2162,13 +2167,16 @@ export default function Home() {
                   }}
                 >
                   {/* Product Image Frame */}
-                  <div className="product-image-outer" style={{ position: 'relative' }}>
+                  <div className="product-image-outer" style={{ position: 'relative', background: '#f8f5f4' }}>
                     <div className="product-image-inner" onClick={() => setLightboxProduct(product)} style={{ cursor: 'pointer', position: 'relative' }}>
                       <img 
-                        src={product.url} alt={product.title} className="product-image"
-                        loading="lazy"
+                        src={product.url} 
+                        alt={product.title} 
+                        className="product-image"
+                        loading={index < 4 ? "eager" : "lazy"}
+                        fetchpriority={index < 2 ? "high" : "auto"}
                         decoding="async"
-                        style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }}
+                        style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block', transition: 'opacity 0.2s ease' }}
                       />
                       
                       {/* Corner Wishlist Button */}
@@ -2318,6 +2326,8 @@ export default function Home() {
                 <img 
                   src="/assets/products/kn_gold_01.jpg" 
                   alt="Royal Wedding Collection - Kn Jewellers" 
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: '100%',
                     height: '100%',
