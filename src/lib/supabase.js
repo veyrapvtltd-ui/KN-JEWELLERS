@@ -426,10 +426,10 @@ ON CONFLICT (id) DO UPDATE SET
 -- 2. LIVE GOLD & SILVER RATES
 CREATE TABLE IF NOT EXISTS public.saj_rates (
     id integer PRIMARY KEY DEFAULT 1,
-    gold24k numeric DEFAULT 15085,
-    gold22k numeric DEFAULT 13818,
-    gold18k numeric DEFAULT 11465,
-    silver numeric DEFAULT 214,
+    gold24k numeric DEFAULT 148650,
+    gold22k numeric DEFAULT 133780,
+    gold18k numeric DEFAULT 112970,
+    silver numeric DEFAULT 212,
     hide24k boolean DEFAULT false,
     updated_at timestamp with time zone DEFAULT now()
 );
@@ -438,7 +438,7 @@ CREATE TABLE IF NOT EXISTS public.saj_rates (
 ALTER TABLE public.saj_rates ADD COLUMN IF NOT EXISTS hide24k boolean DEFAULT false;
 
 INSERT INTO public.saj_rates (id, gold24k, gold22k, gold18k, silver, hide24k)
-VALUES (1, 15085, 13818, 11465, 214, false)
+VALUES (1, 148650, 133780, 112970, 212, true)
 ON CONFLICT (id) DO UPDATE SET
     gold24k = EXCLUDED.gold24k,
     gold22k = EXCLUDED.gold22k,
